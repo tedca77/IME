@@ -1,0 +1,21 @@
+D:\Windows
+D:\Ted\Documents\Visual Studio 2013
+D:\Ted\Documents\Family Tree Maker
+D:\Place3
+D:\Python27
+D:\Place2
+D:\Program Files (x86)
+D:\VisualStudio2013
+D:\.pnpm-store
+D:\AppData
+D:\apache-tomcat-8.0.21
+D:\Eclipse
+D:\eclipse-workspace
+D:\Eclipseoxygen
+D:\FamilyTreeMaker
+D:\git_old
+vLightroom2
+D:\More Software
+D:\MusicBee
+D:\Motor18
+D:\motor18download
