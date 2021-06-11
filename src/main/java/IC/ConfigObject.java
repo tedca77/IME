@@ -8,8 +8,7 @@ public class ConfigObject {
     private String openmapkey;
     private String minfilesize;
     private String thumbsize;
-    private IncludeSpec includespec;
-    private ExcludeSpec excludespec;
+
 
 
 }
