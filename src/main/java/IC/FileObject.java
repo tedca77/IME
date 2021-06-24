@@ -2,9 +2,12 @@ package IC;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import lombok.Data;
 
+@Data
 public class FileObject {
     String fileName;
+    Integer fileKey;
     BigDecimal fileSize;
     BigDecimal fileSizeOnDisk;
     Date fileCreated;
@@ -23,9 +26,10 @@ public class FileObject {
     Integer verResolution;
     String cameraMaker;
     String cameraModel;
+    Integer cameraKey;
     String programName;
     String fStop;
-    String latitude;
-    String longtitude;
+    Double latitude;
+    Double longitude;
     String altitude;
 }

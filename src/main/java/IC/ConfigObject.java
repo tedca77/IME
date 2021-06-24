@@ -1,5 +1,8 @@
 package IC;
+import IC.openmaps.ReverseGeocodeObject;
 import lombok.Data;
+
+import java.util.ArrayList;
 
 @Data
 public class ConfigObject {
@@ -8,7 +11,14 @@ public class ConfigObject {
     private String openmapkey;
     private String minfilesize;
     private String thumbsize;
-
-
+    private ArrayList<DriveObject> drives;
+    private ArrayList<CameraObject> cameras;
+    private ArrayList<ReverseGeocodeObject> places;
+    private ArrayList<FileObject> photos;
+    private ArrayList<String> isocountrycode;
+    private ArrayList<String> country;
+    private ArrayList<String> stateprovince;
+    private ArrayList<String> city;
+    private ArrayList<String> sublocation;
 
 }

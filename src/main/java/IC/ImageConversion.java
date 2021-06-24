@@ -1,6 +1,10 @@
 package IC;
 
 
+import org.apache.commons.imaging.formats.jpeg.JpegImageParser;
+import org.apache.commons.imaging.formats.jpeg.JpegPhotoshopMetadata;
+import org.apache.commons.imaging.formats.jpeg.iptc.JpegIptcRewriter;
+import org.apache.commons.imaging.formats.jpeg.iptc.PhotoshopApp13Data;
 import org.apache.commons.io.FilenameUtils;
 
 import javax.imageio.ImageIO;
@@ -10,7 +14,9 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 public class ImageConversion {
 

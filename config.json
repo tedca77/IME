@@ -1,8 +1,9 @@
 {
-  "imagecatalogue": {
+
     "drives": [
-      {
-        "startdir": "D:\\",
+
+        {
+        "startdir": "R:\\Our Photos 2021\\Teds Phone 20210104",
         "excludespec": {
           "directories": [
             {
@@ -54,6 +55,18 @@
               "name": "apache-tomcat-8.0.21"
             },
             {
+              "name": "Apache-8.5.46"
+            },
+            {
+              "name": "CDBurnerXP"
+            },
+            {
+              "name": "atf"
+            },
+            {
+              "name": "adobe"
+            },
+            {
               "name": "Eclipse"
             },
             {
@@ -83,20 +96,31 @@
             {
               "name": "motor18download"
             }
+            ,
+            {
+              "name": "$RECYCLE.BIN"
+            }
           ]
-        },
-        "fileprefixes": [
-          {
-            "name": "$RECYCLE."
-          }
-        ]
+          ,
+          "fileprefixes": [
+            {
+              "name": "$RECYCLE."
+            }
+
+          ]
+        }
       }
     ],
     "tempdir": "D:\\tempIC",
     "cryptokey": "crypto key",
     "openmapkey": "open map key",
-    "minfilesize": "4200",
-    "thumbsize": "480x600"
-  }
+    "minfilesize": "10000",
+    "thumbsize": "480x600",
+    "isocountrycode": ["country_code"],
+    "country": ["country"],
+    "stateprovince": ["county"],
+    "city": ["town","city","village"],
+    "sublocation": ["house_number","road","hamlet","suburb"]
+
 }
 
