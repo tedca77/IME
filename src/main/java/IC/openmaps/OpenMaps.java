@@ -4,7 +4,9 @@ package IC.openmaps;
 import IC.ConfigObject;
 import IC.Rest;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.web.util.UriUtils;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import org.springframework.web.util.WebUtils;
 
 
@@ -29,7 +31,7 @@ public class OpenMaps {
         try {
         Rest r = new Rest();
         String enc = WebUtils.DEFAULT_CHARACTER_ENCODING;
-        String s="https://api.openrouteservice.org/geocode/autocomplete?api_key=5b3ce3597851110001cf6248a15496c57f254acbbcb04aaf8e115b50&boundary.country=GBR&text="+ UriUtils.encode(query,enc);
+        String s="https://api.openrouteservice.org/geocode/autocomplete?api_key=5b3ce3597851110001cf6248a15496c57f254acbbcb04aaf8e115b50&boundary.country=GBR&text="+ Base64.getEncoder().encodeToString(query.getBytes(StandardCharsets.UTF_8));
      System.out.println("get place suggestions:"+s);
         String result = r.doGetString(s);
 
@@ -77,7 +79,7 @@ public class OpenMaps {
         try {
             Rest r = new Rest();
         String enc = WebUtils.DEFAULT_CHARACTER_ENCODING;
-        String s="https://api.openrouteservice.org/geocode/search?api_key=5b3ce3597851110001cf6248a15496c57f254acbbcb04aaf8e115b50&boundary.country=GBR&text="+ UriUtils.encode(query,enc);
+        String s="https://api.openrouteservice.org/geocode/search?api_key=5b3ce3597851110001cf6248a15496c57f254acbbcb04aaf8e115b50&boundary.country=GBR&text="+ Base64.getEncoder().encodeToString(query.getBytes(StandardCharsets.UTF_8));
       System.out.println("get Place:"+s);
         String result = r.doGetString(s);
 
@@ -101,7 +103,7 @@ public class OpenMaps {
         try {
         Rest r = new Rest();
         String enc = WebUtils.DEFAULT_CHARACTER_ENCODING;
-        String s="https://api.openrouteservice.org/geocode/search?api_key=5b3ce3597851110001cf6248a15496c57f254acbbcb04aaf8e115b50&boundary.country=GBR&text="+ UriUtils.encode(query,enc);
+        String s="https://api.openrouteservice.org/geocode/search?api_key=5b3ce3597851110001cf6248a15496c57f254acbbcb04aaf8e115b50&boundary.country=GBR&text="+ Base64.getEncoder().encodeToString(query.getBytes(StandardCharsets.UTF_8));
        System.out.println("get Place:"+s);
         String result = r.doGetString(s);
 

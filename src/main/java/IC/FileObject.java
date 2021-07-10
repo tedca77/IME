@@ -32,4 +32,11 @@ public class FileObject {
     Double latitude;
     Double longitude;
     String altitude;
+    String city;
+    String country_name;
+    String country_code;
+    String subLocation;
+    String stateProvince;
+    String displayName;
+
 }

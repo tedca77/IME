@@ -21,4 +21,5 @@ public class ReverseGeocodeObject {
     private String IPTCCity;
     private String IPTCSublocation;
     private String friendlyname;
+    private Integer internalKey;
 }

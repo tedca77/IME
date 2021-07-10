@@ -2,6 +2,15 @@ package IC;
 import IC.openmaps.OpenMaps;
 import IC.openmaps.ReverseGeocodeObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.icafe4j.image.meta.Metadata;
+import com.icafe4j.image.meta.MetadataEntry;
+import com.icafe4j.image.meta.MetadataType;
+import com.icafe4j.image.meta.iptc.IPTC;
+import com.icafe4j.image.meta.iptc.IPTCApplicationTag;
+import com.icafe4j.image.meta.iptc.IPTCDataSet;
+import com.icafe4j.image.meta.iptc.IPTCObjectDataTag;
+import com.icafe4j.string.StringUtils;
+import com.icafe4j.image.meta.xmp.XMP;
 import org.apache.commons.imaging.Imaging;
 import org.apache.commons.imaging.common.ImageMetadata;
 import org.apache.commons.imaging.common.RationalNumber;
@@ -15,16 +24,17 @@ import org.apache.commons.imaging.formats.tiff.constants.GpsTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 import static IC.ImageProcessing.createThumbFromPicture;
 //
@@ -183,7 +193,7 @@ public class ImageCatalogue {
         for(String f : fieldnames) {
             if (f.equals("country_code")) {
 
-                s =  addIfNotNull(s,g.getAddress().getCountry_code()) ;
+                s =  addIfNotNull(s,g.getAddress().getCountry_code().toUpperCase()) ;
             }
             if (f.equals("country")) {
                 s =  addIfNotNull(s,g.getAddress().getCountry());
@@ -222,15 +232,19 @@ public class ImageCatalogue {
                 s = addIfNotNull(s,g.getAddress().getTown());
             }
         }
+        // replace spare comma at the end....
+        s=s.trim();
+        if(s.endsWith(","))
+        {
+            s = s.substring(0,s.length() - 1);
+        }
         return s;
-
-
     }
     public static String addIfNotNull(String s,String valString)
     {
         if(valString!=null)
         {
-            return s+valString+",";
+            return s+valString+", ";
         }
         return s;
     }
@@ -457,6 +471,135 @@ public class ImageCatalogue {
         double longitude=0.0d ;
         double latitude=0.0d ;
         Boolean geoFound=false;
+        Date lastModifiedDate=null;
+        Date createdDate=null;
+        Date lastAccessDate=null;
+
+        try {
+            BasicFileAttributes attr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+            lastModifiedDate = new Date(attr.lastModifiedTime().toMillis());
+            System.out.println("lastModifiedTime: " + attr.lastModifiedTime());
+            createdDate = new Date(attr.creationTime().toMillis());
+            lastAccessDate = new Date(attr.lastAccessTime().toMillis());
+        }
+        catch(Exception e)
+        {
+
+        }
+
+
+try {
+    System.out.println("tag"+IPTCApplicationTag.CITY);
+    System.out.println("tag"+IPTCApplicationTag.COUNTRY_CODE);
+    Map<MetadataType, Metadata> metadataMap = Metadata.readMetadata(file.getPath());
+    for (Map.Entry<MetadataType, Metadata> entry : metadataMap.entrySet()) {
+        Metadata meta = entry.getValue();
+        if (meta instanceof XMP) {
+            XMP.showXMP((XMP) meta);
+
+        }
+        else if (meta instanceof IPTC){
+            String city="";
+            String country="";
+            String country_code="";
+            String subLocation="";
+            String stateProvince="";
+            Boolean overwrite=false;
+            List<IPTCDataSet> iptcs =  new ArrayList<IPTCDataSet>();
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.COPYRIGHT_NOTICE, "Copyright 2014-2016, Ted Carroll"));
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.CATEGORY, "ICAFE"));
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.KEY_WORDS, "Welcome 'icafe' user!"));
+
+
+            Iterator<MetadataEntry> iterator = meta.iterator();
+            while (iterator.hasNext()) {
+                MetadataEntry item = iterator.next();
+                if(item.getKey().equals(IPTCApplicationTag.CITY.getName()))
+                {
+                    if(item.getValue().length()>0  && !overwrite)
+                    {
+                        city=item.getValue();
+                    }
+                    System.out.println("City currently is:"+item.getValue());
+                }
+                else if(item.getKey().equals(IPTCApplicationTag.COUNTRY_CODE.getName()))
+                {
+                    if(item.getValue().length()>0  && !overwrite)
+                    {
+                        country_code=item.getValue();
+                    }
+                }
+                else if(item.getKey().equals(IPTCApplicationTag.COUNTRY_NAME.getName()))
+                {
+                    if(item.getValue().length()>0  && !overwrite)
+                    {
+                        country_code=item.getValue();
+                    }
+                }
+                else if(item.getKey().equals(IPTCApplicationTag.SUB_LOCATION.getName()))
+                {
+                    if(item.getValue().length()>0  && !overwrite)
+                    {
+                        subLocation=item.getValue();
+                    }
+                }
+                else if(item.getKey().equals(IPTCApplicationTag.PROVINCE_STATE.getName()))
+                {
+                    if(item.getValue().length()>0  && !overwrite)
+                    {
+                        stateProvince=item.getValue();
+                    }
+                }
+                else
+                {
+                    try {
+                        iptcs.add(new IPTCDataSet(IPTCApplicationTag.valueOf(item.getKey()), item.getValue()));
+                    }
+                    catch(Exception e)
+                    {
+                        System.out.println("Error copying ITPC data:"+ item.getKey()+item.getValue());
+                    }
+
+                }
+                System.out.println("IPTC iterator:"+ item.getKey()+item.getValue());
+            }
+            if (country_code.length() > 0) {
+                iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_CODE, country_code.toUpperCase()));
+            }
+            if (country.length() > 0) {
+                iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_NAME, country));
+            }
+            if (stateProvince.length() > 0) {
+                iptcs.add(new IPTCDataSet(IPTCApplicationTag.PROVINCE_STATE, stateProvince));
+            }
+            if (subLocation.length() > 0) {
+                iptcs.add(new IPTCDataSet(IPTCApplicationTag.SUB_LOCATION, subLocation));
+            }
+            if (city.length() > 0) {
+                iptcs.add(new IPTCDataSet(IPTCApplicationTag.CITY, city));
+            }
+
+        }
+        else {
+            Iterator<MetadataEntry> iterator = entry.getValue().iterator();
+            while (iterator.hasNext()) {
+                MetadataEntry item = iterator.next();
+                printMetadata(item, "", "     ");
+            }
+        }
+    }
+
+
+}
+catch(Exception e)
+{
+    System.out.println("error reading metadata"+e);
+}
+
+
+
+System.out.println("ICAFE COMPLETED");
+
         try {
             final ImageMetadata metadata = Imaging.getMetadata(file);
 
@@ -592,9 +735,13 @@ public class ImageCatalogue {
                 System.out.println();
 
                 final List<ImageMetadata.ImageMetadataItem> items = jpegMetadata.getItems();
+
                 for (int i = 0; i < items.size(); i++) {
                     final ImageMetadata.ImageMetadataItem item = items.get(i);
                     System.out.println("    " + "item: " + item);
+
+
+
                 }
 
                 System.out.println();
@@ -628,22 +775,78 @@ public class ImageCatalogue {
             if(g==null) {
                 g = OpenMaps.reverseGeocode(String.valueOf(latitude), String.valueOf(longitude),config);
                 System.out.println("*****************Adding a new GeoObject:"+g.getLat()+","+g.getLon()+"Display name:"+g.getDisplay_name());
-                geoObjects.add(g);
+                if(g!=null) {
+                    g.setInternalKey(geoObjects.size()+1);
+                    geoObjects.add(g);
+                }
+                else
+                {
+                    System.out.println("Could not geocode :Lat"+String.valueOf(latitude)+", Long:" +String.valueOf(longitude));
+                }
 
             }
             if(g!=null)
             {
-                fNew.setMetaData(g.getDisplay_name());
+                fNew.setDisplayName(g.getDisplay_name());
+                fNew.setCity(g.getIPTCCity());
+                fNew.setCountry_code(g.getIPTCCountryCode());
+                fNew.setCountry_name(g.getIPTCCountry());
+                fNew.setStateProvince(g.getIPTCStateProvince());
+                fNew.setSubLocation(g.getIPTCSublocation());
+                List<IPTCDataSet> iptcs =  new ArrayList<IPTCDataSet>();
+                iptcs.add(new IPTCDataSet(IPTCApplicationTag.CITY, fNew.getCity()));
+                iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_CODE, fNew.getCountry_code()));
+                iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_NAME, fNew.getCountry_name()));
+                iptcs.add(new IPTCDataSet(IPTCApplicationTag.SUB_LOCATION, fNew.getSubLocation()));
+                iptcs.add(new IPTCDataSet(IPTCApplicationTag.PROVINCE_STATE, fNew.getStateProvince()));
+                try {
+                    FileInputStream fin = new FileInputStream(file.getPath());
+                    String fout_name=FilenameUtils.getFullPath(file.getPath())+"out"+FilenameUtils.getName(file.getPath());
+                    File outFile=new File(fout_name);
+                    FileOutputStream fout = new FileOutputStream(outFile,false);
+                    Metadata.insertIPTC(fin, fout, iptcs, true);
+                    fin.close();
+                    fout.close();
+                    file.delete();
+                    Files.copy(outFile.toPath(),file.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
+                    outFile.delete();
+
+
+                    Files.setAttribute(file.toPath(),"creationTime", FileTime.fromMillis(createdDate.getTime()));
+                    Files.setAttribute(file.toPath(),"lastAccessTime", FileTime.fromMillis(lastAccessDate.getTime()));
+                    Files.setAttribute(file.toPath(),"lastModifiedTime", FileTime.fromMillis(lastModifiedDate.getTime()));
+                }
+                catch(Exception e)
+                {
+
+                }
             }
             else
             {
-                fNew.setMetaData("location not found");
+                fNew.setDisplayName("location not found");
             }
+
+
+
+
+
         }
         fileObjects.add(fNew);
+
+
         return true;
 
 
+    }
+    private static void printMetadata(MetadataEntry entry, String indent, String increment) {
+        System.out.println(indent + entry.getKey() + (StringUtils.isNullOrEmpty(entry.getValue())? "" : ": " + entry.getValue()));
+        if(entry.isMetadataEntryGroup()) {
+            indent += increment;
+            Collection<MetadataEntry> entries = entry.getMetadataEntries();
+            for(MetadataEntry e : entries) {
+                printMetadata(e, indent, increment);
+            }
+        }
     }
 
 

@@ -12,7 +12,25 @@
         <maven.compiler.source>15</maven.compiler.source>
         <maven.compiler.target>15</maven.compiler.target>
     </properties>
+    <repositories>
+    <repository>
+        <id>oss.sonatype.org</id>
+        <name>Sonatype Snapshot Repository</name>
+        <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        <releases>
+            <enabled>false</enabled>
+        </releases>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+    </repository>
+    </repositories>
     <dependencies>
+        <dependency>
+            <groupId>com.github.dragon66</groupId>
+            <artifactId>icafe</artifactId>
+            <version>1.1-SNAPSHOT</version>
+        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
