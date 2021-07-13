@@ -4,6 +4,9 @@
 
         {
         "startdir": "R:\\Our Photos 2021\\Test",
+        "iptccopyright": "Ted Carroll, Copyright",
+        "iptccategory": "Home photos",
+        "iptckeywords": "Home; photos",
         "excludespec": {
           "directories": [
             {
