@@ -10,6 +10,10 @@ public class FileObject {
     Integer fileKey;
     BigDecimal fileSize;
     BigDecimal fileSizeOnDisk;
+    Date bestDate;
+    Date exifOriginal;
+    Date exifDigitised;
+    Date tiffDate;
     Date fileCreated;
     Date fileModified;
     Date fileAccessed;
@@ -27,6 +31,7 @@ public class FileObject {
     String cameraMaker;
     String cameraModel;
     Integer cameraKey;
+    Integer placeKey;
     String programName;
     String fStop;
     Double latitude;

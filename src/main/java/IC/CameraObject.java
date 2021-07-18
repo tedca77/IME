@@ -3,6 +3,7 @@ import lombok.Data;
 import java.util.Date;
 @Data
 public class CameraObject {
+    String friendlyName;
     String cameraMaker;
     String cameraModel;
     String programName;

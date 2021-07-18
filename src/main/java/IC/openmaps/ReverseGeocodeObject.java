@@ -2,6 +2,8 @@ package IC.openmaps;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
+import java.util.Date;
+
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown=true)
@@ -22,4 +24,8 @@ public class ReverseGeocodeObject {
     private String IPTCSublocation;
     private String friendlyname;
     private Integer internalKey;
+    private Integer countPlace;
+    private Date endDate;
+    private Date startDate;
+    private Integer trackKey;
 }

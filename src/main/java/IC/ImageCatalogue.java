@@ -58,59 +58,73 @@ public class ImageCatalogue {
     static ArrayList<CameraObject> cameras = new ArrayList<>();
     static ArrayList<FileObject> fileObjects = new ArrayList<>();
     static ArrayList<ReverseGeocodeObject> geoObjects = new ArrayList<>();
+    static ArrayList<TrackObject> tracks = new ArrayList<>();
 
     public static void main(String[] args) {
-        ConfigObject config = null;
+        ConfigObject config;
         try {
             ObjectMapper mapper = new ObjectMapper();
-            Path fileName = Path.of("D:\\ImageCatalogue\\config.json");
+            Path fileName = Path.of(args[0]);
             String result = Files.readString(fileName);
             config = mapper.readValue(result, ConfigObject.class);
+            if(!config.getUpdate().equalsIgnoreCase("true")) {
+                message("----------------------FILES WILL NOT BE UPDATED ------------------------------------");
+            }
+
             for (DriveObject d : config.getDrives()) {
                 countDrive = 0;
                 countDriveTooSmall = 0;
                 countDriveGEOCODED = 0;
-                System.out.println("Starting==============================================================");
-                if (createTempDirForUser(config.getTempdir())) {
+                message("Starting==============================================================");
+                createTempDirForUser(config.getTempdir());
                     //recursively find all file
                     readDirectoryContents(new File(d.getStartdir()), d, config.getTempdir(), config);
-                }
-                System.out.println("Photos found on drive:"+d.getStartdir()+" " + countDrive );
-                System.out.println("Photos too small on drive:" + countDriveTooSmall );
-                System.out.println("Photos found on drive:" + countDriveGEOCODED );
+
+                message("Photos found on drive "+d.getStartdir()+" :" + countDrive );
+                message("Photos too small on drive "+d.getStartdir()+" :" + countDriveTooSmall );
+                message("Photos found on drive "+d.getStartdir()+" :" + countDriveGEOCODED );
 
 
             }
-            System.out.println("End of program" + "Photos found:" + count + "============================================");
-            System.out.println("End of program" + "Photos too small:" + countTooSmall + "============================================");
-            System.out.println("End of program" + "Photos found:" + countGEOCODED + "============================================");
+            message("End of program" + "Photos found:" + count + "============================================");
+            message("End of program" + "Photos too small:" + countTooSmall + "============================================");
+            message("End of program" + "Photos found:" + countGEOCODED + "============================================");
+
+            //sets config object with new values
+            //create tracks - this will also update the geoObjects
+            if(!createTracks())
+            {
+                message("Failed to create tracks");
+            }
+            config.setCameras(cameras);
+            config.setPhotos(fileObjects);
+            config.setPlaces(geoObjects);
+            config.setTracks(tracks);
+            // exports JSON
+            if(!exportConfig(config,fileName))
+            {
+                message("Failed to export HTML");
+            }
+            // runs report for console
+            runReport();
+            //Exports reports for cameras, fileObjects etc...
+            if(!exportHTML(config.getTempdir()))
+            {
+                message("Failed to export HTML");
+            }
 
         } catch (Exception e) {
-            System.out.println("Error reading json file " + e);
+            message("Error reading json file " + e);
         }
-        //sets config object with new values
-        config.setCameras(cameras);
-        config.setPhotos(fileObjects);
-        config.setPlaces(geoObjects);
-        // exports
-        exportConfig(config);
-        // runs report for console
-        runReport();
-        exportHTML(config.getTempdir());
+
     }
-    //recursively find files
 
-
-    // convert grid reference to Google Coordinates
-
-    // read metadata;
-
-
-    // create objects for every file
-
-    // sort object name
-
-    // check duplicates...
+    /**
+     * Writes out HTML reports using freemarker for the main objects.  Freemarker templates are in the project.
+     * FIles are written to the tempDir
+     * @param tempDir - Output directory
+     * @return - returns true or false
+     */
     public static Boolean exportHTML(String tempDir)
     {
         Configuration cfg = new Configuration(Configuration.VERSION_2_3_29);
@@ -126,38 +140,41 @@ public class ImageCatalogue {
         try {
             Template ctemplate = cfg.getTemplate("cameras.ftl");
             FileWriter writer = new FileWriter(tempDir+"/"+"cameras.html");
-            Map<String, Object> croot = new HashMap<String, Object>();
+            Map<String, Object> croot = new HashMap<>();
             croot.put( "cameras", cameras );
             ctemplate.process(croot, writer);
             writer.close();
             //
             Template ptemplate = cfg.getTemplate("places.ftl");
             FileWriter pwriter = new FileWriter(tempDir+"/"+"places.html");
-            Map<String, Object> proot = new HashMap<String, Object>();
+            Map<String, Object> proot = new HashMap<>();
             proot.put( "places", geoObjects );
             ptemplate.process(proot, pwriter);
             pwriter.close();
 
-            //
-
-
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-
-
         return true;
     }
-    public static Boolean exportConfig(ConfigObject c)
+
+    /**
+     * Exports JSON config file with new lists of objects included.  File is same as input file but with date and time added.
+     * @param c - config opbject
+     * @param inputPath - input Path Name
+     * @return - returns true or false
+     */
+    public static Boolean exportConfig(ConfigObject c, Path inputPath)
     {
         ObjectMapper objectMapper = new ObjectMapper();
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss");
+        String fileName=inputPath.getFileName().toString();
+        String newName = c.getTempdir() + "\\"+  FilenameUtils.getBaseName(fileName)+format.format(new Date()) + "."+FilenameUtils.getExtension(fileName);
         try {
-            objectMapper.writeValue(new File("D:\\ImageCatalogue\\config" + format.format(new Date()) + ".json"), c);
+            objectMapper.writeValue(new File(newName), c);
             return true;
         } catch (Exception e) {
-            System.out.println("Cannot write out file" + e);
+            message("Cannot write out file"+ newName + " error:" +e);
             return false;
         }
     }
@@ -165,79 +182,93 @@ public class ImageCatalogue {
     {
         int i = 0;
         for (FileObject f : fileObjects) {
-            System.out.println("Key" + f.getFileKey() + " ,Camera:" + f.getCameraMaker() + ", Model" + f.getCameraModel() + ", Date:" + f.getFileCreated() + ", FileName:" + f.getFileName());
+            message("Key" + f.getFileKey() + " ,Camera:" + f.getCameraMaker() + ", Model" + f.getCameraModel() + ", Date:" + f.getFileCreated() + ", FileName:" + f.getFileName());
             i++;
             if (i != f.getFileKey()) {
-                System.out.println("THIS ONE MISSING - Key" + f.getFileKey() + " ,Camera:" + f.getCameraMaker() + ", Model" + f.getCameraModel() + ", Date:" + f.getFileCreated() + ", FileName:" + f.getFileName());
-
-
+                message("THIS ONE MISSING - Key" + f.getFileKey() + " ,Camera:" + f.getCameraMaker() + ", Model" + f.getCameraModel() + ", Date:" + f.getFileCreated() + ", FileName:" + f.getFileName());
             }
             if (f.getLatitude() != null) {
-                System.out.println("Lattitude" + f.getLatitude());
-                System.out.println("Longtitude" + f.getLongitude());
-                System.out.println("Location" + f.getMetaData());
-
-
+                message("Lattitude" + f.getLatitude());
+                message("Longtitude" + f.getLongitude());
+                message("Location" + f.getMetaData());
             }
         }
-        System.out.println("Count from FileObjects:" + i);
+        message("Count from FileObjects:" + i);
         for (CameraObject c : cameras) {
-            System.out.println("Key" + c.getCameraKey() + " ,Camera:" + c.getCameraMaker() + ", Model" + c.getCameraModel() + ", Start Date:" + c.getStartDate() + ", End Date:" + c.getEndDate() + ", Camera Count:" + c.getCameraCount());
+            message("Key" + c.getCameraKey() + " ,Camera:" + c.getCameraMaker() + ", Model" + c.getCameraModel() + ", Start Date:" + c.getStartDate() + ", End Date:" + c.getEndDate() + ", Camera Count:" + c.getCameraCount());
             countFromMake = countFromMake + c.getCameraCount();
         }
-        System.out.println("Count from Makes:" + countFromMake);
-        System.out.println("Reverse Geolocation Objects:");
+        message("Count from Makes:" + countFromMake);
+        message("Reverse Geolocation Objects:");
         for (ReverseGeocodeObject g : geoObjects) {
-            System.out.println("Key" + g.getLat() + "," + g.getLon() + "," + g.getDisplay_name());
-            System.out.println("Country Code:" + g.getIPTCCountryCode());
-            System.out.println("Country:" + g.getIPTCCountry());
-            System.out.println("State Province:" + g.getIPTCStateProvince());
-            System.out.println("City:" + g.getIPTCCity());
-            System.out.println("Sublocation:" + g.getIPTCSublocation());
+            message("Key" + g.getLat() + "," + g.getLon() + "," + g.getDisplay_name());
+            message("Country Code:" + g.getIPTCCountryCode());
+            message("Country:" + g.getIPTCCountry());
+            message("State Province:" + g.getIPTCStateProvince());
+            message("City:" + g.getIPTCCity());
+            message("Sublocation:" + g.getIPTCSublocation());
         }
 
     }
+
+    /**
+     * this method recursively looks at directories and sdubdirectories and identifies image files
+     * @param dir - root directory to start
+     * @param drive - drive (this is used to make up the new filename)
+     * @param tempDir - where files are to be written to
+     * @param config - configuration object (this is set up at the start of the program)
+     */
     public static void readDirectoryContents(File dir, DriveObject drive, String tempDir, ConfigObject config) {
         try {
             File[] files = dir.listFiles();
-
-            for (File file : files) {
-                try {
-                    if (file.isDirectory()) {
-                        //System.out.println("directory:" + file.getCanonicalPath());
-                        if (!isExcluded(file.getCanonicalPath(), drive.getStartdir(), drive.getExcludespec().getDirectories())) {
-                            if (!file.getCanonicalPath().equals(tempDir)) {
-                                readDirectoryContents(file, drive, tempDir, config);
+            if(files!=null) {
+                for (File file : files) {
+                    try {
+                        if (file.isDirectory()) {
+                            //message("directory:" + file.getCanonicalPath());
+                            if (!isExcluded(file.getCanonicalPath(), drive.getStartdir(), drive.getExcludespec().getDirectories())) {
+                                if (!file.getCanonicalPath().equals(tempDir)) {
+                                    readDirectoryContents(file, drive, tempDir, config);
+                                }
                             }
-                        }
 
-                    } else {
-                        if (isImage(file.getName())) {
-                            if (!isExcludedPrefix(file.getName(), drive.getExcludespec().getFileprefixes())) {
-                                long fileSize = file.length();
-                                long minSize = 4880L;
-                                System.out.println("File size is:" + fileSize);
-                                if (fileSize > minSize) {
-                                    count++;
-                                    countDrive++;
-                                    System.out.println(count + "     file:" + file.getCanonicalPath() + ",Name:" + file.getName());
-                                    readMetadata(file, config, drive);
-                                    updateMetadata(file, config, drive);
-                                    readMetadata(file, config, drive);
-                                    String thumbName = makeThumbName(file);
-                                    System.out.println("Thumbfilename is:" + thumbName);
-                                    createThumbFromPicture(file, tempDir, thumbName, 400, 400);
-                                } else {
-                                    countTooSmall++;
-                                    countDriveTooSmall++;
-                                    System.out.println("*********************file:" + file.getCanonicalPath() + ",Name:" + file.getName());
-                                    System.out.println("*********************File too small - size is:" + fileSize);
+                        } else {
+                            if (isImage(file.getName())) {
+                                if (!isExcludedPrefix(file.getName(), drive.getExcludespec().getFileprefixes())) {
+                                    long fileSize = file.length();
+                                    long minSize = 4880L;
+                                    message("File size is:" + fileSize);
+                                    if (fileSize > minSize) {
+                                        count++;
+                                        countDrive++;
+                                        message(count + "     file:" + file.getCanonicalPath() + ",Name:" + file.getName());
+                                        if(!readMetadata(file))
+                                        {
+                                            message("Could not read metadata before update");
+                                        }
+                                        if(!updateMetadata(file, config, drive))
+                                        {
+                                            message("Could not update metadata");
+                                        }
+                                        if(!readMetadata(file))
+                                        {
+                                            message("Could not read metadata after update");
+                                        }
+                                        String thumbName = makeThumbName(file);
+                                        message("Thumbfilename is:" + thumbName);
+                                        createThumbFromPicture(file, tempDir, thumbName, 400, 400);
+                                    } else {
+                                        countTooSmall++;
+                                        countDriveTooSmall++;
+                                        message("*********************file:" + file.getCanonicalPath() + ",Name:" + file.getName());
+                                        message("*********************File too small - size is:" + fileSize);
+                                    }
                                 }
                             }
                         }
+                    } catch (Exception ee) {
+                        message("Cannot read directory:" + file.getCanonicalPath());
                     }
-                } catch (Exception ee) {
-                    System.out.println("Cannot read directory:" + file.getCanonicalPath());
                 }
             }
 
@@ -246,6 +277,12 @@ public class ImageCatalogue {
         }
     }
 
+    /**
+     * THis adds one or more geocoding fields to a string which is then used to update the metadata fields used
+     * @param g - object retrieved from OpenMaps API
+     * @param fieldnames - a list of field names we are interested in
+     * @return - String to use for metadata field
+     */
     public static String assembleLocation(ReverseGeocodeObject g, ArrayList<String> fieldnames) {
         String s = "";
         for (String f : fieldnames) {
@@ -305,6 +342,15 @@ public class ImageCatalogue {
         return s;
     }
 
+    /**
+     * Adds a new camera if it does not exist in the array and sets start and end date
+     * If it is not a new camera, start and/or end date are updated in the ArrayList
+     * Allows for null camera model
+     * @param make - camera make
+     * @param model - camera model
+     * @param d - date (of photo)
+     * @return - returns camera key
+     */
     public static Integer addCamera(String make, String model, Date d) {
 
 
@@ -339,10 +385,8 @@ public class ImageCatalogue {
 
             }
         }
-
-
+        // we have not found a camera, so add a new one to the ArrayList
         Integer newKey = cameras.size() + 1;
-
         CameraObject cNew = new CameraObject();
         cNew.setCameraKey(newKey);
         cNew.setCameraMaker(make);
@@ -354,37 +398,127 @@ public class ImageCatalogue {
         return newKey;
     }
 
-    public static ReverseGeocodeObject checkCachedGeo(double lat, double lon) {
+    /**
+     * Checks whether we already have a geocode object - if we do, then we just update the start or end date
+     * @param lat - latitude (of image)
+     * @param lon - longitude (of image)
+     * @param d - date  (of image)
+     * @return - ReverseGeocodeObject i.e. a place...
+     */
+    public static ReverseGeocodeObject checkCachedGeo(double lat, double lon,Date d) {
+        message("*****Checking latitude:"+lat);
+        message("*****Checking longitude:"+lon);
         for (ReverseGeocodeObject g : geoObjects) {
-            Double glat = Double.parseDouble(g.getLat());
-            Double glon = Double.parseDouble(g.getLon());
+            double glat = Double.parseDouble(g.getLat());
+            double glon = Double.parseDouble(g.getLon());
+            message("*****target latitude:"+glat);
+            message("*****target longitude:"+glon);
+            message("Checking difference:"+Math.abs(glat - lat));
+            message("Checking difference:"+Math.abs(glon - lon));
+
+
             if (Math.abs(glat - lat) < 0.001 && Math.abs(glon - lon) < 0.001) {
-                System.out.println("found existing one");
+                message("found existing one:"+g.getDisplay_name());
+                Date startDate=g.getStartDate();
+                Date endDate=g.getEndDate();
+                int count=g.getCountPlace()+1;
+                message("Counted place is:"+count);
+                g.setCountPlace(count);
+                if(d.before(startDate))
+                {
+                    g.setStartDate(d);
+                }
+                if(d.after(endDate))
+                {
+                    g.setEndDate(d);
+                }
                 return g;
             }
         }
-
         return null;
     }
 
-    public static boolean createTempDirForUser(String temp) {
+    public static void createTempDirForUser(String temp) {
         try {
-            new File(temp).mkdir();
-            return true;
+            boolean result= new File(temp).mkdir();
         } catch (Exception e) {
-            return false;
+            message("Directory may already exist for: "+temp);
+        }
+    }
+    public static Boolean createTracks()
+    {
+        tracks = new ArrayList<>();
+        // Each Place can be part of one or more tracks...
+        // if we already have a track for this date... do we redo it...
+        fileObjects.sort(Comparator.comparing(o -> o.getBestDate()));
+        Date lastDay=null;
+        Integer placeKey=0;
+        Date startDate=null;
+        Date endDate=null;
+
+        ArrayList<Integer> points = new ArrayList<>();
+        for(FileObject f : fileObjects)
+        {
+            //
+            Date d= getDateWithoutTimeUsingCalendar(f.getBestDate());
+            if(!d.equals(lastDay) && points.size()>0)
+            {
+                TrackObject t = new TrackObject();
+                t.setPoints(points);
+                t.setTrackKey(tracks.size()+1);
+                t.setStartDate(startDate);
+                t.setEndDate(endDate);
+                t.setPlaceCount(points.size());
+                t.setTrackDate(d);
+
+                tracks.add(t);
+                points = new ArrayList<>();
+                startDate=f.getBestDate();
+
+                // write out track and create a new one...
+            }
+            else
+            {
+                points.add(f.getFileKey());
+                endDate=f.getBestDate();
+            }
+
+        }
+        return true;
+    }
+    public static void message(String s)
+    {
+        String str="*";
+        if(s.length()>100) {
+            System.out.println(s.substring(0,100));
+        }
+        else
+        {
+            int width=100-s.length()-4;
+            String ss= "* "+s+ " "+str.repeat(width);
+            if(ss.length()<100)
+            {
+                ss=ss+"*";
+            }
+            System.out.println(ss);
+
         }
     }
 
+    /**
+     * Makes a thumbnail name replacing slashes and colon with underscores - as we need to create a valid file name
+     * @param f - File to create thumbnail name for
+     * @return - returns a string
+     */
     public static String makeThumbName(File f) {
         try {
-            String newName = f.getCanonicalPath().replace("\\", "_").replace(":", "_");
+            return f.getCanonicalPath().replace("\\", "_").replace(":", "_");
             //remove the root
 
             // replace any directory slashes with underscores
-            return newName;
+
         } catch (Exception e) {
-            System.out.println("Could not determine the Thumbname");
+            message("Could not determine the Thumbname for " +f.getPath());
             return f.getName();
         }
 
@@ -393,24 +527,24 @@ public class ImageCatalogue {
     public static Boolean isExcluded(String fdir, String startDir, ArrayList<DirectoryObject> excludeDir) {
         for (DirectoryObject i : excludeDir) {
             if (fdir.equals(startDir + i.getName())) {
-                System.out.println("Excluded:" + fdir);
+                message("Excluded:" + fdir);
                 return true;
             }
         }
-        //  System.out.println("Not Excluded:"+fname);
+        //  message("Not Excluded:"+fname);
         return false;
     }
 
     public static Boolean isExcludedPrefix(String fname, ArrayList<DirectoryObject> excludePrefix) {
         for (DirectoryObject i : excludePrefix) {
-            System.out.println("Excluded Prefix checking:" + i.getName());
-            System.out.println("Excluded Prefix checking:" + fname);
+            message("Excluded Prefix checking:" + i.getName());
+            message("Excluded Prefix checking:" + fname);
             if (fname.indexOf(i.getName()) == 0) {
-                System.out.println("Excluded Prefix:" + fname);
+                message("Excluded Prefix:" + fname);
                 return true;
             }
         }
-        //  System.out.println("Not Excluded:"+fname);
+        //  message("Not Excluded:"+fname);
         return false;
     }
 
@@ -437,36 +571,44 @@ public class ImageCatalogue {
     }
 
     private static Date getFileDate(File file) {
-        Date d = null;
+        Date d;
         try {
 
 
             BasicFileAttributes attr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
             try {
                 d = new Date(attr.lastModifiedTime().toMillis());
-                System.out.println("lastModifiedTime: " + attr.lastModifiedTime());
+                message("lastModifiedTime: " + attr.lastModifiedTime());
             } catch (Exception e) {
                 try {
                     d = new Date(attr.creationTime().toMillis());
-                    System.out.println("creationTime: " + attr.creationTime());
-                    System.out.println("lastAccessTime: " + attr.lastAccessTime());
+                    message("creationTime: " + attr.creationTime());
+                    message("lastAccessTime: " + attr.lastAccessTime());
                 } catch (Exception ee) {
                     d = new Date();
                 }
             }
 
         } catch (Exception e) {
-            System.out.println("Using current date");
+            message("Using current date");
             d = new Date();
         }
 
         return d;
     }
-
+    public static Date getDateWithoutTimeUsingCalendar(Date d) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(d);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTime();
+    }
     private static IPTCApplicationTag getTagFromName(String tagName) {
 
         for (IPTCApplicationTag e : IPTCApplicationTag.values()) {
-            if (tagName == e.getName()) return e;
+            if (tagName.equals(e.getName())) return e;
         }
         return null;
 
@@ -475,7 +617,7 @@ public class ImageCatalogue {
     private static ExifTag getExifTagFromName(String tagName) {
 
         for (ExifTag e : ExifTag.values()) {
-            if (tagName == e.getName()) return e;
+            if (tagName.equals(e.getName())) return e;
         }
         return null;
 
@@ -502,15 +644,15 @@ public class ImageCatalogue {
         } else {
             try {
                 SimpleDateFormat inputFormatter = new SimpleDateFormat("yyyy:MM:dd hh:mm:ss");
-                Date inputDate = inputFormatter.parse(field.getValueDescription().replace("'", ""));
-                return inputDate;
+                return inputFormatter.parse(field.getValueDescription().replace("'", ""));
+
             } catch (Exception e) {
                 try {
                     SimpleDateFormat inputFormatter = new SimpleDateFormat("dd MMM yyyy hh:mm:ss", Locale.ENGLISH);
-                    Date inputDate = inputFormatter.parse(field.getValueDescription().replace("'", ""));
-                    return inputDate;
+                    return inputFormatter.parse(field.getValueDescription().replace("'", ""));
+
                 } catch (Exception ee) {
-                    System.out.println("******* error converting date:" + field.getValueDescription() + e);
+                    message("******* error converting date:" + field.getValueDescription() + e);
                     return null;
                 }
 
@@ -522,9 +664,9 @@ public class ImageCatalogue {
                                       final TagInfo tagInfo) {
         final TiffField field = jpegMetadata.findEXIFValueWithExactMatch(tagInfo);
         if (field == null) {
-            System.out.println(tagInfo.name + ": " + "Not Found.");
+            message(tagInfo.name + ": " + "Not Found.");
         } else {
-            System.out.println(tagInfo.name + ": "
+            message(tagInfo.name + ": "
                     + field.getValueDescription());
         }
     }
@@ -536,10 +678,13 @@ public class ImageCatalogue {
         String fStop = "";
         String altitude = "";
         String dimensions = "";
-        Date d = null;
+        Date bestDate = null;
+        Date exifDigitisedDate = null;
+        Date exifOriginalDate = null;
+        Date tiffDate = null;
         double longitude = 0.0d;
         double latitude = 0.0d;
-        Boolean geoFound = false;
+        boolean geoFound = false;
         Date lastModifiedDate = null;
         Date createdDate = null;
         Date lastAccessDate = null;
@@ -547,7 +692,7 @@ public class ImageCatalogue {
         try {
             BasicFileAttributes attr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
             lastModifiedDate = new Date(attr.lastModifiedTime().toMillis());
-            System.out.println("lastModifiedTime: " + attr.lastModifiedTime());
+            message("lastModifiedTime: " + attr.lastModifiedTime());
             createdDate = new Date(attr.creationTime().toMillis());
             lastAccessDate = new Date(attr.lastAccessTime().toMillis());
         } catch (Exception e) {
@@ -559,8 +704,8 @@ public class ImageCatalogue {
         IPTC iptc = new IPTC();
         JpegExif exif = new JpegExif();
         try {
-            System.out.println("tag" + IPTCApplicationTag.CITY);
-            System.out.println("tag" + IPTCApplicationTag.COUNTRY_CODE);
+            message("tag" + IPTCApplicationTag.CITY);
+            message("tag" + IPTCApplicationTag.COUNTRY_CODE);
             Map<MetadataType, Metadata> metadataMap = Metadata.readMetadata(file.getPath());
             for (Map.Entry<MetadataType, Metadata> entry : metadataMap.entrySet()) {
                 Metadata meta = entry.getValue();
@@ -577,7 +722,7 @@ public class ImageCatalogue {
                     String country_code = "";
                     String subLocation = "";
                     String stateProvince = "";
-                    Boolean overwrite = false;
+                    boolean overwrite = false;
 
                     iptc= (IPTC)meta;
                     Iterator<MetadataEntry> iterator = meta.iterator();
@@ -587,7 +732,7 @@ public class ImageCatalogue {
                             if (item.getValue().length() > 0 && !overwrite) {
                                 city = item.getValue();
                             }
-                            System.out.println("City currently is:" + item.getValue());
+                            message("City currently is:" + item.getValue());
                         } else if (item.getKey().equals(IPTCApplicationTag.COUNTRY_CODE.getName())) {
                             if (item.getValue().length() > 0 && !overwrite) {
                                 country_code = item.getValue();
@@ -608,13 +753,13 @@ public class ImageCatalogue {
                           /*  try {
                                 iptcs.add(new IPTCDataSet(getTagFromName(item.getKey()), item.getValue()));
                             } catch (Exception e) {
-                                System.out.println("Error copying ITPC data:" + item.getKey() + item.getValue() + e);
+                                message("Error copying ITPC data:" + item.getKey() + item.getValue() + e);
                             }
 
                            */
 
                         }
-                        System.out.println("IPTC iterator:" + item.getKey() + item.getValue());
+                        message("IPTC iterator:" + item.getKey() + item.getValue());
                     }
                     if (country_code.length() > 0) {
                         iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_CODE, country_code.toUpperCase()));
@@ -643,14 +788,14 @@ public class ImageCatalogue {
 
 
         } catch (Exception e) {
-            System.out.println("error reading metadata" + e);
+            message("error reading metadata" + e);
         }
 
 
         try {
             final ImageMetadata metadata = Imaging.getMetadata(file);
 
-            // System.out.println(metadata);
+            // message(metadata);
 
             if (metadata instanceof JpegImageMetadata) {
                 final JpegImageMetadata jpegMetadata = (JpegImageMetadata) metadata;
@@ -662,7 +807,7 @@ public class ImageCatalogue {
                 //
                 // see the TiffConstants file for a list of TIFF tags.
 
-                System.out.println("file: " + file.getPath());
+                message("file: " + file.getPath());
 
                 // print out various interesting EXIF tags.
                 make = getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MAKE);
@@ -671,16 +816,16 @@ public class ImageCatalogue {
               //  programName = getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL);
               //  altitude = getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL);
               //  dimensions = getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL);
-
-                d = getTagValueDate(jpegMetadata, TiffTagConstants.TIFF_TAG_DATE_TIME);
-                if (d == null) {
-                    d = getTagValueDate(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
+                exifOriginalDate =getTagValueDate(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
+                exifDigitisedDate=getTagValueDate(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_DIGITIZED);
+                tiffDate =    getTagValueDate(jpegMetadata, TiffTagConstants.TIFF_TAG_DATE_TIME);
+                bestDate =exifOriginalDate;
+                if (bestDate == null) {
+                    bestDate = exifDigitisedDate;
                 }
-                if (d == null) {
-                    d = getTagValueDate(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_DIGITIZED);
+                if (bestDate == null) {
+                    bestDate =tiffDate ;
                 }
-                System.out.println();
-
                 // simple interface to GPS data
                 final TiffImageMetadata exifMetadata = jpegMetadata.getExif();
                 if (null != exifMetadata) {
@@ -693,11 +838,11 @@ public class ImageCatalogue {
                         longitude = gpsInfo.getLongitudeAsDegreesEast();
                         latitude = gpsInfo.getLatitudeAsDegreesNorth();
 
-                        System.out.println("    " + "GPS Description: "
+                        message("    " + "GPS Description: "
                                 + gpsDescription);
-                        System.out.println("    "
+                        message("    "
                                 + "GPS Longitude (Degrees East): " + longitude);
-                        System.out.println("    "
+                        message("    "
                                 + "GPS Latitude (Degrees North): " + latitude);
                     }
                 }
@@ -705,38 +850,49 @@ public class ImageCatalogue {
 
         } catch (Exception e) {
 
-            System.out.println("error:"+e);
+            message("error:"+e);
 
         }
-        if (d == null) {
-            d = getFileDate(file);
+        if (bestDate == null) {
+            bestDate = getFileDate(file);
         }
-        Integer cameraKey = addCamera(make, model, d);
+        Integer cameraKey = addCamera(make, model, bestDate);
         FileObject fNew = new FileObject();
         fNew.setCameraKey(cameraKey);
         fNew.setCameraMaker(make);
         fNew.setCameraModel(model);
-        fNew.setFileCreated(d);
+        fNew.setFileCreated(bestDate);
         fNew.setFileName(file.getName());
         fNew.setDirectory(FilenameUtils.getFullPath(file.getPath()));
         fNew.setFileKey(count);
-
+        fNew.setBestDate(bestDate);
+        fNew.setExifDigitised(exifDigitisedDate);
+        fNew.setExifOriginal(exifOriginalDate);
+        fNew.setTiffDate(tiffDate);
+        //
         if (geoFound) {
             fNew.setLatitude(latitude);
             fNew.setLongitude(longitude);
-            ReverseGeocodeObject g = checkCachedGeo(latitude, longitude);
+            ReverseGeocodeObject g = checkCachedGeo(latitude, longitude,bestDate);
             if (g == null) {
                 g = OpenMaps.reverseGeocode(String.valueOf(latitude), String.valueOf(longitude), config);
-                System.out.println("*****************Adding a new GeoObject:" + g.getLat() + "," + g.getLon() + "Display name:" + g.getDisplay_name());
+                message("*****************Adding a new GeoObject:" + latitude + "," + longitude + "Display name:" + g.getDisplay_name());
                 if (g != null) {
                     g.setInternalKey(geoObjects.size() + 1);
+                    g.setEndDate(bestDate);
+                    g.setStartDate(bestDate);
                     geoObjects.add(g);
                 } else {
-                    System.out.println("Could not geocode :Lat" + String.valueOf(latitude) + ", Long:" + String.valueOf(longitude));
+                    message("Could not geocode :Lat" + latitude + ", Long:" + longitude);
                 }
-
+            }
+            else
+            {
+                 message("Found GeoObject in cache therefore do not need to call Open Street Map : "+g.getDisplay_name());
             }
             if (g != null) {
+                // this links 
+                fNew.setPlaceKey(g.getInternalKey());
                 fNew.setDisplayName(g.getDisplay_name());
                 fNew.setCity(g.getIPTCCity());
                 fNew.setCountry_code(g.getIPTCCountryCode());
@@ -760,50 +916,47 @@ public class ImageCatalogue {
         iptcs.add(new IPTCDataSet(IPTCApplicationTag.CATEGORY, drive.getIPTCCategory()));
         iptcs.add(new IPTCDataSet(IPTCApplicationTag.KEY_WORDS, drive.getIPTCKeywords()));
 
+        if(config.getUpdate().equalsIgnoreCase("true")) {
+            try {
+                FileInputStream fin = new FileInputStream(file.getPath());
+                String fout_name = FilenameUtils.getFullPath(file.getPath()) + "out" + FilenameUtils.getName(file.getPath());
+                File outFile = new File(fout_name);
+                FileOutputStream fout = new FileOutputStream(outFile, false);
+                List<Metadata> metaList = new ArrayList<>();
+                metaList.clear();
 
-        try {
-            FileInputStream fin = new FileInputStream(file.getPath());
-            String fout_name = FilenameUtils.getFullPath(file.getPath()) + "out" + FilenameUtils.getName(file.getPath());
-            File outFile = new File(fout_name);
-            FileOutputStream fout = new FileOutputStream(outFile, false);
-            List<Metadata> metaList = new ArrayList<>();
-            metaList.clear();
+                metaList.add(populateExif(exif));
 
-            metaList.add(populateExif(exif));
-
-            iptc.addDataSets(iptcs);
-            metaList.add(iptc);
-            //  metaList.add(new Comments(Arrays.asList("comment 1","Comment2")));
-            Metadata.insertMetadata(metaList, fin, fout);
-            fin.close();
-            fout.close();
-            file.delete();
-            Files.copy(outFile.toPath(), file.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
-            outFile.delete();
-
-
-            Files.setAttribute(file.toPath(), "creationTime", FileTime.fromMillis(createdDate.getTime()));
-            Files.setAttribute(file.toPath(), "lastAccessTime", FileTime.fromMillis(lastAccessDate.getTime()));
-            Files.setAttribute(file.toPath(), "lastModifiedTime", FileTime.fromMillis(lastModifiedDate.getTime()));
-        } catch (Exception e) {
-            System.out.println("Cannot write metadata:" + e);
+                iptc.addDataSets(iptcs);
+                metaList.add(iptc);
+                //  metaList.add(new Comments(Arrays.asList("comment 1","Comment2")));
+                Metadata.insertMetadata(metaList, fin, fout);
+                fin.close();
+                fout.close();
+                if(!file.delete())
+                {
+                    message("Cannot delete file:" + file.getPath());
+                }
+                Files.copy(outFile.toPath(), file.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
+                if(!outFile.delete())
+                {
+                    message("Cannot delete file:" + outFile.getPath());
+                }
+                Files.setAttribute(file.toPath(), "creationTime", FileTime.fromMillis(createdDate.getTime()));
+                Files.setAttribute(file.toPath(), "lastAccessTime", FileTime.fromMillis(lastAccessDate.getTime()));
+                Files.setAttribute(file.toPath(), "lastModifiedTime", FileTime.fromMillis(lastModifiedDate.getTime()));
+            } catch (Exception e) {
+                message("Cannot write metadata:" + e);
+            }
         }
-
-
         fileObjects.add(fNew);
-
-
         return true;
-
-
     }
-
-
     public static String getStringOrUnknown(final JpegImageMetadata jpegMetadata, final TagInfo tagInfo)
     {
         String v=getTagValueString(jpegMetadata, tagInfo);
         if (v.length() > 0) {
-            System.out.println("Make is:" +v);
+            message("Make is:" +v);
             return v;
         } else {
             return "Unknown";
@@ -811,7 +964,7 @@ public class ImageCatalogue {
 
 
     }
-    public static Boolean readMetadata(File file, ConfigObject config, DriveObject drive) {
+    public static Boolean readMetadata(File file) {
 
 
         try {
@@ -825,19 +978,11 @@ public class ImageCatalogue {
 
 
                 } else if (meta instanceof IPTC) {
-                    String city = "";
-                    String country = "";
-                    String country_code = "";
-                    String subLocation = "";
-                    String stateProvince = "";
-                    Boolean overwrite = false;
-
-
-                    Iterator<MetadataEntry> iterator = meta.iterator();
+                           Iterator<MetadataEntry> iterator = meta.iterator();
                     while (iterator.hasNext()) {
                         MetadataEntry item = iterator.next();
 
-                        System.out.println("IPTC iterator:" + item.getKey() + item.getValue());
+                        message("IPTC iterator:" + item.getKey() + item.getValue());
                     }
 
 
@@ -852,14 +997,14 @@ public class ImageCatalogue {
 
 
         } catch (Exception e) {
-            System.out.println("error reading metadata" + e);
+            message("error reading metadata" + e);
         }
 
 
         try {
             final ImageMetadata metadata = Imaging.getMetadata(file);
 
-            // System.out.println(metadata);
+            // message(metadata);
 
             if (metadata instanceof JpegImageMetadata) {
                 final JpegImageMetadata jpegMetadata = (JpegImageMetadata) metadata;
@@ -871,7 +1016,7 @@ public class ImageCatalogue {
                 //
                 // see the TiffConstants file for a list of TIFF tags.
 
-                System.out.println("file: " + file.getPath());
+                message("file: " + file.getPath());
 
 
                 printTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_XRESOLUTION);
@@ -893,8 +1038,6 @@ public class ImageCatalogue {
                         GpsTagConstants.GPS_TAG_GPS_LONGITUDE_REF);
                 printTagValue(jpegMetadata, GpsTagConstants.GPS_TAG_GPS_LONGITUDE);
 
-                System.out.println();
-
                 // simple interface to GPS data
                 final TiffImageMetadata exifMetadata = jpegMetadata.getExif();
                 if (null != exifMetadata) {
@@ -905,7 +1048,7 @@ public class ImageCatalogue {
                         final String gpsDescription = gpsInfo.toString();
 
 
-                        System.out.println("    " + "GPS Description: "
+                        message("    " + "GPS Description: "
                                 + gpsDescription);
 
                     }
@@ -942,12 +1085,12 @@ public class ImageCatalogue {
                     // gpsLatitude: 8 degrees, 40 minutes, 42.2 seconds S
                     // gpsLongitude: 115 degrees, 26 minutes, 21.8 seconds E
 
-                    System.out.println("    " + "GPS Latitude: "
+                    message("    " + "GPS Latitude: "
                             + gpsLatitudeDegrees.toDisplayString() + " degrees, "
                             + gpsLatitudeMinutes.toDisplayString() + " minutes, "
                             + gpsLatitudeSeconds.toDisplayString() + " seconds "
                             + gpsLatitudeRef);
-                    System.out.println("    " + "GPS Longitude: "
+                    message("    " + "GPS Longitude: "
                             + gpsLongitudeDegrees.toDisplayString() + " degrees, "
                             + gpsLongitudeMinutes.toDisplayString() + " minutes, "
                             + gpsLongitudeSeconds.toDisplayString() + " seconds "
@@ -955,25 +1098,24 @@ public class ImageCatalogue {
 
                 }
 
-                System.out.println();
+
 
                 final List<ImageMetadata.ImageMetadataItem> items = jpegMetadata.getItems();
 
                 for (int i = 0; i < items.size(); i++) {
                     final ImageMetadata.ImageMetadataItem item = items.get(i);
-                    System.out.println("    " + "item: " + item);
+                    message("    " + "item: " + item);
 
 
                 }
 
-                System.out.println();
 
 
             }
 
         } catch (Exception e) {
 
-            System.out.println(e);
+            message("Error accessing metadata:"+e);
 
         }
 
@@ -984,7 +1126,7 @@ public class ImageCatalogue {
 
     }
     // This method is for testing only
-    private static Exif populateExif(Exif exif) throws IOException {
+    private static Exif populateExif(Exif exif)  {
         exif.addExifField(ExifTag.WINDOWS_XP_AUTHOR, FieldType.WINDOWSXP, "Author");
         exif.addExifField(ExifTag.WINDOWS_XP_KEYWORDS, FieldType.WINDOWSXP, "Exif Copyright:  Ted Carroll ");
 
@@ -998,7 +1140,7 @@ public class ImageCatalogue {
     }
 
     private static void printMetadata(MetadataEntry entry, String indent, String increment) {
-        System.out.println(indent + entry.getKey() + (StringUtils.isNullOrEmpty(entry.getValue()) ? "" : ": " + entry.getValue()));
+        message(indent + entry.getKey() + (StringUtils.isNullOrEmpty(entry.getValue()) ? "" : ": " + entry.getValue()));
         if (entry.isMetadataEntryGroup()) {
             indent += increment;
             Collection<MetadataEntry> entries = entry.getMetadataEntries();

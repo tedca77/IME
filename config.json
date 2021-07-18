@@ -114,9 +114,22 @@
         }
       }
     ],
+  "cameras": [
+    {
+      "friendlyName": "Teds Phone",
+      "cameraMaker": "'Xiaomi'",
+      "cameraModel": "'Mi A1'",
+      "programName": null,
+      "startDate": 1609753056000,
+      "endDate": 1609753056000,
+      "cameraKey": 1,
+      "cameraCount": 1
+    }
+  ],
     "tempdir": "D:\\tempIC",
     "cryptokey": "crypto key",
     "openmapkey": "open map key",
+    "update": "false",
     "minfilesize": "10000",
     "thumbsize": "480x600",
     "isocountrycode": ["country_code"],

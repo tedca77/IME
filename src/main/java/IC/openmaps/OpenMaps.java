@@ -11,6 +11,7 @@ import org.springframework.web.util.WebUtils;
 
 
 import java.util.ArrayList;
+import java.util.Date;
 
 import static IC.ImageCatalogue.assembleLocation;
 
@@ -145,6 +146,10 @@ public class OpenMaps {
             dResult.setIPTCCountry(assembleLocation(dResult,config.getCountry()));
             dResult.setIPTCStateProvince(assembleLocation(dResult,config.getStateprovince()));
             dResult.setIPTCSublocation(assembleLocation(dResult,config.getSublocation()));
+            // we set lat and long to the photo in case there is a difference in OpenMaps
+            dResult.setLat(lat);
+            dResult.setLon(lon);
+            dResult.setCountPlace(1);
 
             System.out.println("result:"+dResult.getDisplay_name());
             return dResult;

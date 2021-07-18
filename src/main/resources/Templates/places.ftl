@@ -15,7 +15,9 @@
     <th>City</th>
      <th>State / Province</th>
     <th>Country</th>
-
+ <th>Count</th>
+ <th>First Date</th>
+ <th>Last Date</th>
 </tr>
 <#list places as place>
 <tr>
@@ -25,9 +27,11 @@
     <td>${(place.friendlyname)!}</td>
     <td>${(place.IPTCSublocation)!}</td>
     <td>${(place.IPTCCity)!}</td>
-     <td>${(place.IPTCStateProvince)!}</td>
+    <td>${(place.IPTCStateProvince)!}</td>
     <td>${(place.IPTCCountry)!}</td>
-
+    <td>${(place.countPlace)!}</td>
+    <td>${(place.startDate?datetime)!}</td>
+    <td>${(place.endDate?datetime)!}</td>
 </tr>
 </#list>
 </TABLE>

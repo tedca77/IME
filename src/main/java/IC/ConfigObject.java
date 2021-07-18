@@ -10,11 +10,13 @@ public class ConfigObject {
     private String cryptokey;
     private String openmapkey;
     private String minfilesize;
+    private String update;
     private String thumbsize;
     private ArrayList<DriveObject> drives;
     private ArrayList<CameraObject> cameras;
     private ArrayList<ReverseGeocodeObject> places;
     private ArrayList<FileObject> photos;
+    private ArrayList<TrackObject> tracks;
     private ArrayList<String> isocountrycode;
     private ArrayList<String> country;
     private ArrayList<String> stateprovince;
