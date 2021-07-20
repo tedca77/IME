@@ -36,7 +36,7 @@ public class FileObject {
     String fStop;
     Double latitude;
     Double longitude;
-    String altitude;
+    Double altitude;
     String city;
     String country_name;
     String country_code;

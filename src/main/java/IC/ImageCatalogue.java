@@ -33,8 +33,11 @@ import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.GpsTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.*;
 
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -151,6 +154,20 @@ public class ImageCatalogue {
             proot.put( "places", geoObjects );
             ptemplate.process(proot, pwriter);
             pwriter.close();
+            //
+            Template ttemplate = cfg.getTemplate("tracks.ftl");
+            FileWriter twriter = new FileWriter(tempDir+"/"+"tracks.html");
+            Map<String, Object> troot = new HashMap<>();
+            troot.put( "tracks",tracks );
+            ttemplate.process(troot, twriter);
+            twriter.close();
+            //
+            Template ftemplate = cfg.getTemplate("photosbydate.ftl");
+            FileWriter fwriter = new FileWriter(tempDir+"/"+"photosbydate.html");
+            Map<String, Object> froot = new HashMap<>();
+            froot.put( "photos",fileObjects );
+            ftemplate.process(froot, fwriter);
+            twriter.close();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -168,6 +185,8 @@ public class ImageCatalogue {
     {
         ObjectMapper objectMapper = new ObjectMapper();
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss");
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm ss");
+        objectMapper.setDateFormat(df);
         String fileName=inputPath.getFileName().toString();
         String newName = c.getTempdir() + "\\"+  FilenameUtils.getBaseName(fileName)+format.format(new Date()) + "."+FilenameUtils.getExtension(fileName);
         try {
@@ -201,7 +220,7 @@ public class ImageCatalogue {
         message("Count from Makes:" + countFromMake);
         message("Reverse Geolocation Objects:");
         for (ReverseGeocodeObject g : geoObjects) {
-            message("Key" + g.getLat() + "," + g.getLon() + "," + g.getDisplay_name());
+            message("Key:" +g.getInternalKey()+"latLon:"+ g.getLat() + "," + g.getLon() + "," + g.getDisplay_name());
             message("Country Code:" + g.getIPTCCountryCode());
             message("Country:" + g.getIPTCCountry());
             message("State Province:" + g.getIPTCStateProvince());
@@ -461,28 +480,48 @@ public class ImageCatalogue {
         {
             //
             Date d= getDateWithoutTimeUsingCalendar(f.getBestDate());
-            if(!d.equals(lastDay) && points.size()>0)
+            if(d.equals(lastDay))
             {
-                TrackObject t = new TrackObject();
-                t.setPoints(points);
-                t.setTrackKey(tracks.size()+1);
-                t.setStartDate(startDate);
-                t.setEndDate(endDate);
-                t.setPlaceCount(points.size());
-                t.setTrackDate(d);
+                if(f.getPlaceKey()!=placeKey) {
+                    points.add(f.getFileKey());
+                }
+                endDate=f.getBestDate();
 
-                tracks.add(t);
-                points = new ArrayList<>();
-                startDate=f.getBestDate();
-
-                // write out track and create a new one...
             }
             else
             {
+                // write out track
+                if(points.size()>1) {
+                    TrackObject t = new TrackObject();
+                    t.setPoints(points);
+                    t.setTrackKey(tracks.size() + 1);
+                    t.setStartDate(startDate);
+                    t.setEndDate(endDate);
+                    t.setPlaceCount(points.size());
+                    t.setTrackDate(lastDay);
+                    tracks.add(t);
+                }
+                points = new ArrayList<>();
                 points.add(f.getFileKey());
+                startDate=f.getBestDate();
                 endDate=f.getBestDate();
+                lastDay=getDateWithoutTimeUsingCalendar(f.getBestDate());
+                placeKey=f.getPlaceKey();
+
             }
 
+
+        }
+        // write out track
+        if(points.size()>1) {
+            TrackObject t = new TrackObject();
+            t.setPoints(points);
+            t.setTrackKey(tracks.size() + 1);
+            t.setStartDate(startDate);
+            t.setEndDate(endDate);
+            t.setPlaceCount(points.size());
+            t.setTrackDate(lastDay);
+            tracks.add(t);
         }
         return true;
     }
@@ -537,8 +576,6 @@ public class ImageCatalogue {
 
     public static Boolean isExcludedPrefix(String fname, ArrayList<DirectoryObject> excludePrefix) {
         for (DirectoryObject i : excludePrefix) {
-            message("Excluded Prefix checking:" + i.getName());
-            message("Excluded Prefix checking:" + fname);
             if (fname.indexOf(i.getName()) == 0) {
                 message("Excluded Prefix:" + fname);
                 return true;
@@ -633,7 +670,21 @@ public class ImageCatalogue {
             return field.getValueDescription().replace(", ", "");
         }
     }
-
+    private static double getTagValueDouble(final JpegImageMetadata jpegMetadata,
+                                            final TagInfo tagInfo) {
+        final TiffField field = jpegMetadata.findEXIFValueWithExactMatch(tagInfo);
+        if (field == null) {
+            return 0.0d;
+        } else {
+            try {
+                return field.getDoubleValue();
+            }
+            catch(Exception e)
+            {
+                return 0.0d;
+            }
+        }
+    }
     private static Date getTagValueDate(final JpegImageMetadata jpegMetadata,
                                         final TagInfo tagInfo) {
         final TiffField field = jpegMetadata.findEXIFValueWithExactMatch(tagInfo);
@@ -643,12 +694,12 @@ public class ImageCatalogue {
             return null;
         } else {
             try {
-                SimpleDateFormat inputFormatter = new SimpleDateFormat("yyyy:MM:dd hh:mm:ss");
+                SimpleDateFormat inputFormatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
                 return inputFormatter.parse(field.getValueDescription().replace("'", ""));
 
             } catch (Exception e) {
                 try {
-                    SimpleDateFormat inputFormatter = new SimpleDateFormat("dd MMM yyyy hh:mm:ss", Locale.ENGLISH);
+                    SimpleDateFormat inputFormatter = new SimpleDateFormat("dd MMM yyyy HH:mm:ss", Locale.ENGLISH);
                     return inputFormatter.parse(field.getValueDescription().replace("'", ""));
 
                 } catch (Exception ee) {
@@ -676,7 +727,7 @@ public class ImageCatalogue {
         String model = "";
         String programName = "";
         String fStop = "";
-        String altitude = "";
+
         String dimensions = "";
         Date bestDate = null;
         Date exifDigitisedDate = null;
@@ -684,6 +735,7 @@ public class ImageCatalogue {
         Date tiffDate = null;
         double longitude = 0.0d;
         double latitude = 0.0d;
+        double altitude=0.0d;
         boolean geoFound = false;
         Date lastModifiedDate = null;
         Date createdDate = null;
@@ -812,13 +864,14 @@ public class ImageCatalogue {
                 // print out various interesting EXIF tags.
                 make = getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MAKE);
                 model = getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL);
-              //  fStop = getStringOrUnknown(jpegMetadata, ExifTagConstants.);
-              //  programName = getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL);
-              //  altitude = getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL);
+                fStop = ""+ getTagValueDouble(jpegMetadata, ExifTagConstants.EXIF_TAG_FNUMBER);
+                programName = getStringOrUnknown(jpegMetadata, ExifTagConstants.EXIF_TAG_SOFTWARE);
+
               //  dimensions = getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL);
                 exifOriginalDate =getTagValueDate(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
                 exifDigitisedDate=getTagValueDate(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_DIGITIZED);
                 tiffDate =    getTagValueDate(jpegMetadata, TiffTagConstants.TIFF_TAG_DATE_TIME);
+
                 bestDate =exifOriginalDate;
                 if (bestDate == null) {
                     bestDate = exifDigitisedDate;
@@ -827,8 +880,10 @@ public class ImageCatalogue {
                     bestDate =tiffDate ;
                 }
                 // simple interface to GPS data
+                altitude= getTagValueDouble(jpegMetadata,GpsTagConstants.GPS_TAG_GPS_ALTITUDE);
                 final TiffImageMetadata exifMetadata = jpegMetadata.getExif();
                 if (null != exifMetadata) {
+
                     final TiffImageMetadata.GPSInfo gpsInfo = exifMetadata.getGPS();
                     if (null != gpsInfo) {
                         geoFound = true;
@@ -862,13 +917,23 @@ public class ImageCatalogue {
         fNew.setCameraMaker(make);
         fNew.setCameraModel(model);
         fNew.setFileCreated(bestDate);
+        fNew.setFileModified(lastModifiedDate);
+        fNew.setFileAccessed(lastAccessDate);
         fNew.setFileName(file.getName());
+        fNew.setFileSize(new BigDecimal(file.length()));
         fNew.setDirectory(FilenameUtils.getFullPath(file.getPath()));
         fNew.setFileKey(count);
         fNew.setBestDate(bestDate);
         fNew.setExifDigitised(exifDigitisedDate);
         fNew.setExifOriginal(exifOriginalDate);
         fNew.setTiffDate(tiffDate);
+        fNew.setAltitude(altitude);
+        fNew.setProgramName(programName);
+        fNew.setFStop(fStop);
+        BufferedImage bimg = ImageIO.read(file);
+        fNew.setWidth(bimg.getWidth());
+        fNew.setHeight(bimg.getHeight());
+
         //
         if (geoFound) {
             fNew.setLatitude(latitude);
