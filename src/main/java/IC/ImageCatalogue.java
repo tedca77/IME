@@ -9,6 +9,7 @@ import com.icafe4j.image.meta.MetadataType;
 import com.icafe4j.image.meta.exif.Exif;
 import com.icafe4j.image.meta.exif.ExifTag;
 
+import com.icafe4j.image.meta.image.Comments;
 import com.icafe4j.image.meta.iptc.IPTC;
 import com.icafe4j.image.meta.iptc.IPTCApplicationTag;
 import com.icafe4j.image.meta.iptc.IPTCDataSet;
@@ -24,6 +25,7 @@ import freemarker.template.TemplateExceptionHandler;
 import org.apache.commons.imaging.Imaging;
 import org.apache.commons.imaging.common.ImageMetadata;
 import org.apache.commons.imaging.common.RationalNumber;
+import org.apache.commons.imaging.formats.jpeg.JpegConstants;
 import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
 import org.apache.commons.imaging.formats.tiff.TiffField;
 import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
@@ -726,7 +728,7 @@ public class ImageCatalogue {
         String make = "";
         String model = "";
         String programName = "";
-        String fStop = "";
+        double fStop =0.0d;
 
         String dimensions = "";
         Date bestDate = null;
@@ -755,6 +757,7 @@ public class ImageCatalogue {
         // Create a TIFF EXIF wrapper
         IPTC iptc = new IPTC();
         JpegExif exif = new JpegExif();
+        List<String> existingComments = new ArrayList<String>();
         try {
             message("tag" + IPTCApplicationTag.CITY);
             message("tag" + IPTCApplicationTag.COUNTRY_CODE);
@@ -766,8 +769,9 @@ public class ImageCatalogue {
 
                 } else if (meta instanceof Exif) {
                     exif=(JpegExif)meta;
-
-
+                } else if (meta instanceof Comments) {
+                    existingComments = ((Comments) meta).getComments();
+                    exif=(JpegExif)meta;
                    } else if (meta instanceof IPTC) {
                     String city = "";
                     String country = "";
@@ -864,7 +868,7 @@ public class ImageCatalogue {
                 // print out various interesting EXIF tags.
                 make = getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MAKE);
                 model = getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL);
-                fStop = ""+ getTagValueDouble(jpegMetadata, ExifTagConstants.EXIF_TAG_FNUMBER);
+                fStop = getTagValueDouble(jpegMetadata, ExifTagConstants.EXIF_TAG_FNUMBER);
                 programName = getStringOrUnknown(jpegMetadata, ExifTagConstants.EXIF_TAG_SOFTWARE);
 
               //  dimensions = getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL);
@@ -930,10 +934,15 @@ public class ImageCatalogue {
         fNew.setAltitude(altitude);
         fNew.setProgramName(programName);
         fNew.setFStop(fStop);
-        BufferedImage bimg = ImageIO.read(file);
-        fNew.setWidth(bimg.getWidth());
-        fNew.setHeight(bimg.getHeight());
-
+        try {
+            BufferedImage bimg = ImageIO.read(file);
+            fNew.setWidth(bimg.getWidth());
+            fNew.setHeight(bimg.getHeight());
+        }
+        catch(Exception e)
+        {
+            message("Could not read width and height for "+file.getName());
+        }
         //
         if (geoFound) {
             fNew.setLatitude(latitude);
@@ -1040,7 +1049,16 @@ public class ImageCatalogue {
                 if (meta instanceof XMP) {
                     XMP.showXMP((XMP) meta);
 
+                } else if (meta instanceof Exif) {
+                    JpegExif exif=(JpegExif)meta;
 
+                    message("Windows Author:"+exif.getAsString(ExifTag.WINDOWS_XP_AUTHOR));
+                    message("Windows Comment:"+exif.getAsString(ExifTag.WINDOWS_XP_COMMENT));
+                    message("Windows Keywords:"+exif.getAsString(ExifTag.WINDOWS_XP_KEYWORDS));
+                    message("Windows Title:"+exif.getAsString(ExifTag.WINDOWS_XP_TITLE));
+                    message("Windows Subject:"+exif.getAsString(ExifTag.WINDOWS_XP_SUBJECT));
+                    message("User Comment:"+exif.getAsString(ExifTag.USER_COMMENT));
+                    message("Subject Location:"+exif.getAsString(ExifTag.SUBJECT_LOCATION));
 
                 } else if (meta instanceof IPTC) {
                            Iterator<MetadataEntry> iterator = meta.iterator();
@@ -1082,8 +1100,8 @@ public class ImageCatalogue {
                 // see the TiffConstants file for a list of TIFF tags.
 
                 message("file: " + file.getPath());
-
-
+                printTagValue(jpegMetadata,  TiffTagConstants.TIFF_TAG_IMAGE_DESCRIPTION);
+                printTagValue(jpegMetadata,  TiffTagConstants.TIFF_TAG_DOCUMENT_NAME);
                 printTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_XRESOLUTION);
                 printTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_DATE_TIME);
                 printTagValue(jpegMetadata,
@@ -1175,7 +1193,6 @@ public class ImageCatalogue {
                 }
 
 
-
             }
 
         } catch (Exception e) {
@@ -1192,6 +1209,7 @@ public class ImageCatalogue {
     }
     // This method is for testing only
     private static Exif populateExif(Exif exif)  {
+
         exif.addExifField(ExifTag.WINDOWS_XP_AUTHOR, FieldType.WINDOWSXP, "Author");
         exif.addExifField(ExifTag.WINDOWS_XP_KEYWORDS, FieldType.WINDOWSXP, "Exif Copyright:  Ted Carroll ");
 
