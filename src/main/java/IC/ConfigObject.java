@@ -10,7 +10,9 @@ public class ConfigObject {
     private String cryptokey;
     private String openmapkey;
     private String minfilesize;
-    private String update;
+    private Boolean update;
+    private Boolean showmetadata;
+    private Boolean overwrite;
     private String thumbsize;
     private ArrayList<DriveObject> drives;
     private ArrayList<CameraObject> cameras;

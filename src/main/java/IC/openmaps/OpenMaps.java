@@ -81,13 +81,13 @@ public class OpenMaps {
             Rest r = new Rest();
         String enc = WebUtils.DEFAULT_CHARACTER_ENCODING;
         String s="https://api.openrouteservice.org/geocode/search?api_key=5b3ce3597851110001cf6248a15496c57f254acbbcb04aaf8e115b50&boundary.country=GBR&text="+ Base64.getEncoder().encodeToString(query.getBytes(StandardCharsets.UTF_8));
-      System.out.println("get Place:"+s);
+      //  System.out.println("get Place:"+s);
         String result = r.doGetString(s);
 
 
             ObjectMapper mapper = new ObjectMapper();
             OpenMapPlace dResult = mapper.readValue(result, OpenMapPlace.class);
-          System.out.println("result:"+dResult.getBbox().get(0)+dResult.getBbox().get(1));
+       //  System.out.println("result:"+dResult.getBbox().get(0)+dResult.getBbox().get(1));
             return ""+dResult.getBbox().get(0)+","+dResult.getBbox().get(1);
         }
         catch(Exception e)
@@ -105,7 +105,7 @@ public class OpenMaps {
         Rest r = new Rest();
         String enc = WebUtils.DEFAULT_CHARACTER_ENCODING;
         String s="https://api.openrouteservice.org/geocode/search?api_key=5b3ce3597851110001cf6248a15496c57f254acbbcb04aaf8e115b50&boundary.country=GBR&text="+ Base64.getEncoder().encodeToString(query.getBytes(StandardCharsets.UTF_8));
-       System.out.println("get Place:"+s);
+      // System.out.println("get Place:"+s);
         String result = r.doGetString(s);
 
             ObjectMapper mapper = new ObjectMapper();
@@ -136,7 +136,7 @@ public class OpenMaps {
             Rest r = new Rest();
             String enc = WebUtils.DEFAULT_CHARACTER_ENCODING;
             String s="https://nominatim.openstreetmap.org/reverse?lat="+lat+"&lon="+lon+"&format=json";
-            System.out.println("get Place:"+s);
+
             String result = r.doGetString(s);
 
             ObjectMapper mapper = new ObjectMapper();
@@ -151,7 +151,7 @@ public class OpenMaps {
             dResult.setLon(lon);
             dResult.setCountPlace(1);
 
-            System.out.println("result:"+dResult.getDisplay_name());
+
             return dResult;
 
         }

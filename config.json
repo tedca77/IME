@@ -129,7 +129,7 @@
     "tempdir": "D:\\tempIC",
     "cryptokey": "crypto key",
     "openmapkey": "open map key",
-    "update": "false",
+    "update": false,
     "minfilesize": "10000",
     "thumbsize": "480x600",
     "isocountrycode": ["country_code"],

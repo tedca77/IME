@@ -123,19 +123,18 @@ public class ImageProcessing {
             try
             {
                 imgThumb= ImageProcessing.getScaledImage(img,width,height);
-                System.out.println("Creating thumbnamil");
+               // System.out.println("Creating thumbnamil");
             }
             catch(Exception e)
             {
-                System.out.println("converting image for thumbnail thumbnamil");
+                System.out.println("Error converting image for thumbnail thumbnamil"+e);
                 newName=ImageConversion.convertNonJPGFormats(file,tempDir);
                 img = ImageIO.read(new File(tempDir+"/"+newName));
                 imgThumb= ImageProcessing.getScaledImage(img,width,height);
             }
-
             File outputfile = new File(tempDir+"/"+thumbName);
             ImageIO.write(imgThumb, "jpg", outputfile);
-            System.out.println("picture thumb is :"+thumbName);
+
             //upload
 
             return true;

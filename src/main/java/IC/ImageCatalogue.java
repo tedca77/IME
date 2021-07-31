@@ -51,7 +51,9 @@ import java.util.*;
 
 import static IC.ImageProcessing.createThumbFromPicture;
 
-//
+/**
+ *
+ */
 public class ImageCatalogue {
     static int count = 0;
     static int countTooSmall = 0;
@@ -64,7 +66,12 @@ public class ImageCatalogue {
     static ArrayList<FileObject> fileObjects = new ArrayList<>();
     static ArrayList<ReverseGeocodeObject> geoObjects = new ArrayList<>();
     static ArrayList<TrackObject> tracks = new ArrayList<>();
+    static int messageLength=160;
 
+    /**
+     * Main Method for the program - arguments passes as Java arguments..
+     * @param args
+     */
     public static void main(String[] args) {
         ConfigObject config;
         try {
@@ -72,35 +79,50 @@ public class ImageCatalogue {
             Path fileName = Path.of(args[0]);
             String result = Files.readString(fileName);
             config = mapper.readValue(result, ConfigObject.class);
-            if(!config.getUpdate().equalsIgnoreCase("true")) {
-                message("----------------------FILES WILL NOT BE UPDATED ------------------------------------");
+            //
+            config=setDefaults(config);
+            if(config.getUpdate()) {
+                message("FILES WILL BE UPDATED");
             }
-
+            //
+            if(config.getShowmetadata()) {
+                message("METADATA WILL BE SHOWN BEFORE AND AFTER UPDATING");
+            }
+            if(config.getOverwrite()) {
+                message("EXISTING METADATA WILL BE OVERWRITTEN");
+            }
+            messageLine("*");
             for (DriveObject d : config.getDrives()) {
                 countDrive = 0;
                 countDriveTooSmall = 0;
                 countDriveGEOCODED = 0;
-                message("Starting==============================================================");
+                message("Starting - drive"+d.getStartdir());
                 createTempDirForUser(config.getTempdir());
-                    //recursively find all file
-                    readDirectoryContents(new File(d.getStartdir()), d, config.getTempdir(), config);
-
+                //recursively find all files
+                readDirectoryContents(new File(d.getStartdir()), d, config.getTempdir(), config);
+                messageLine("-");
                 message("Photos found on drive "+d.getStartdir()+" :" + countDrive );
                 message("Photos too small on drive "+d.getStartdir()+" :" + countDriveTooSmall );
                 message("Photos found on drive "+d.getStartdir()+" :" + countDriveGEOCODED );
 
 
             }
-            message("End of program" + "Photos found:" + count + "============================================");
-            message("End of program" + "Photos too small:" + countTooSmall + "============================================");
-            message("End of program" + "Photos found:" + countGEOCODED + "============================================");
+            // print out total number of photos if more than one drive...
+            if(config.getDrives().size()>1) {
+                messageLine("*");
+                message("All Drives -" + "Photos found:" + count);
+                message("All Drives - " + "Photos too small:" + countTooSmall);
+                message("All Drives - " + "Photos found:" + countGEOCODED);
+            }
+            // sort any ArrayLists....
+            fileObjects.sort(Comparator.comparing(o -> o.getBestDate()));
 
-            //sets config object with new values
             //create tracks - this will also update the geoObjects
             if(!createTracks())
             {
                 message("Failed to create tracks");
             }
+            //sets config object with new values
             config.setCameras(cameras);
             config.setPhotos(fileObjects);
             config.setPlaces(geoObjects);
@@ -124,6 +146,19 @@ public class ImageCatalogue {
 
     }
 
+    /**
+     * Sets the defaults if the values are not in the JSON
+     * @param config - passes ConfigObject
+     * @return - returns modified ConfigObject
+     */
+    public static ConfigObject setDefaults(ConfigObject config)
+    {
+        if(config.getUpdate()==null){config.setUpdate(false);}
+        if(config.getShowmetadata()==null) {config.setShowmetadata(false);}
+        if(config.getOverwrite()==null) {config.setOverwrite(false);}
+
+        return config;
+    }
     /**
      * Writes out HTML reports using freemarker for the main objects.  Freemarker templates are in the project.
      * FIles are written to the tempDir
@@ -201,33 +236,39 @@ public class ImageCatalogue {
     }
     public static void runReport()
     {
-        int i = 0;
+
+        messageLine("*");
         for (FileObject f : fileObjects) {
-            message("Key" + f.getFileKey() + " ,Camera:" + f.getCameraMaker() + ", Model" + f.getCameraModel() + ", Date:" + f.getFileCreated() + ", FileName:" + f.getFileName());
-            i++;
-            if (i != f.getFileKey()) {
-                message("THIS ONE MISSING - Key" + f.getFileKey() + " ,Camera:" + f.getCameraMaker() + ", Model" + f.getCameraModel() + ", Date:" + f.getFileCreated() + ", FileName:" + f.getFileName());
+            message("Key:[" + f.getFileKey() + "] ,Camera: " + f.getCameraMaker() + ", Model: " + f.getCameraModel() + ", Date: " + f.getFileCreated() );
+            message("Directory: " + f.getDirectory()+", FileName: " + f.getFileName());
+            if (f.getDisplayName()!= null) {
+                  message("Location: " + f.getDisplayName());
             }
-            if (f.getLatitude() != null) {
-                message("Lattitude" + f.getLatitude());
-                message("Longtitude" + f.getLongitude());
-                message("Location" + f.getMetaData());
+            else
+            {
+                message("No geolocation information "+f.getLongitude()+","+f.getLatitude());
             }
+            messageLine("-");
         }
-        message("Count from FileObjects:" + i);
+        messageLine("*");
+
         for (CameraObject c : cameras) {
-            message("Key" + c.getCameraKey() + " ,Camera:" + c.getCameraMaker() + ", Model" + c.getCameraModel() + ", Start Date:" + c.getStartDate() + ", End Date:" + c.getEndDate() + ", Camera Count:" + c.getCameraCount());
+            message("Key:[" + c.getCameraKey() + "] ,Camera:" + c.getCameraMaker() + ", Model" + c.getCameraModel() + ", Start Date:" + c.getStartDate() + ", End Date:" + c.getEndDate() + ", Camera Count:" + c.getCameraCount());
             countFromMake = countFromMake + c.getCameraCount();
         }
         message("Count from Makes:" + countFromMake);
-        message("Reverse Geolocation Objects:");
+
+        messageLine("*");
         for (ReverseGeocodeObject g : geoObjects) {
-            message("Key:" +g.getInternalKey()+"latLon:"+ g.getLat() + "," + g.getLon() + "," + g.getDisplay_name());
+
+            message("Key:[" +g.getInternalKey()+"] ,Lat:"+ g.getLat() + ", Lon:" + g.getLon());
+            message( g.getDisplay_name());
             message("Country Code:" + g.getIPTCCountryCode());
             message("Country:" + g.getIPTCCountry());
             message("State Province:" + g.getIPTCStateProvince());
             message("City:" + g.getIPTCCity());
             message("Sublocation:" + g.getIPTCSublocation());
+            messageLine("-");
         }
 
     }
@@ -258,37 +299,45 @@ public class ImageCatalogue {
                                 if (!isExcludedPrefix(file.getName(), drive.getExcludespec().getFileprefixes())) {
                                     long fileSize = file.length();
                                     long minSize = 4880L;
-                                    message("File size is:" + fileSize);
+
                                     if (fileSize > minSize) {
                                         count++;
                                         countDrive++;
-                                        message(count + "     file:" + file.getCanonicalPath() + ",Name:" + file.getName());
-                                        if(!readMetadata(file))
-                                        {
-                                            message("Could not read metadata before update");
+                                        messageLine("-");
+                                        message("File number:["+count + "], file:" + file.getCanonicalPath());
+                                        message("File size is:" + fileSize);
+                                        if(config.getShowmetadata()) {
+                                            if (!readMetadata(file)) {
+                                                message("Could not read metadata before update");
+                                            }
                                         }
                                         if(!updateMetadata(file, config, drive))
                                         {
                                             message("Could not update metadata");
                                         }
-                                        if(!readMetadata(file))
-                                        {
-                                            message("Could not read metadata after update");
+                                        if(config.getShowmetadata()) {
+                                            if (!readMetadata(file)) {
+                                                message("Could not read metadata after update");
+                                            }
                                         }
                                         String thumbName = makeThumbName(file);
-                                        message("Thumbfilename is:" + thumbName);
-                                        createThumbFromPicture(file, tempDir, thumbName, 400, 400);
+
+                                        Boolean thumbResult=createThumbFromPicture(file, tempDir, thumbName, 400, 400);
+                                        if(thumbResult)
+                                        {
+                                            message("Created Thumbnail:" + thumbName);
+                                        }
                                     } else {
                                         countTooSmall++;
                                         countDriveTooSmall++;
-                                        message("*********************file:" + file.getCanonicalPath() + ",Name:" + file.getName());
-                                        message("*********************File too small - size is:" + fileSize);
+
+                                        message("File too small "+ file.getCanonicalPath() + ",Name:" + file.getName()+"- size is:" + fileSize);
                                     }
                                 }
                             }
                         }
                     } catch (Exception ee) {
-                        message("Cannot read directory:" + file.getCanonicalPath());
+                        message("Cannot read directory:" + file.getCanonicalPath()+"Error:"+ee);
                     }
                 }
             }
@@ -356,6 +405,12 @@ public class ImageCatalogue {
         return s;
     }
 
+    /**
+     * adds a comma and a value to a string
+     * @param s - string to add to = this is either blank or a value ending in a comma (never null)
+     * @param valString - new value - it can be null;
+     * @return - modified s (or existing value if null)
+     */
     public static String addIfNotNull(String s, String valString) {
         if (valString != null) {
             return s + valString + ", ";
@@ -427,23 +482,23 @@ public class ImageCatalogue {
      * @return - ReverseGeocodeObject i.e. a place...
      */
     public static ReverseGeocodeObject checkCachedGeo(double lat, double lon,Date d) {
-        message("*****Checking latitude:"+lat);
-        message("*****Checking longitude:"+lon);
+      //  message("*****Checking latitude:"+lat);
+      //  message("*****Checking longitude:"+lon);
         for (ReverseGeocodeObject g : geoObjects) {
             double glat = Double.parseDouble(g.getLat());
             double glon = Double.parseDouble(g.getLon());
-            message("*****target latitude:"+glat);
-            message("*****target longitude:"+glon);
-            message("Checking difference:"+Math.abs(glat - lat));
-            message("Checking difference:"+Math.abs(glon - lon));
+         //   message("*****target latitude:"+glat);
+         //   message("*****target longitude:"+glon);
+         //   message("Checking difference:"+Math.abs(glat - lat));
+         //   message("Checking difference:"+Math.abs(glon - lon));
 
 
             if (Math.abs(glat - lat) < 0.001 && Math.abs(glon - lon) < 0.001) {
-                message("found existing one:"+g.getDisplay_name());
+
                 Date startDate=g.getStartDate();
                 Date endDate=g.getEndDate();
                 int count=g.getCountPlace()+1;
-                message("Counted place is:"+count);
+
                 g.setCountPlace(count);
                 if(d.before(startDate))
                 {
@@ -459,6 +514,10 @@ public class ImageCatalogue {
         return null;
     }
 
+    /**
+     * Creates temporary folder for output from the program
+     * @param temp - name (from the JSON)
+     */
     public static void createTempDirForUser(String temp) {
         try {
             boolean result= new File(temp).mkdir();
@@ -471,7 +530,7 @@ public class ImageCatalogue {
         tracks = new ArrayList<>();
         // Each Place can be part of one or more tracks...
         // if we already have a track for this date... do we redo it...
-        fileObjects.sort(Comparator.comparing(o -> o.getBestDate()));
+
         Date lastDay=null;
         Integer placeKey=0;
         Date startDate=null;
@@ -529,15 +588,15 @@ public class ImageCatalogue {
     }
     public static void message(String s)
     {
-        String str="*";
-        if(s.length()>100) {
-            System.out.println(s.substring(0,100));
+        String str=" ";
+        if(s.length()>(messageLength-4)) {
+            System.out.println("* "+s.substring(0,messageLength-4)+" *");
         }
         else
         {
-            int width=100-s.length()-4;
+            int width=messageLength-(s.length()+4);
             String ss= "* "+s+ " "+str.repeat(width);
-            if(ss.length()<100)
+            if(ss.length()<messageLength)
             {
                 ss=ss+"*";
             }
@@ -546,6 +605,15 @@ public class ImageCatalogue {
         }
     }
 
+    /**
+     * Writes a line of characters across the console
+     * @param s - single character to display
+     */
+    public static void messageLine(String s)
+    {
+         String ss= s.repeat(messageLength);
+         System.out.println(ss);
+    }
     /**
      * Makes a thumbnail name replacing slashes and colon with underscores - as we need to create a valid file name
      * @param f - File to create thumbnail name for
@@ -746,21 +814,19 @@ public class ImageCatalogue {
         try {
             BasicFileAttributes attr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
             lastModifiedDate = new Date(attr.lastModifiedTime().toMillis());
-            message("lastModifiedTime: " + attr.lastModifiedTime());
+
             createdDate = new Date(attr.creationTime().toMillis());
+            message("System Creation Date/Time: " + createdDate);
             lastAccessDate = new Date(attr.lastAccessTime().toMillis());
         } catch (Exception e) {
-
+            message("Could not read File Basic Attributes: " + e);
         }
-
         List<IPTCDataSet> iptcs = new ArrayList<>();
         // Create a TIFF EXIF wrapper
         IPTC iptc = new IPTC();
         JpegExif exif = new JpegExif();
         List<String> existingComments = new ArrayList<String>();
         try {
-            message("tag" + IPTCApplicationTag.CITY);
-            message("tag" + IPTCApplicationTag.COUNTRY_CODE);
             Map<MetadataType, Metadata> metadataMap = Metadata.readMetadata(file.getPath());
             for (Map.Entry<MetadataType, Metadata> entry : metadataMap.entrySet()) {
                 Metadata meta = entry.getValue();
@@ -771,8 +837,8 @@ public class ImageCatalogue {
                     exif=(JpegExif)meta;
                 } else if (meta instanceof Comments) {
                     existingComments = ((Comments) meta).getComments();
-                    exif=(JpegExif)meta;
-                   } else if (meta instanceof IPTC) {
+
+                } else if (meta instanceof IPTC) {
                     String city = "";
                     String country = "";
                     String country_code = "";
@@ -815,7 +881,7 @@ public class ImageCatalogue {
                            */
 
                         }
-                        message("IPTC iterator:" + item.getKey() + item.getValue());
+
                     }
                     if (country_code.length() > 0) {
                         iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_CODE, country_code.toUpperCase()));
@@ -834,11 +900,7 @@ public class ImageCatalogue {
                     }
 
                 } else {
-                    Iterator<MetadataEntry> iterator = entry.getValue().iterator();
-                    while (iterator.hasNext()) {
-                        MetadataEntry item = iterator.next();
-                        printMetadata(item, "", "     ");
-                    }
+                   // we may want to look at other metadata
                 }
             }
 
@@ -863,7 +925,7 @@ public class ImageCatalogue {
                 //
                 // see the TiffConstants file for a list of TIFF tags.
 
-                message("file: " + file.getPath());
+
 
                 // print out various interesting EXIF tags.
                 make = getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MAKE);
@@ -896,9 +958,6 @@ public class ImageCatalogue {
                         final String gpsDescription = gpsInfo.toString();
                         longitude = gpsInfo.getLongitudeAsDegreesEast();
                         latitude = gpsInfo.getLatitudeAsDegreesNorth();
-
-                        message("    " + "GPS Description: "
-                                + gpsDescription);
                         message("    "
                                 + "GPS Longitude (Degrees East): " + longitude);
                         message("    "
@@ -909,7 +968,7 @@ public class ImageCatalogue {
 
         } catch (Exception e) {
 
-            message("error:"+e);
+            message("Error reading metadata:"+e);
 
         }
         if (bestDate == null) {
@@ -950,8 +1009,9 @@ public class ImageCatalogue {
             ReverseGeocodeObject g = checkCachedGeo(latitude, longitude,bestDate);
             if (g == null) {
                 g = OpenMaps.reverseGeocode(String.valueOf(latitude), String.valueOf(longitude), config);
-                message("*****************Adding a new GeoObject:" + latitude + "," + longitude + "Display name:" + g.getDisplay_name());
+
                 if (g != null) {
+                    message("Adding a new Place:["+(geoObjects.size() + 1) +"]" + g.getDisplay_name());
                     g.setInternalKey(geoObjects.size() + 1);
                     g.setEndDate(bestDate);
                     g.setStartDate(bestDate);
@@ -962,7 +1022,7 @@ public class ImageCatalogue {
             }
             else
             {
-                 message("Found GeoObject in cache therefore do not need to call Open Street Map : "+g.getDisplay_name());
+                 message("Found Lat / Long in cache : ["+g.getInternalKey()+"]"+g.getDisplay_name());
             }
             if (g != null) {
                 // this links 
@@ -990,7 +1050,7 @@ public class ImageCatalogue {
         iptcs.add(new IPTCDataSet(IPTCApplicationTag.CATEGORY, drive.getIPTCCategory()));
         iptcs.add(new IPTCDataSet(IPTCApplicationTag.KEY_WORDS, drive.getIPTCKeywords()));
 
-        if(config.getUpdate().equalsIgnoreCase("true")) {
+        if(config.getUpdate()) {
             try {
                 FileInputStream fin = new FileInputStream(file.getPath());
                 String fout_name = FilenameUtils.getFullPath(file.getPath()) + "out" + FilenameUtils.getName(file.getPath());
@@ -1030,7 +1090,7 @@ public class ImageCatalogue {
     {
         String v=getTagValueString(jpegMetadata, tagInfo);
         if (v.length() > 0) {
-            message("Make is:" +v);
+
             return v;
         } else {
             return "Unknown";

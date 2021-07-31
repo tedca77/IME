@@ -37,7 +37,7 @@ public class Rest {
 
             String line = "";
             while ((line = rd.readLine()) != null) {
-                System.out.println(line);
+              //  System.out.println(line);
                 lineOut=lineOut+line;
             }
         } catch (Exception e) {
