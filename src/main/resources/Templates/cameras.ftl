@@ -6,6 +6,7 @@
   <h1>Cameras and Scanners identified in metadata</h1>
 <TABLE BORDER>
 <tr>
+    <th>Camera Name</th>
     <th>Make</th>
     <th>Model</th>
     <th>Software</th>
@@ -15,12 +16,13 @@
 </tr>
 <#list cameras as camera>
 <tr>
-    <td>${(camera.cameraMaker)!}</td>
-    <td>${(camera.cameraModel)!}</td>
-    <td>${(camera.programName)!}</td>
-    <td>${(camera.startDate?datetime)!}</td>
-    <td>${(camera.endDate?datetime)!}</td>
-    <td>${(camera.cameraCount)!}</td>
+    <td>${(camera.friendlyname)!}</td>
+    <td>${(camera.cameramaker)!}</td>
+    <td>${(camera.cameramodel)!}</td>
+    <td>${(camera.programname)!}</td>
+    <td>${(camera.startdate?datetime)!}</td>
+    <td>${(camera.enddate?datetime)!}</td>
+    <td>${(camera.cameracount)!}</td>
 </tr>
 </#list>
 </TABLE>

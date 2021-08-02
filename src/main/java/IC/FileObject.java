@@ -23,6 +23,7 @@ public class FileObject {
     String dimensions;
     String cameraMaker;
     String cameraModel;
+    String cameraName;
     Integer cameraKey;
     Integer placeKey;
     String programName;
@@ -35,6 +36,7 @@ public class FileObject {
     String country_code;
     String subLocation;
     String stateProvince;
+    String thumbnail;
     String displayName;
 
 }

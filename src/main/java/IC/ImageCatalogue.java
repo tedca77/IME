@@ -25,7 +25,7 @@ import freemarker.template.TemplateExceptionHandler;
 import org.apache.commons.imaging.Imaging;
 import org.apache.commons.imaging.common.ImageMetadata;
 import org.apache.commons.imaging.common.RationalNumber;
-import org.apache.commons.imaging.formats.jpeg.JpegConstants;
+
 import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
 import org.apache.commons.imaging.formats.tiff.TiffField;
 import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
@@ -66,8 +66,11 @@ public class ImageCatalogue {
     static ArrayList<FileObject> fileObjects = new ArrayList<>();
     static ArrayList<ReverseGeocodeObject> geoObjects = new ArrayList<>();
     static ArrayList<TrackObject> tracks = new ArrayList<>();
-    static int messageLength=160;
-
+    // Variables - that can be modified..
+    static int messageLength=160; //length of Console Message
+    static String videoDefaults="mp4~mp4a";
+    static String imageDefaults="jpg~jpeg~bmp";
+    static double cacheDistance=0.001d;
     /**
      * Main Method for the program - arguments passes as Java arguments..
      * @param args
@@ -76,11 +79,14 @@ public class ImageCatalogue {
         ConfigObject config;
         try {
             ObjectMapper mapper = new ObjectMapper();
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm ss");
+            mapper.setDateFormat(df);
             Path fileName = Path.of(args[0]);
             String result = Files.readString(fileName);
             config = mapper.readValue(result, ConfigObject.class);
             //
             config=setDefaults(config);
+            messageLine("*");
             if(config.getUpdate()) {
                 message("FILES WILL BE UPDATED");
             }
@@ -91,7 +97,31 @@ public class ImageCatalogue {
             if(config.getOverwrite()) {
                 message("EXISTING METADATA WILL BE OVERWRITTEN");
             }
-            messageLine("*");
+            if(config.getCameras()!=null)
+            {
+                message("NUMBER OF CAMERAS READ FROM CONFIG FILE:"+config.getCameras().size());
+                cameras=config.getCameras();
+                int i=1;
+                for(CameraObject c :cameras)
+                {
+                    c.setCamerakey(i);
+                    c.setCameracount(0);
+                    i++;
+                }
+            }
+            if(config.getPlaces()!=null)
+            {
+                message("NUMBER OF PLACES READ FROM CONFIG FILE:"+config.getPlaces().size());
+                geoObjects=config.getPlaces();
+                int i=1;
+                for(ReverseGeocodeObject r : geoObjects)
+                {
+                    r.setInternalKey(i);
+                    r.setCountPlace(0);
+                    i++;
+                }
+            }
+
             for (DriveObject d : config.getDrives()) {
                 countDrive = 0;
                 countDriveTooSmall = 0;
@@ -116,12 +146,13 @@ public class ImageCatalogue {
             }
             // sort any ArrayLists....
             fileObjects.sort(Comparator.comparing(o -> o.getBestDate()));
-
+            addLinksToPlaces(200,"d://tempIC//");
             //create tracks - this will also update the geoObjects
             if(!createTracks())
             {
                 message("Failed to create tracks");
             }
+            addLinksToTracks(200,"d://tempIC//");
             //sets config object with new values
             config.setCameras(cameras);
             config.setPhotos(fileObjects);
@@ -156,7 +187,8 @@ public class ImageCatalogue {
         if(config.getUpdate()==null){config.setUpdate(false);}
         if(config.getShowmetadata()==null) {config.setShowmetadata(false);}
         if(config.getOverwrite()==null) {config.setOverwrite(false);}
-
+        if(config.getImageextensions()==null) {config.setImageextensions(imageDefaults);}
+        if(config.getVideoextensions()==null) {config.setVideoextensions(videoDefaults);}
         return config;
     }
     /**
@@ -239,7 +271,12 @@ public class ImageCatalogue {
 
         messageLine("*");
         for (FileObject f : fileObjects) {
-            message("Key:[" + f.getFileKey() + "] ,Camera: " + f.getCameraMaker() + ", Model: " + f.getCameraModel() + ", Date: " + f.getFileCreated() );
+            String cameraName="";
+            if(f.getCameraName()!=null)
+            {
+                cameraName="Camera Name: "+f.getCameraName()+",";
+            }
+            message("Key:[" + f.getFileKey() + "] "+cameraName+"Camera: " + f.getCameraMaker() + ", Model: " + f.getCameraModel() + ", Date: " + f.getFileCreated() );
             message("Directory: " + f.getDirectory()+", FileName: " + f.getFileName());
             if (f.getDisplayName()!= null) {
                   message("Location: " + f.getDisplayName());
@@ -253,8 +290,8 @@ public class ImageCatalogue {
         messageLine("*");
 
         for (CameraObject c : cameras) {
-            message("Key:[" + c.getCameraKey() + "] ,Camera:" + c.getCameraMaker() + ", Model" + c.getCameraModel() + ", Start Date:" + c.getStartDate() + ", End Date:" + c.getEndDate() + ", Camera Count:" + c.getCameraCount());
-            countFromMake = countFromMake + c.getCameraCount();
+            message("Key:[" + c.getCamerakey() + "] ,Camera:" + c.getCameramaker() + ", Model" + c.getCameramodel() + ", Start Date:" + c.getStartdate() + ", End Date:" + c.getEnddate() + ", Camera Count:" + c.getCameracount());
+            countFromMake = countFromMake + c.getCameracount();
         }
         message("Count from Makes:" + countFromMake);
 
@@ -295,7 +332,7 @@ public class ImageCatalogue {
                             }
 
                         } else {
-                            if (isImage(file.getName())) {
+                            if (isImage(file.getName(),config.getImageextensions())) {
                                 if (!isExcludedPrefix(file.getName(), drive.getExcludespec().getFileprefixes())) {
                                     long fileSize = file.length();
                                     long minSize = 4880L;
@@ -311,7 +348,18 @@ public class ImageCatalogue {
                                                 message("Could not read metadata before update");
                                             }
                                         }
-                                        if(!updateMetadata(file, config, drive))
+                                        String thumbName = makeThumbName(file);
+                                        Boolean thumbResult=createThumbFromPicture(file, tempDir, thumbName, 400, 400);
+                                        if(thumbResult)
+                                        {
+                                            message("Created Thumbnail:" + thumbName);
+                                        }
+                                        else
+                                        {
+                                            message("Could not create Thumbnail:" + thumbName);
+                                            thumbName=null;
+                                        }
+                                        if(!updateMetadata(file, thumbName,config, drive))
                                         {
                                             message("Could not update metadata");
                                         }
@@ -320,13 +368,7 @@ public class ImageCatalogue {
                                                 message("Could not read metadata after update");
                                             }
                                         }
-                                        String thumbName = makeThumbName(file);
 
-                                        Boolean thumbResult=createThumbFromPicture(file, tempDir, thumbName, 400, 400);
-                                        if(thumbResult)
-                                        {
-                                            message("Created Thumbnail:" + thumbName);
-                                        }
                                     } else {
                                         countTooSmall++;
                                         countDriveTooSmall++;
@@ -417,7 +459,40 @@ public class ImageCatalogue {
         }
         return s;
     }
+    public static void addLinksToPlaces(Integer width, String root)
+    {
+        for(ReverseGeocodeObject r : geoObjects)
+        {
+            String s= "";
+            for(FileObject f: fileObjects)
+            {
+                if(f.getPlaceKey().equals(r.getInternalKey()))
+                {
+                    s=s+"<img src=\"d://tempIC//"+f.getThumbnail()+"\" width=\"200\">";
+                }
+            }
+            r.setImagelinks(s);
+        }
 
+    }
+    public static void addLinksToTracks(Integer width, String root)
+    {
+
+        // for each track
+        for(TrackObject t : tracks) {
+            String s = "";
+            // we have a list of points...
+            for (Integer i : t.getPoints()) {
+
+                for (FileObject f : fileObjects) {
+                    if (f.getPlaceKey().equals(i)) {
+                        s = s + "<img src=\"d://tempIC//" + f.getThumbnail() + "\" width=\"200\">";
+                    }
+                }
+            }
+            t.setImagelinks(s);
+        }
+    }
     /**
      * Adds a new camera if it does not exist in the array and sets start and end date
      * If it is not a new camera, start and/or end date are updated in the ArrayList
@@ -431,31 +506,30 @@ public class ImageCatalogue {
 
 
         for (CameraObject c : cameras) {
-            if (make.equals(c.getCameraMaker())) {
+            if (make.equals(c.getCameramaker())) {
                 if (model != null) {
-                    if (model.equals(c.getCameraModel())) {
-
-                        if (d.before(c.getStartDate())) {
-                            c.setStartDate(d);
+                    if (model.equals(c.getCameramodel())) {
+                        if (d.before(c.getStartdate())) {
+                            c.setStartdate(d);
                         }
-                        if (d.after(c.getEndDate())) {
-                            c.setEndDate(d);
+                        if (d.after(c.getEnddate())) {
+                            c.setEnddate(d);
                         }
-                        c.setCameraCount(c.getCameraCount() + 1);
-                        return c.getCameraKey();
+                        c.setCameracount(c.getCameracount() + 1);
+                        return c.getCamerakey();
                     }
 
 
                 } else {
-                    if (c.getCameraModel() == null) {
-                        if (d.before(c.getStartDate())) {
-                            c.setStartDate(d);
+                    if (c.getCameramodel() == null) {
+                        if (d.before(c.getStartdate())) {
+                            c.setStartdate(d);
                         }
-                        if (d.after(c.getEndDate())) {
-                            c.setEndDate(d);
+                        if (d.after(c.getEnddate())) {
+                            c.setEnddate(d);
                         }
-                        c.setCameraCount(c.getCameraCount() + 1);
-                        return c.getCameraKey();
+                        c.setCameracount(c.getCameracount() + 1);
+                        return c.getCamerakey();
                     }
                 }
 
@@ -464,12 +538,12 @@ public class ImageCatalogue {
         // we have not found a camera, so add a new one to the ArrayList
         Integer newKey = cameras.size() + 1;
         CameraObject cNew = new CameraObject();
-        cNew.setCameraKey(newKey);
-        cNew.setCameraMaker(make);
-        cNew.setCameraModel(model);
-        cNew.setStartDate(d);
-        cNew.setEndDate(d);
-        cNew.setCameraCount(1);
+        cNew.setCamerakey(newKey);
+        cNew.setCameramaker(make);
+        cNew.setCameramodel(model);
+        cNew.setStartdate(d);
+        cNew.setEnddate(d);
+        cNew.setCameracount(1);
         cameras.add(cNew);
         return newKey;
     }
@@ -493,7 +567,7 @@ public class ImageCatalogue {
          //   message("Checking difference:"+Math.abs(glon - lon));
 
 
-            if (Math.abs(glat - lat) < 0.001 && Math.abs(glon - lon) < 0.001) {
+            if (Math.abs(glat - lat) < cacheDistance && Math.abs(glon - lon) < cacheDistance) {
 
                 Date startDate=g.getStartDate();
                 Date endDate=g.getEndDate();
@@ -521,6 +595,7 @@ public class ImageCatalogue {
     public static void createTempDirForUser(String temp) {
         try {
             boolean result= new File(temp).mkdir();
+
         } catch (Exception e) {
             message("Directory may already exist for: "+temp);
         }
@@ -544,7 +619,7 @@ public class ImageCatalogue {
             if(d.equals(lastDay))
             {
                 if(f.getPlaceKey()!=placeKey) {
-                    points.add(f.getFileKey());
+                    points.add(f.getPlaceKey());
                 }
                 endDate=f.getBestDate();
 
@@ -552,7 +627,7 @@ public class ImageCatalogue {
             else
             {
                 // write out track
-                if(points.size()>1) {
+                if(points.size()>0) {
                     TrackObject t = new TrackObject();
                     t.setPoints(points);
                     t.setTrackKey(tracks.size() + 1);
@@ -563,7 +638,7 @@ public class ImageCatalogue {
                     tracks.add(t);
                 }
                 points = new ArrayList<>();
-                points.add(f.getFileKey());
+                points.add(f.getPlaceKey());
                 startDate=f.getBestDate();
                 endDate=f.getBestDate();
                 lastDay=getDateWithoutTimeUsingCalendar(f.getBestDate());
@@ -574,7 +649,7 @@ public class ImageCatalogue {
 
         }
         // write out track
-        if(points.size()>1) {
+        if(points.size()>0) {
             TrackObject t = new TrackObject();
             t.setPoints(points);
             t.setTrackKey(tracks.size() + 1);
@@ -655,8 +730,8 @@ public class ImageCatalogue {
         return false;
     }
 
-    public static Boolean isVideo(String fname) {
-        String[] vids = "mp4~mp4a".toLowerCase().split("~", -1);
+    public static Boolean isVideo(String fname,String extensions) {
+        String[] vids = extensions.toLowerCase().split("~", -1);
         String result = FilenameUtils.getExtension(fname).toLowerCase();
         for (int kk = 0; kk < vids.length; kk++) {
             if (result.equals(vids[kk])) {
@@ -666,8 +741,8 @@ public class ImageCatalogue {
         return false;
     }
 
-    public static Boolean isImage(String fname) {
-        String[] pics = "jpg~jpeg~bmp".toLowerCase().split("~", -1);
+    public static Boolean isImage(String fname,String extensions) {
+        String[] pics = extensions.toLowerCase().split("~", -1);
         String result = FilenameUtils.getExtension(fname).toLowerCase();
         for (int kk = 0; kk < pics.length; kk++) {
             if (result.equals(pics[kk])) {
@@ -792,7 +867,7 @@ public class ImageCatalogue {
         }
     }
 
-    public static Boolean updateMetadata(File file, ConfigObject config, DriveObject drive) {
+    public static Boolean updateMetadata(File file, String thumbName,ConfigObject config, DriveObject drive) {
         String make = "";
         String model = "";
         String programName = "";
@@ -979,6 +1054,10 @@ public class ImageCatalogue {
         fNew.setCameraKey(cameraKey);
         fNew.setCameraMaker(make);
         fNew.setCameraModel(model);
+        if(cameras.get(cameraKey-1).getFriendlyname()!=null)
+        {
+            fNew.setCameraName(cameras.get(cameraKey-1).getFriendlyname());
+        }
         fNew.setFileCreated(bestDate);
         fNew.setFileModified(lastModifiedDate);
         fNew.setFileAccessed(lastAccessDate);
@@ -992,6 +1071,10 @@ public class ImageCatalogue {
         fNew.setTiffDate(tiffDate);
         fNew.setAltitude(altitude);
         fNew.setProgramName(programName);
+        if(thumbName!=null)
+        {
+            fNew.setThumbnail(thumbName);
+        }
         fNew.setFStop(fStop);
         try {
             BufferedImage bimg = ImageIO.read(file);
@@ -1057,7 +1140,7 @@ public class ImageCatalogue {
                 File outFile = new File(fout_name);
                 FileOutputStream fout = new FileOutputStream(outFile, false);
                 List<Metadata> metaList = new ArrayList<>();
-                metaList.clear();
+
 
                 metaList.add(populateExif(exif));
 
@@ -1090,8 +1173,7 @@ public class ImageCatalogue {
     {
         String v=getTagValueString(jpegMetadata, tagInfo);
         if (v.length() > 0) {
-
-            return v;
+            return v.replaceAll("'","");
         } else {
             return "Unknown";
         }
@@ -1121,18 +1203,11 @@ public class ImageCatalogue {
                     message("Subject Location:"+exif.getAsString(ExifTag.SUBJECT_LOCATION));
 
                 } else if (meta instanceof IPTC) {
-                           Iterator<MetadataEntry> iterator = meta.iterator();
-                    while (iterator.hasNext()) {
-                        MetadataEntry item = iterator.next();
-
+                    for (MetadataEntry item : meta) {
                         message("IPTC iterator:" + item.getKey() + item.getValue());
                     }
-
-
                 } else {
-                    Iterator<MetadataEntry> iterator = entry.getValue().iterator();
-                    while (iterator.hasNext()) {
-                        MetadataEntry item = iterator.next();
+                    for (MetadataEntry item : entry.getValue()) {
                         printMetadata(item, "", "     ");
                     }
                 }
@@ -1211,9 +1286,9 @@ public class ImageCatalogue {
                         gpsLongitudeField != null) {
                     // all of these values are strings.
                     final String gpsLatitudeRef = (String) gpsLatitudeRefField.getValue();
-                    final RationalNumber gpsLatitude[] = (RationalNumber[]) (gpsLatitudeField.getValue());
+                    final RationalNumber[] gpsLatitude = (RationalNumber[]) (gpsLatitudeField.getValue());
                     final String gpsLongitudeRef = (String) gpsLongitudeRefField.getValue();
-                    final RationalNumber gpsLongitude[] = (RationalNumber[]) gpsLongitudeField.getValue();
+                    final RationalNumber[] gpsLongitude = (RationalNumber[]) gpsLongitudeField.getValue();
 
                     final RationalNumber gpsLatitudeDegrees = gpsLatitude[0];
                     final RationalNumber gpsLatitudeMinutes = gpsLatitude[1];
@@ -1245,11 +1320,8 @@ public class ImageCatalogue {
 
                 final List<ImageMetadata.ImageMetadataItem> items = jpegMetadata.getItems();
 
-                for (int i = 0; i < items.size(); i++) {
-                    final ImageMetadata.ImageMetadataItem item = items.get(i);
+                for (final ImageMetadata.ImageMetadataItem item : items) {
                     message("    " + "item: " + item);
-
-
                 }
 
 

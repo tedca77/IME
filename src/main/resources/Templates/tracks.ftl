@@ -9,7 +9,6 @@
     <th>Track No</th>
     <th>Friendly Name</th>
     <th>Points</th>
-    <th>Software</th>
     <th>Start Time</th>
     <th>End Time</th>
 </tr>
@@ -20,6 +19,9 @@
     <td>${(track.placeCount)!}</td>
     <td>${(track.startDate?datetime)!}</td>
     <td>${(track.endDate?datetime)!}</td>
+</tr>
+<tr>
+<td COLSPAN=5, WIDTH=1000>${(track.imagelinks)!}</td>
 </tr>
 </#list>
 </TABLE>

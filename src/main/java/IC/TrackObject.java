@@ -6,11 +6,12 @@ import java.util.ArrayList;
 import java.util.Date;
 @Data
 public class TrackObject {
-    String friendlyName;
-    Date startDate;
-    Date endDate;
-    Date trackDate;
-    Integer trackKey;
-    Integer placeCount=0;
-    ArrayList<Integer> points = new ArrayList<>();
+    private String friendlyName;
+    private Date startDate;
+    private Date endDate;
+    private Date trackDate;
+    private Integer trackKey;
+    private Integer placeCount=0;
+    private ArrayList<Integer> points = new ArrayList<>();
+    private String imagelinks;
 }

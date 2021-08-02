@@ -28,4 +28,5 @@ public class ReverseGeocodeObject {
     private Date endDate;
     private Date startDate;
     private Integer trackKey;
+    private String imagelinks;
 }

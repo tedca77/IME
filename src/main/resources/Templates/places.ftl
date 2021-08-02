@@ -1,6 +1,12 @@
 <html>
 <head>
   <title>Places identified by Grid Reference</title>
+    <style type="text/css">
+    .img {
+      border: 2px;
+      padding: 10px;
+    }
+    </style>
 </head>
 <body>
   <h1>Places identified in Photos</h1>
@@ -32,6 +38,9 @@
     <td>${(place.countPlace)!}</td>
     <td>${(place.startDate?datetime)!}</td>
     <td>${(place.endDate?datetime)!}</td>
+</tr>
+<tr>
+<td COLSPAN=11>${(place.imagelinks)!}</td>
 </tr>
 </#list>
 </TABLE>

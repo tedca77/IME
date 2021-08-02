@@ -24,5 +24,7 @@ public class ConfigObject {
     private ArrayList<String> stateprovince;
     private ArrayList<String> city;
     private ArrayList<String> sublocation;
+    private String imageextensions;
+    private String videoextensions;
 
 }
