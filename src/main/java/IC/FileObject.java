@@ -38,5 +38,6 @@ public class FileObject {
     String stateProvince;
     String thumbnail;
     String displayName;
+    Integer orientation;
 
 }

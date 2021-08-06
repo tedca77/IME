@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.icafe4j.image.meta.Metadata;
 import com.icafe4j.image.meta.MetadataEntry;
 import com.icafe4j.image.meta.MetadataType;
+import com.icafe4j.image.meta.adobe.IRB;
 import com.icafe4j.image.meta.exif.Exif;
 import com.icafe4j.image.meta.exif.ExifTag;
 
@@ -101,27 +102,17 @@ public class ImageCatalogue {
             {
                 message("NUMBER OF CAMERAS READ FROM CONFIG FILE:"+config.getCameras().size());
                 cameras=config.getCameras();
-                int i=1;
-                for(CameraObject c :cameras)
-                {
-                    c.setCamerakey(i);
-                    c.setCameracount(0);
-                    i++;
-                }
+                //sort in case there are gaps in numbering
+                cameras.sort(Comparator.comparing(o -> o.getCamerakey()));
             }
             if(config.getPlaces()!=null)
             {
                 message("NUMBER OF PLACES READ FROM CONFIG FILE:"+config.getPlaces().size());
                 geoObjects=config.getPlaces();
-                int i=1;
-                for(ReverseGeocodeObject r : geoObjects)
-                {
-                    r.setInternalKey(i);
-                    r.setCountPlace(0);
-                    i++;
-                }
-            }
+                //sort in case there are gaps in numbering
+                geoObjects.sort(Comparator.comparing(o -> o.getInternalKey()));
 
+            }
             for (DriveObject d : config.getDrives()) {
                 countDrive = 0;
                 countDriveTooSmall = 0;
@@ -134,8 +125,6 @@ public class ImageCatalogue {
                 message("Photos found on drive "+d.getStartdir()+" :" + countDrive );
                 message("Photos too small on drive "+d.getStartdir()+" :" + countDriveTooSmall );
                 message("Photos found on drive "+d.getStartdir()+" :" + countDriveGEOCODED );
-
-
             }
             // print out total number of photos if more than one drive...
             if(config.getDrives().size()>1) {
@@ -230,6 +219,14 @@ public class ImageCatalogue {
             troot.put( "tracks",tracks );
             ttemplate.process(troot, twriter);
             twriter.close();
+            //
+            //
+            Template tkmltemplate = cfg.getTemplate("trackkml.ftl");
+            FileWriter tkmlwriter = new FileWriter(tempDir+"/"+"track.kml");
+            Map<String, Object> tkmlroot = new HashMap<>();
+            tkmlroot.put( "tracks",tracks );
+            tkmltemplate.process(tkmlroot, tkmlwriter);
+            tkmlwriter.close();
             //
             Template ftemplate = cfg.getTemplate("photosbydate.ftl");
             FileWriter fwriter = new FileWriter(tempDir+"/"+"photosbydate.html");
@@ -349,17 +346,8 @@ public class ImageCatalogue {
                                             }
                                         }
                                         String thumbName = makeThumbName(file);
-                                        Boolean thumbResult=createThumbFromPicture(file, tempDir, thumbName, 400, 400);
-                                        if(thumbResult)
-                                        {
-                                            message("Created Thumbnail:" + thumbName);
-                                        }
-                                        else
-                                        {
-                                            message("Could not create Thumbnail:" + thumbName);
-                                            thumbName=null;
-                                        }
-                                        if(!updateMetadata(file, thumbName,config, drive))
+
+                                        if(!processFile(file, thumbName,config, drive))
                                         {
                                             message("Could not update metadata");
                                         }
@@ -459,6 +447,11 @@ public class ImageCatalogue {
         }
         return s;
     }
+    /**
+     * this adds some HTML for images to the Place object so we can incorporate into Freemarker report easily
+     * @param width - width of image
+     * @param root - directory where images will be
+     */
     public static void addLinksToPlaces(Integer width, String root)
     {
         for(ReverseGeocodeObject r : geoObjects)
@@ -468,13 +461,19 @@ public class ImageCatalogue {
             {
                 if(f.getPlaceKey().equals(r.getInternalKey()))
                 {
-                    s=s+"<img src=\"d://tempIC//"+f.getThumbnail()+"\" width=\"200\">";
+                    s=s+"<img src=\"d://tempIC//"+f.getThumbnail()+"\" width=\"200\" class=\"padding\" >";
                 }
             }
             r.setImagelinks(s);
         }
 
     }
+
+    /**
+     * this adds some HTML for images to the Track object so we can incorporate into Freemarker report easily
+     * @param width - width of image
+     * @param root - directory where images will be
+     */
     public static void addLinksToTracks(Integer width, String root)
     {
 
@@ -535,8 +534,17 @@ public class ImageCatalogue {
 
             }
         }
-        // we have not found a camera, so add a new one to the ArrayList
-        Integer newKey = cameras.size() + 1;
+        // we have not found a camera, so add a new one to the ArrayList -
+        // there may be gaps in numbering, so add one to the highest in the sorted list
+        Integer newKey;
+        if( cameras.size()==0)
+        {
+            newKey=1;
+        }
+        else
+        {
+            newKey=cameras.get(cameras.size()-1).getCamerakey()+1;
+        }
         CameraObject cNew = new CameraObject();
         cNew.setCamerakey(newKey);
         cNew.setCameramaker(make);
@@ -610,6 +618,7 @@ public class ImageCatalogue {
         Integer placeKey=0;
         Date startDate=null;
         Date endDate=null;
+        String coordinates="";
 
         ArrayList<Integer> points = new ArrayList<>();
         for(FileObject f : fileObjects)
@@ -620,6 +629,7 @@ public class ImageCatalogue {
             {
                 if(f.getPlaceKey()!=placeKey) {
                     points.add(f.getPlaceKey());
+                    coordinates=coordinates+f.getLongitude()+","+f.getLatitude()+","+f.getAltitude()+System.getProperty("line.separator");
                 }
                 endDate=f.getBestDate();
 
@@ -635,10 +645,15 @@ public class ImageCatalogue {
                     t.setEndDate(endDate);
                     t.setPlaceCount(points.size());
                     t.setTrackDate(lastDay);
+                    t.setCoordinates(coordinates);
+                    t.setStartAndEndPlace(getStartAndEndString(t));
                     tracks.add(t);
                 }
                 points = new ArrayList<>();
+                coordinates="";
                 points.add(f.getPlaceKey());
+                coordinates=f.getLongitude()+","+f.getLatitude()+","+f.getAltitude()+System.getProperty("line.separator");
+
                 startDate=f.getBestDate();
                 endDate=f.getBestDate();
                 lastDay=getDateWithoutTimeUsingCalendar(f.getBestDate());
@@ -657,26 +672,29 @@ public class ImageCatalogue {
             t.setEndDate(endDate);
             t.setPlaceCount(points.size());
             t.setTrackDate(lastDay);
+            t.setCoordinates(coordinates);
+            t.setStartAndEndPlace(getStartAndEndString(t));
             tracks.add(t);
         }
         return true;
     }
-    public static void message(String s)
+    public static void message(String messageString)
     {
         String str=" ";
-        if(s.length()>(messageLength-4)) {
-            System.out.println("* "+s.substring(0,messageLength-4)+" *");
-        }
-        else
-        {
-            int width=messageLength-(s.length()+4);
-            String ss= "* "+s+ " "+str.repeat(width);
-            if(ss.length()<messageLength)
-            {
-                ss=ss+"*";
-            }
-            System.out.println(ss);
 
+        String lines[] = messageString.split("\\R",-1);
+        for(String l: lines) {
+            if (l.length() > (messageLength - 4)) {
+                System.out.println("* " + l.substring(0, messageLength - 4) + " *");
+            } else {
+                int width = messageLength - (l.length() + 4);
+                String ss = "* " + l + " " + str.repeat(width);
+                if (ss.length() < messageLength) {
+                    ss = ss + "*";
+                }
+                System.out.println(ss);
+
+            }
         }
     }
 
@@ -805,7 +823,33 @@ public class ImageCatalogue {
 
 
     }
+    private static String getStartAndEndString(TrackObject t)
+    {
+        String s="";
+        if(t.getPoints().size()==1)
+        {
+            return getPlace(t.getPoints().get(0)).getDisplay_name();
+        }
+        else
+        {
+            return getPlace(t.getPoints().get(0)).getDisplay_name()+
+                    " to "+
+                    getPlace(t.getPoints().get(t.getPoints().size()-1)).getDisplay_name();
 
+        }
+    }
+    private static ReverseGeocodeObject getPlace(Integer i)
+    {
+        for(ReverseGeocodeObject r : geoObjects)
+        {
+            if(r.getInternalKey().equals(i))
+            {
+                return r;
+            }
+        }
+        message("Error -could not retrieve Place with a key of:"+i);
+        return null;
+    }
     private static String getTagValueString(final JpegImageMetadata jpegMetadata,
                                             final TagInfo tagInfo) {
         final TiffField field = jpegMetadata.findEXIFValueWithExactMatch(tagInfo);
@@ -813,6 +857,21 @@ public class ImageCatalogue {
             return "";
         } else {
             return field.getValueDescription().replace(", ", "");
+        }
+    }
+    private static Integer getTagValueInteger(final JpegImageMetadata jpegMetadata,
+                                            final TagInfo tagInfo) {
+        final TiffField field = jpegMetadata.findEXIFValueWithExactMatch(tagInfo);
+        if (field == null) {
+            return null;
+        } else {
+            try {
+                return field.getIntValue();
+            }
+            catch(Exception e)
+            {
+                return 1;
+            }
         }
     }
     private static double getTagValueDouble(final JpegImageMetadata jpegMetadata,
@@ -867,7 +926,7 @@ public class ImageCatalogue {
         }
     }
 
-    public static Boolean updateMetadata(File file, String thumbName,ConfigObject config, DriveObject drive) {
+    public static Boolean processFile(File file, String thumbName,ConfigObject config, DriveObject drive) {
         String make = "";
         String model = "";
         String programName = "";
@@ -885,6 +944,7 @@ public class ImageCatalogue {
         Date lastModifiedDate = null;
         Date createdDate = null;
         Date lastAccessDate = null;
+        Integer orientation=1;
 
         try {
             BasicFileAttributes attr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
@@ -900,7 +960,8 @@ public class ImageCatalogue {
         // Create a TIFF EXIF wrapper
         IPTC iptc = new IPTC();
         JpegExif exif = new JpegExif();
-        List<String> existingComments = new ArrayList<String>();
+        List<String> existingComments=null;
+        ArrayList<String> existingCommentsString=new ArrayList<>();
         try {
             Map<MetadataType, Metadata> metadataMap = Metadata.readMetadata(file.getPath());
             for (Map.Entry<MetadataType, Metadata> entry : metadataMap.entrySet()) {
@@ -911,7 +972,12 @@ public class ImageCatalogue {
                 } else if (meta instanceof Exif) {
                     exif=(JpegExif)meta;
                 } else if (meta instanceof Comments) {
-                    existingComments = ((Comments) meta).getComments();
+                    existingComments = (((Comments) meta).getComments());
+                    for(String s : existingComments)
+                    {
+                        existingCommentsString.add(s);
+
+                    }
 
                 } else if (meta instanceof IPTC) {
                     String city = "";
@@ -1007,6 +1073,7 @@ public class ImageCatalogue {
                 model = getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL);
                 fStop = getTagValueDouble(jpegMetadata, ExifTagConstants.EXIF_TAG_FNUMBER);
                 programName = getStringOrUnknown(jpegMetadata, ExifTagConstants.EXIF_TAG_SOFTWARE);
+                orientation=getTagValueInteger(jpegMetadata, TiffTagConstants.TIFF_TAG_ORIENTATION);
 
               //  dimensions = getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL);
                 exifOriginalDate =getTagValueDate(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
@@ -1050,6 +1117,16 @@ public class ImageCatalogue {
             bestDate = getFileDate(file);
         }
         Integer cameraKey = addCamera(make, model, bestDate);
+        Boolean thumbResult=createThumbFromPicture(file, config.getTempdir(), thumbName, 400, 400,orientation);
+        if(thumbResult)
+        {
+            message("Created Thumbnail:" + thumbName);
+        }
+        else
+        {
+            message("Could not create Thumbnail:" + thumbName);
+            thumbName=null;
+        }
         FileObject fNew = new FileObject();
         fNew.setCameraKey(cameraKey);
         fNew.setCameraMaker(make);
@@ -1095,7 +1172,17 @@ public class ImageCatalogue {
 
                 if (g != null) {
                     message("Adding a new Place:["+(geoObjects.size() + 1) +"]" + g.getDisplay_name());
-                    g.setInternalKey(geoObjects.size() + 1);
+                    // there may be gaps in numbering, so add one to the highest in the sorted list
+                    Integer newKey;
+                    if( geoObjects.size()==0)
+                    {
+                        newKey=1;
+                    }
+                    else
+                    {
+                        newKey=geoObjects.get(geoObjects.size()-1).getInternalKey()+1;
+                    }
+                    g.setInternalKey(newKey);
                     g.setEndDate(bestDate);
                     g.setStartDate(bestDate);
                     geoObjects.add(g);
@@ -1146,7 +1233,9 @@ public class ImageCatalogue {
 
                 iptc.addDataSets(iptcs);
                 metaList.add(iptc);
-                //  metaList.add(new Comments(Arrays.asList("comment 1","Comment2")));
+                existingCommentsString.add("This is new comment:");
+
+                metaList.add(new Comments(existingCommentsString));
                 Metadata.insertMetadata(metaList, fin, fout);
                 fin.close();
                 fout.close();
@@ -1189,26 +1278,40 @@ public class ImageCatalogue {
             for (Map.Entry<MetadataType, Metadata> entry : metadataMap.entrySet()) {
                 Metadata meta = entry.getValue();
                 if (meta instanceof XMP) {
-                    XMP.showXMP((XMP) meta);
+                  XMP.showXMP((XMP) meta);
 
+                } else if (meta instanceof IRB) {
+                    for (MetadataEntry item : meta) {
+                        printMetadata(item,"IRB - "+ item.getKey()+":","    ");
+                    }
+                } else if (meta instanceof ImageMetadata) {
+                    for (MetadataEntry item : meta) {
+                        printMetadata(item,"Image metadata - "+ item.getKey()+":","    ");
+                    }
                 } else if (meta instanceof Exif) {
                     JpegExif exif=(JpegExif)meta;
 
-                    message("Windows Author:"+exif.getAsString(ExifTag.WINDOWS_XP_AUTHOR));
-                    message("Windows Comment:"+exif.getAsString(ExifTag.WINDOWS_XP_COMMENT));
-                    message("Windows Keywords:"+exif.getAsString(ExifTag.WINDOWS_XP_KEYWORDS));
-                    message("Windows Title:"+exif.getAsString(ExifTag.WINDOWS_XP_TITLE));
-                    message("Windows Subject:"+exif.getAsString(ExifTag.WINDOWS_XP_SUBJECT));
-                    message("User Comment:"+exif.getAsString(ExifTag.USER_COMMENT));
-                    message("Subject Location:"+exif.getAsString(ExifTag.SUBJECT_LOCATION));
+                    for (MetadataEntry item : meta) {
+                       printMetadata(item,"JpegExif - "+ item.getKey()+":","    ");
+                    }
 
                 } else if (meta instanceof IPTC) {
                     for (MetadataEntry item : meta) {
-                        message("IPTC iterator:" + item.getKey() + item.getValue());
+                       printMetadata(item,"IPTC - "+ item.getKey()+":","    ");
                     }
+                } else if (meta instanceof Comments) {
+                    List<String> existingComments = new ArrayList<String>();
+                    existingComments = ((Comments) meta).getComments();
+                    int count=1;
+                    for(String s : existingComments)
+                    {
+                        message("Comments["+count+"]:" + s);
+                        count++;
+                    }
+
                 } else {
                     for (MetadataEntry item : entry.getValue()) {
-                        printMetadata(item, "", "     ");
+                        printMetadata(item, "Other - "+item.getKey()+":", "     ");
                     }
                 }
             }
@@ -1237,6 +1340,7 @@ public class ImageCatalogue {
                 message("file: " + file.getPath());
                 printTagValue(jpegMetadata,  TiffTagConstants.TIFF_TAG_IMAGE_DESCRIPTION);
                 printTagValue(jpegMetadata,  TiffTagConstants.TIFF_TAG_DOCUMENT_NAME);
+                printTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_ORIENTATION);
                 printTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_XRESOLUTION);
                 printTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_DATE_TIME);
                 printTagValue(jpegMetadata,

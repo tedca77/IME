@@ -7,6 +7,9 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
+import static org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants.ORIENTATION_VALUE_ROTATE_270_CW;
+import static org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants.ORIENTATION_VALUE_ROTATE_90_CW;
+
 public class ImageProcessing {
     //Below is the Code (which will convert PPM(byte array to Buffered image and you can save buffered image to the file)
 
@@ -104,7 +107,7 @@ public class ImageProcessing {
         g2.dispose();
         return resizedImg;
     }
-    public static Boolean createThumbFromPicture(File file,String tempDir,String thumbName,Integer width,Integer height)
+    public static Boolean createThumbFromPicture(File file,String tempDir,String thumbName,Integer width,Integer height,Integer orientation)
     {
         String newName="";
         BufferedImage img = null;
@@ -131,6 +134,14 @@ public class ImageProcessing {
                 newName=ImageConversion.convertNonJPGFormats(file,tempDir);
                 img = ImageIO.read(new File(tempDir+"/"+newName));
                 imgThumb= ImageProcessing.getScaledImage(img,width,height);
+            }
+            if(orientation.equals( ORIENTATION_VALUE_ROTATE_90_CW))
+            {
+
+            }
+            else if(orientation.equals(ORIENTATION_VALUE_ROTATE_270_CW))
+            {
+
             }
             File outputfile = new File(tempDir+"/"+thumbName);
             ImageIO.write(imgThumb, "jpg", outputfile);

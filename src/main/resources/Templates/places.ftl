@@ -2,9 +2,10 @@
 <head>
   <title>Places identified by Grid Reference</title>
     <style type="text/css">
-    .img {
-      border: 2px;
-      padding: 10px;
+    .img padding{
+      border: 20px;
+      padding-left: 20px;
+       padding-right: 20px;
     }
     </style>
 </head>
