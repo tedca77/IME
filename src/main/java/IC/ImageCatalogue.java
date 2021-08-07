@@ -74,7 +74,7 @@ public class ImageCatalogue {
     static double cacheDistance=0.001d;
     /**
      * Main Method for the program - arguments passes as Java arguments..
-     * @param args
+     * @param args - name of the json file
      */
     public static void main(String[] args) {
         ConfigObject config;
@@ -86,7 +86,7 @@ public class ImageCatalogue {
             String result = Files.readString(fileName);
             config = mapper.readValue(result, ConfigObject.class);
             //
-            config=setDefaults(config);
+            setDefaults(config);
             messageLine("*");
             if(config.getUpdate()) {
                 message("FILES WILL BE UPDATED");
@@ -103,14 +103,14 @@ public class ImageCatalogue {
                 message("NUMBER OF CAMERAS READ FROM CONFIG FILE:"+config.getCameras().size());
                 cameras=config.getCameras();
                 //sort in case there are gaps in numbering
-                cameras.sort(Comparator.comparing(o -> o.getCamerakey()));
+                cameras.sort(Comparator.comparing(CameraObject::getCamerakey));
             }
             if(config.getPlaces()!=null)
             {
                 message("NUMBER OF PLACES READ FROM CONFIG FILE:"+config.getPlaces().size());
                 geoObjects=config.getPlaces();
                 //sort in case there are gaps in numbering
-                geoObjects.sort(Comparator.comparing(o -> o.getInternalKey()));
+                geoObjects.sort(Comparator.comparing(ReverseGeocodeObject::getInternalKey));
 
             }
             for (DriveObject d : config.getDrives()) {
@@ -134,7 +134,7 @@ public class ImageCatalogue {
                 message("All Drives - " + "Photos found:" + countGEOCODED);
             }
             // sort any ArrayLists....
-            fileObjects.sort(Comparator.comparing(o -> o.getBestDate()));
+            fileObjects.sort(Comparator.comparing(FileObject::getBestDate));
             addLinksToPlaces(200,"d://tempIC//");
             //create tracks - this will also update the geoObjects
             if(!createTracks())
