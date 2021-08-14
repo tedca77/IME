@@ -60,6 +60,8 @@ public class ImageCatalogue {
     static int countTooSmall = 0;
     static int countFromMake = 0;
     static int countGEOCODED = 0;
+    static int countErrors = 0;
+
     static int countDrive = 0;
     static int countDriveTooSmall = 0;
     static int countDriveGEOCODED = 0;
@@ -77,71 +79,46 @@ public class ImageCatalogue {
      * @param args - name of the json file
      */
     public static void main(String[] args) {
-        ConfigObject config;
+        ConfigObject config=null;
+        Path fileName=null;
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm ss");
-            mapper.setDateFormat(df);
-            Path fileName = Path.of(args[0]);
-            String result = Files.readString(fileName);
-            config = mapper.readValue(result, ConfigObject.class);
-            //
-            setDefaults(config);
-            messageLine("*");
-            if(config.getUpdate()) {
-                message("FILES WILL BE UPDATED");
-            }
-            //
-            if(config.getShowmetadata()) {
-                message("METADATA WILL BE SHOWN BEFORE AND AFTER UPDATING");
-            }
-            if(config.getOverwrite()) {
-                message("EXISTING METADATA WILL BE OVERWRITTEN");
-            }
-            if(config.getCameras()!=null)
+            if(FilenameUtils.getExtension(args[0]).toLowerCase().equals("json"))
             {
-                message("NUMBER OF CAMERAS READ FROM CONFIG FILE:"+config.getCameras().size());
-                cameras=config.getCameras();
-                //sort in case there are gaps in numbering
-                cameras.sort(Comparator.comparing(CameraObject::getCamerakey));
+                fileName = Path.of(args[0]);
+                config = readConfig(args[0]);
             }
-            if(config.getPlaces()!=null)
+            else
             {
-                message("NUMBER OF PLACES READ FROM CONFIG FILE:"+config.getPlaces().size());
-                geoObjects=config.getPlaces();
-                //sort in case there are gaps in numbering
-                geoObjects.sort(Comparator.comparing(ReverseGeocodeObject::getInternalKey));
+                message("No json file present - requiring two directories");
+                if(args.length==2) {
+                    config = new ConfigObject();
+                }
+                else
+                {
+                    message("Please provide two arguments, for the Root directory for searching and the temporary output directory");
+                }
 
             }
-            for (DriveObject d : config.getDrives()) {
-                countDrive = 0;
-                countDriveTooSmall = 0;
-                countDriveGEOCODED = 0;
-                message("Starting - drive"+d.getStartdir());
-                createTempDirForUser(config.getTempdir());
-                //recursively find all files
-                readDirectoryContents(new File(d.getStartdir()), d, config.getTempdir(), config);
-                messageLine("-");
-                message("Photos found on drive "+d.getStartdir()+" :" + countDrive );
-                message("Photos too small on drive "+d.getStartdir()+" :" + countDriveTooSmall );
-                message("Photos found on drive "+d.getStartdir()+" :" + countDriveGEOCODED );
-            }
-            // print out total number of photos if more than one drive...
-            if(config.getDrives().size()>1) {
-                messageLine("*");
-                message("All Drives -" + "Photos found:" + count);
-                message("All Drives - " + "Photos too small:" + countTooSmall);
-                message("All Drives - " + "Photos found:" + countGEOCODED);
-            }
+            //
+            setDefaults(config);
+
+            messageLine("*");
+            //this prints out the main options
+            displayDefaults(config);
+            // set the ArrayLists with values from the config file
+            readConfigLists(config);
+            readDrives(config);
+
+
             // sort any ArrayLists....
             fileObjects.sort(Comparator.comparing(FileObject::getBestDate));
-            addLinksToPlaces(200,"d://tempIC//");
+            addLinksToPlaces(200,config.getTempdir());
             //create tracks - this will also update the geoObjects
             if(!createTracks())
             {
                 message("Failed to create tracks");
             }
-            addLinksToTracks(200,"d://tempIC//");
+            addLinksToTracks(200,config.getTempdir());
             //sets config object with new values
             config.setCameras(cameras);
             config.setPhotos(fileObjects);
@@ -159,13 +136,37 @@ public class ImageCatalogue {
             {
                 message("Failed to export HTML");
             }
+            // print out total number of photos if more than one drive...
+            if(config.getDrives().size()>1) {
+                messageLine("*");
+                message("All Drives -" + "Photos found:" + count);
+                message("All Drives - " + "Photos too small:" + countTooSmall);
+                message("All Drives - " + "Photos geocoded on drive:" + countGEOCODED);
+                message("All Drives - " + "Errors in processing:" + countErrors);
+            }
 
         } catch (Exception e) {
             message("Error reading json file " + e);
         }
 
     }
+    public static ConfigObject readConfig(String configFile)
+    {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm ss");
+            mapper.setDateFormat(df);
+            Path fileName = Path.of(configFile);
+            String result = Files.readString(fileName);
+            return mapper.readValue(result, ConfigObject.class);
+        }
+        catch(Exception e)
+        {
+            message("Failed to read JSON config file"+e);
+            return null;
+        }
 
+    }
     /**
      * Sets the defaults if the values are not in the JSON
      * @param config - passes ConfigObject
@@ -232,6 +233,7 @@ public class ImageCatalogue {
             FileWriter fwriter = new FileWriter(tempDir+"/"+"photosbydate.html");
             Map<String, Object> froot = new HashMap<>();
             froot.put( "photos",fileObjects );
+            froot.put("root",tempDir);
             ftemplate.process(froot, fwriter);
             twriter.close();
 
@@ -240,7 +242,20 @@ public class ImageCatalogue {
         }
         return true;
     }
-
+    public static void displayDefaults(ConfigObject c)
+    {
+        if(c.getUpdate()) {
+            message("FILES WILL BE UPDATED");
+        }
+        //
+        if(c.getShowmetadata()) {
+            message("METADATA WILL BE SHOWN BEFORE AND AFTER UPDATING");
+        }
+        if(c.getOverwrite()) {
+            message("EXISTING METADATA WILL BE OVERWRITTEN");
+        }
+         return;
+    }
     /**
      * Exports JSON config file with new lists of objects included.  File is same as input file but with date and time added.
      * @param c - config opbject
@@ -349,7 +364,8 @@ public class ImageCatalogue {
 
                                         if(!processFile(file, thumbName,config, drive))
                                         {
-                                            message("Could not update metadata");
+                                            countErrors++;
+                                            message("Could not process file:"+file.getCanonicalPath());
                                         }
                                         if(config.getShowmetadata()) {
                                             if (!readMetadata(file)) {
@@ -367,7 +383,7 @@ public class ImageCatalogue {
                             }
                         }
                     } catch (Exception ee) {
-                        message("Cannot read directory:" + file.getCanonicalPath()+"Error:"+ee);
+                        message("Error reading files:" + file.getCanonicalPath()+"Error:"+ee);
                     }
                 }
             }
@@ -459,9 +475,14 @@ public class ImageCatalogue {
             String s= "";
             for(FileObject f: fileObjects)
             {
-                if(f.getPlaceKey().equals(r.getInternalKey()))
+                try {
+                    if (f.getPlaceKey().equals(r.getInternalKey())) {
+                        s = s + "<img src=\"" + root + "\\" + f.getThumbnail() + "\" width=\"200\" class=\"padding\" >";
+                    }
+                }
+                catch(Exception e)
                 {
-                    s=s+"<img src=\"d://tempIC//"+f.getThumbnail()+"\" width=\"200\" class=\"padding\" >";
+                    message("error adding links to decoding:"+f.getDisplayName()+e);
                 }
             }
             r.setImagelinks(s);
@@ -476,21 +497,39 @@ public class ImageCatalogue {
      */
     public static void addLinksToTracks(Integer width, String root)
     {
-
-        // for each track
+        ArrayList<Integer> usedPoints = new ArrayList<>();
+        // for each track, get all the photos for the day, as some may not have location...and
+        // they could be slotted in, in sequence (i.e. date order)
         for(TrackObject t : tracks) {
             String s = "";
-            // we have a list of points...
-            for (Integer i : t.getPoints()) {
-
-                for (FileObject f : fileObjects) {
-                    if (f.getPlaceKey().equals(i)) {
-                        s = s + "<img src=\"d://tempIC//" + f.getThumbnail() + "\" width=\"200\">";
-                    }
-                }
+                    for (FileObject f : fileObjects) {
+                        try {
+                            if (getDateWithoutTimeUsingCalendar(f.getBestDate()).equals(t.getTrackDate())) {
+                                s = s + "<img src=\"" + root + "\\" + f.getThumbnail() + "\" width=\"200\">";
+                            }
+                        } catch (Exception e) {
+                            message("error adding links to tracks:" + f.getDisplayName() + e);
+                        }
             }
             t.setImagelinks(s);
         }
+    }
+    public static void addTrack(ArrayList<Integer> points, Date startDate,Date endDate, Date trackDay,String coordinates)
+    {
+        // write out track
+        if(points.size()>0) {
+            TrackObject t = new TrackObject();
+            t.setPoints(points);
+            t.setTrackKey(tracks.size() + 1);
+            t.setStartDate(startDate);
+            t.setEndDate(endDate);
+            t.setPlaceCount(points.size());
+            t.setTrackDate(trackDay);
+            t.setCoordinates(coordinates);
+            t.setStartAndEndPlace(getStartAndEndString(t));
+            tracks.add(t);
+        }
+
     }
     /**
      * Adds a new camera if it does not exist in the array and sets start and end date
@@ -627,55 +666,42 @@ public class ImageCatalogue {
             Date d= getDateWithoutTimeUsingCalendar(f.getBestDate());
             if(d.equals(lastDay))
             {
-                if(f.getPlaceKey()!=placeKey) {
-                    points.add(f.getPlaceKey());
-                    coordinates=coordinates+f.getLongitude()+","+f.getLatitude()+","+f.getAltitude()+System.getProperty("line.separator");
+                if(f.getPlaceKey()!=null) {
+                    if (f.getPlaceKey() != placeKey) {
+                        points.add(f.getPlaceKey());
+                        coordinates = coordinates + f.getLongitude() + "," + f.getLatitude() + "," + f.getAltitude() + System.getProperty("line.separator");
+                        placeKey=f.getPlaceKey();
+                    }
+                }
+                else
+                {
+                    // if place is null, we want to ensure that next place is identified
+                    placeKey=-1;
                 }
                 endDate=f.getBestDate();
-
             }
             else
             {
-                // write out track
-                if(points.size()>0) {
-                    TrackObject t = new TrackObject();
-                    t.setPoints(points);
-                    t.setTrackKey(tracks.size() + 1);
-                    t.setStartDate(startDate);
-                    t.setEndDate(endDate);
-                    t.setPlaceCount(points.size());
-                    t.setTrackDate(lastDay);
-                    t.setCoordinates(coordinates);
-                    t.setStartAndEndPlace(getStartAndEndString(t));
-                    tracks.add(t);
-                }
+                addTrack(points,startDate,endDate,lastDay,coordinates);
                 points = new ArrayList<>();
                 coordinates="";
-                points.add(f.getPlaceKey());
-                coordinates=f.getLongitude()+","+f.getLatitude()+","+f.getAltitude()+System.getProperty("line.separator");
-
+                if(f.getPlaceKey()!=null) {
+                    points.add(f.getPlaceKey());
+                    coordinates = f.getLongitude() + "," + f.getLatitude() + "," + f.getAltitude() + System.getProperty("line.separator");
+                    placeKey=f.getPlaceKey();
+                }
+                else
+                {
+                    placeKey=-1;
+                }
                 startDate=f.getBestDate();
                 endDate=f.getBestDate();
                 lastDay=getDateWithoutTimeUsingCalendar(f.getBestDate());
-                placeKey=f.getPlaceKey();
 
             }
-
-
         }
-        // write out track
-        if(points.size()>0) {
-            TrackObject t = new TrackObject();
-            t.setPoints(points);
-            t.setTrackKey(tracks.size() + 1);
-            t.setStartDate(startDate);
-            t.setEndDate(endDate);
-            t.setPlaceCount(points.size());
-            t.setTrackDate(lastDay);
-            t.setCoordinates(coordinates);
-            t.setStartAndEndPlace(getStartAndEndString(t));
-            tracks.add(t);
-        }
+        // write out last track
+        addTrack(points,startDate,endDate,lastDay,coordinates);
         return true;
     }
     public static void message(String messageString)
@@ -706,6 +732,32 @@ public class ImageCatalogue {
     {
          String ss= s.repeat(messageLength);
          System.out.println(ss);
+    }
+    public static void readConfigLists(ConfigObject c)
+    {
+        if(c.getCameras()!=null)
+        {
+            message("NUMBER OF CAMERAS READ FROM CONFIG FILE:"+c.getCameras().size());
+            cameras=c.getCameras();
+            //sort in case there are gaps in numbering
+            cameras.sort(Comparator.comparing(CameraObject::getCamerakey));
+            for(CameraObject cc : cameras)
+            {
+                cc.setCameracount(0);
+            }
+        }
+        if(c.getPlaces()!=null)
+        {
+            message("NUMBER OF PLACES READ FROM CONFIG FILE:"+c.getPlaces().size());
+            geoObjects=c.getPlaces();
+            //sort in case there are gaps in numbering
+            geoObjects.sort(Comparator.comparing(ReverseGeocodeObject::getInternalKey));
+            for(ReverseGeocodeObject g : geoObjects)
+            {
+                g.setCountPlace(0);
+            }
+        }
+
     }
     /**
      * Makes a thumbnail name replacing slashes and colon with underscores - as we need to create a valid file name
@@ -1187,6 +1239,7 @@ public class ImageCatalogue {
                     g.setStartDate(bestDate);
                     geoObjects.add(g);
                 } else {
+                    fNew.setDisplayName("Could not reverse goecode Lat,Long data");
                     message("Could not geocode :Lat" + latitude + ", Long:" + longitude);
                 }
             }
@@ -1212,7 +1265,7 @@ public class ImageCatalogue {
                 iptcs.add(new IPTCDataSet(IPTCApplicationTag.PROVINCE_STATE, fNew.getStateProvince()));
             }
         } else {
-            fNew.setDisplayName("location not found");
+            fNew.setDisplayName("No Lat and Long date found");
         }
 
         //     List<IPTCDataSet> iptcs =  new ArrayList<IPTCDataSet>();
@@ -1442,6 +1495,23 @@ public class ImageCatalogue {
         return true;
 
 
+    }
+    public static void readDrives(ConfigObject c)
+    {
+        for (DriveObject d : c.getDrives()) {
+            countDrive = 0;
+            countDriveTooSmall = 0;
+            countDriveGEOCODED = 0;
+            message("Starting - drive"+d.getStartdir());
+            createTempDirForUser(c.getTempdir());
+            //recursively find all files
+            readDirectoryContents(new File(d.getStartdir()), d, c.getTempdir(), c);
+            messageLine("-");
+            message("Photos found on drive "+d.getStartdir()+" :" + countDrive );
+            message("Photos too small on drive "+d.getStartdir()+" :" + countDriveTooSmall );
+            message("Photos geocoded on drive "+d.getStartdir()+" :" + countDriveGEOCODED );
+        }
+        return;
     }
     // This method is for testing only
     private static Exif populateExif(Exif exif)  {
