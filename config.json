@@ -3,7 +3,7 @@
     "drives": [
 
         {
-        "startdir": "R:\\Our Photos 2021\\Test",
+        "startdir": "C:\\Users\\tedca\\OneDrive\\Pictures",
         "iptccopyright": "Ted Carroll, Copyright",
         "iptccategory": "Home photos",
         "iptckeywords": "Home; photos",
@@ -11,98 +11,8 @@
           "directories": [
             {
               "name": "Audacity"
-            },
-            {
-              "name": "Work Dump\\Visual Studio 2013_old"
-            },
-            {
-              "name": "Work Resources\\Capgemini"
-            },
-            {
-              "name": "Tomcat 8.5"
-            },
-            {
-              "name": "Program Files\\Java"
-            },
-            {
-              "name": "Windows"
-            },
-            {
-              "name": "Ted\\Documents\\Visual Studio 2013"
-            },
-            {
-              "name": "Ted\\Documents\\Family Tree Maker"
-            },
-            {
-              "name": "Place3"
-            },
-            {
-              "name": "Python27"
-            },
-            {
-              "name": "Place2"
-            },
-            {
-              "name": "Program Files (x86)"
-            },
-            {
-              "name": "VisualStudio2013"
-            },
-            {
-              "name": ".pnpm-store"
-            },
-            {
-              "name": "AppData"
-            },
-            {
-              "name": "apache-tomcat-8.0.21"
-            },
-            {
-              "name": "Apache-8.5.46"
-            },
-            {
-              "name": "CDBurnerXP"
-            },
-            {
-              "name": "atf"
-            },
-            {
-              "name": "adobe"
-            },
-            {
-              "name": "Eclipse"
-            },
-            {
-              "name": "eclipse-workspace"
-            },
-            {
-              "name": "Eclipseoxygen"
-            },
-            {
-              "name": "FamilyTreeMaker"
-            },
-            {
-              "name": "git_old"
-            },
-            {
-              "name": "Lightroom2"
-            },
-            {
-              "name": "More Software"
-            },
-            {
-              "name": "MusicBee"
-            },
-            {
-              "name": "Motor18"
-            },
-            {
-              "name": "motor18download"
             }
-            ,
-            {
-              "name": "$RECYCLE.BIN"
-            }
+
           ]
           ,
           "fileprefixes": [
@@ -136,11 +46,10 @@
       "cameracount": 25
     }
   ],
-    "tempdir": "D:\\tempIC",
+    "tempdir": "C:\\Users\\tedca\\tempIC",
     "cryptokey": "crypto key",
     "openmapkey": "open map key",
-    "showmetadata": true,
-    "update": true,
+    "update": false,
     "minfilesize": "10000",
     "thumbsize": "480x600",
     "isocountrycode": ["country_code"],

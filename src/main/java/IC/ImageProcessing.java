@@ -119,8 +119,14 @@ public class ImageProcessing {
             catch(Exception e2)
             {
                 // will create a file that can be used for getting a thumbnail
-                newName=ImageConversion.convertNonJPGFormats(file,tempDir);
-                img = ImageIO.read(file);
+                try {
+                    newName = ImageConversion.convertNonJPGFormats(file, tempDir);
+                    img = ImageIO.read(file);
+                }
+                catch(Exception e)
+                {
+                    return false;
+                }
             }
             BufferedImage imgThumb=null;
             try
@@ -130,10 +136,17 @@ public class ImageProcessing {
             }
             catch(Exception e)
             {
-                System.out.println("Error converting image for thumbnail thumbnamil"+e);
-                newName=ImageConversion.convertNonJPGFormats(file,tempDir);
-                img = ImageIO.read(new File(tempDir+"/"+newName));
-                imgThumb= ImageProcessing.getScaledImage(img,width,height);
+                try {
+                    System.out.println("Error converting image for thumbnail thumbnamil" + e);
+                    newName = ImageConversion.convertNonJPGFormats(file, tempDir);
+                    img = ImageIO.read(new File(tempDir + "/" + newName));
+                    imgThumb = ImageProcessing.getScaledImage(img, width, height);
+                }
+                catch(Exception ee)
+                {
+                    System.out.println("Cannot create thumb for non jPEG formats"+ee);
+                    return false;
+                }
             }
             if(orientation.equals( ORIENTATION_VALUE_ROTATE_90_CW))
             {
@@ -150,7 +163,8 @@ public class ImageProcessing {
 
             return true;
 
-        } catch (IOException e) {
+        } catch (Exception e) {
+            System.out.println("Failed to create thumbnail"+e);
             return false;
         }
     }

@@ -20,7 +20,15 @@
 <#list photos as photo>
 <tr>
     <td>${(photo.fileKey)!}</td>
-    <td><img src="d://tempIC//${(photo.thumbnail)!}" width="200"></td>
+    <td>
+
+    <#assign test = "${(photo.thumbnail)!}">
+    <#if test?has_content>
+        <img src="${root}//${(photo.thumbnail)!}" width="200">
+    <#else>
+       No thumbnail
+    </#if>
+    </td>
     <td>${(photo.fileName)!}</td>
     <td>${(photo.subLocation)!}</td>
     <td>${(photo.city)!}</td>

@@ -17,6 +17,7 @@ public class ConfigObject {
     private ArrayList<DriveObject> drives;
     private ArrayList<CameraObject> cameras;
     private ArrayList<ReverseGeocodeObject> places;
+    private ArrayList<EventObject> events;
     private ArrayList<FileObject> photos;
     private ArrayList<TrackObject> tracks;
     private ArrayList<String> isocountrycode;
