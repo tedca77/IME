@@ -2,12 +2,10 @@
 <head>
   <title>Places identified by Grid Reference</title>
     <style type="text/css">
-    .img padding{
-      border: 20px;
-      padding-left: 20px;
-       padding-right: 20px;
-    }
-    </style>
+        .padding{
+         padding:2px 10px 2px 2px;
+        }
+        </style>
 </head>
 <body>
   <h1>Places identified in Photos</h1>
@@ -41,7 +39,7 @@
     <td>${(place.endDate?datetime)!}</td>
 </tr>
 <tr>
-<td COLSPAN=11>${(place.imagelinks)!}</td>
+<td COLSPAN=11 WIDTH=1000>${(place.imagelinks)!}</td>
 </tr>
 </#list>
 </TABLE>

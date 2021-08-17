@@ -7,9 +7,7 @@ import java.util.ArrayList;
 @Data
 public class ConfigObject {
     private String tempdir;
-    private String cryptokey;
-    private String openmapkey;
-    private String minfilesize;
+    private Long minfilesize;
     private Boolean update;
     private Boolean showmetadata;
     private Boolean overwrite;

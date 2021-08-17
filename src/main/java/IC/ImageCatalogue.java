@@ -69,14 +69,22 @@ public class ImageCatalogue {
     static ArrayList<FileObject> fileObjects = new ArrayList<>();
     static ArrayList<ReverseGeocodeObject> geoObjects = new ArrayList<>();
     static ArrayList<TrackObject> tracks = new ArrayList<>();
-    // Variables - that can be modified..
+    // Default Variables - that can be modified..
     static int messageLength=160; //length of Console Message
     static String videoDefaults="mp4~mp4a";
     static String imageDefaults="jpg~jpeg~bmp";
+    static String jsonDefault="config.json";
+    static Long minFileSizeDefault=4000L;
+    static String thumbSizeDefault="480x600";
+    static ArrayList<String> isocountryDefault=new ArrayList<>(Arrays.asList("country_code"));
+    static ArrayList<String> countryDefault=new ArrayList<>(Arrays.asList("country"));
+    static ArrayList<String> stateprovinceDefault=new ArrayList<>(Arrays.asList("county"));
+    static ArrayList<String> cityDefault=new ArrayList<>(Arrays.asList("town","city","village"));
+    static ArrayList<String> sublocationDefault=new ArrayList<>(Arrays.asList("house_number","road","hamlet","suburb"));
     static double cacheDistance=0.001d;
     /**
      * Main Method for the program - arguments passes as Java arguments..
-     * @param args - name of the json file
+     * @param args - either single json file or two files, first one is root directory and second is output file
      */
     public static void main(String[] args) {
         ConfigObject config=null;
@@ -90,17 +98,18 @@ public class ImageCatalogue {
             else
             {
                 message("No json file present - requiring two directories");
-                if(args.length==2) {
+                if(args.length>1) {
                     config = new ConfigObject();
+                    setDrives(config,args[0],args[1]);
+                    fileName=Path.of(args[1]+"\\"+jsonDefault);
                 }
                 else
                 {
-                    message("Please provide two arguments, for the Root directory for searching and the temporary output directory");
+                    message("Please provide at least two arguments, for the Root directory for searching and the temporary output directory");
                 }
-
             }
             //
-            setDefaults(config);
+            setDefaults(config,args);
 
             messageLine("*");
             //this prints out the main options
@@ -150,6 +159,12 @@ public class ImageCatalogue {
         }
 
     }
+
+    /**
+     * Reads a Config File
+     * @param configFile - filenamee
+     * @return - config object
+     */
     public static ConfigObject readConfig(String configFile)
     {
         try {
@@ -172,13 +187,37 @@ public class ImageCatalogue {
      * @param config - passes ConfigObject
      * @return - returns modified ConfigObject
      */
-    public static ConfigObject setDefaults(ConfigObject config)
+    public static ConfigObject setDefaults(ConfigObject config,String[] args)
     {
+        if(config.getMinfilesize()==null){config.setMinfilesize(minFileSizeDefault);}
+        if(config.getThumbsize()==null){config.setThumbsize(thumbSizeDefault);}
+        // sets the defaults
         if(config.getUpdate()==null){config.setUpdate(false);}
         if(config.getShowmetadata()==null) {config.setShowmetadata(false);}
         if(config.getOverwrite()==null) {config.setOverwrite(false);}
+        //checks args
+        for(String s:args)
+        {
+            if(s.trim().toLowerCase().equals("update"))
+            {
+                config.setUpdate(true);
+            }
+            if(s.trim().toLowerCase().equals("overwrite"))
+            {
+                config.setOverwrite(true);
+            }
+            if(s.trim().toLowerCase().equals("showmetadata"))
+            {
+                config.setShowmetadata(true);
+            }
+        }
         if(config.getImageextensions()==null) {config.setImageextensions(imageDefaults);}
         if(config.getVideoextensions()==null) {config.setVideoextensions(videoDefaults);}
+        if(config.getSublocation()==null) {config.setSublocation(sublocationDefault);}
+        if(config.getCity()==null) {config.setCity(cityDefault);}
+        if(config.getCountry()==null) {config.setCountry(countryDefault);}
+        if(config.getIsocountrycode()==null) {config.setIsocountrycode(isocountryDefault);}
+        if(config.getStateprovince()==null) {config.setStateprovince(stateprovinceDefault);}
         return config;
     }
     /**
@@ -237,11 +276,20 @@ public class ImageCatalogue {
             ftemplate.process(froot, fwriter);
             twriter.close();
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            message("Cannot write output files to directory - please check the path exists:"+tempDir);
+        }
+        catch(Exception ee)
+        {
+            message("Error writing output files :"+ee);
         }
         return true;
     }
+
+    /**
+     *  Displays what options have been selected on the console
+     * @param c - Configuration Object
+     */
     public static void displayDefaults(ConfigObject c)
     {
         if(c.getUpdate()) {
@@ -278,6 +326,9 @@ public class ImageCatalogue {
             return false;
         }
     }
+    /**
+     * Runs Console reports at the end of the program run
+     */
     public static void runReport()
     {
 
@@ -347,9 +398,9 @@ public class ImageCatalogue {
                             if (isImage(file.getName(),config.getImageextensions())) {
                                 if (!isExcludedPrefix(file.getName(), drive.getExcludespec().getFileprefixes())) {
                                     long fileSize = file.length();
-                                    long minSize = 4880L;
 
-                                    if (fileSize > minSize) {
+
+                                    if (fileSize > config.getMinfilesize()) {
                                         count++;
                                         countDrive++;
                                         messageLine("-");
@@ -477,7 +528,7 @@ public class ImageCatalogue {
             {
                 try {
                     if (f.getPlaceKey().equals(r.getInternalKey())) {
-                        s = s + "<img src=\"" + root + "\\" + f.getThumbnail() + "\" width=\"200\" class=\"padding\" >";
+                        s = s + "<img src=\"" + root + "\\" + f.getThumbnail() + "\" width=\""+width+"\" class=\"padding\" >";
                     }
                 }
                 catch(Exception e)
@@ -505,7 +556,7 @@ public class ImageCatalogue {
                     for (FileObject f : fileObjects) {
                         try {
                             if (getDateWithoutTimeUsingCalendar(f.getBestDate()).equals(t.getTrackDate())) {
-                                s = s + "<img src=\"" + root + "\\" + f.getThumbnail() + "\" width=\"200\">";
+                                s = s + "<img src=\"" + root + "\\" + f.getThumbnail() + "\" width=\""+width+"\" class=\"padding\" >";
                             }
                         } catch (Exception e) {
                             message("error adding links to tracks:" + f.getDisplayName() + e);
@@ -514,6 +565,15 @@ public class ImageCatalogue {
             t.setImagelinks(s);
         }
     }
+
+    /**
+     * Adds tracks to the tracks arraylist
+     * @param points - one or more geo points in an array list - referenced by internal key
+     * @param startDate - start date time of track
+     * @param endDate - end date time of track
+     * @param trackDay - Date time, normalised to be 12 midnight
+     * @param coordinates - a String containing all coordinates with CR between each value
+     */
     public static void addTrack(ArrayList<Integer> points, Date startDate,Date endDate, Date trackDay,String coordinates)
     {
         // write out track
@@ -529,7 +589,6 @@ public class ImageCatalogue {
             t.setStartAndEndPlace(getStartAndEndString(t));
             tracks.add(t);
         }
-
     }
     /**
      * Adds a new camera if it does not exist in the array and sets start and end date
@@ -541,8 +600,6 @@ public class ImageCatalogue {
      * @return - returns camera key
      */
     public static Integer addCamera(String make, String model, Date d) {
-
-
         for (CameraObject c : cameras) {
             if (make.equals(c.getCameramaker())) {
                 if (model != null) {
@@ -556,8 +613,6 @@ public class ImageCatalogue {
                         c.setCameracount(c.getCameracount() + 1);
                         return c.getCamerakey();
                     }
-
-
                 } else {
                     if (c.getCameramodel() == null) {
                         if (d.before(c.getStartdate())) {
@@ -594,7 +649,6 @@ public class ImageCatalogue {
         cameras.add(cNew);
         return newKey;
     }
-
     /**
      * Checks whether we already have a geocode object - if we do, then we just update the start or end date
      * @param lat - latitude (of image)
@@ -603,23 +657,13 @@ public class ImageCatalogue {
      * @return - ReverseGeocodeObject i.e. a place...
      */
     public static ReverseGeocodeObject checkCachedGeo(double lat, double lon,Date d) {
-      //  message("*****Checking latitude:"+lat);
-      //  message("*****Checking longitude:"+lon);
         for (ReverseGeocodeObject g : geoObjects) {
             double glat = Double.parseDouble(g.getLat());
             double glon = Double.parseDouble(g.getLon());
-         //   message("*****target latitude:"+glat);
-         //   message("*****target longitude:"+glon);
-         //   message("Checking difference:"+Math.abs(glat - lat));
-         //   message("Checking difference:"+Math.abs(glon - lon));
-
-
             if (Math.abs(glat - lat) < cacheDistance && Math.abs(glon - lon) < cacheDistance) {
-
                 Date startDate=g.getStartDate();
                 Date endDate=g.getEndDate();
                 int count=g.getCountPlace()+1;
-
                 g.setCountPlace(count);
                 if(d.before(startDate))
                 {
@@ -634,7 +678,6 @@ public class ImageCatalogue {
         }
         return null;
     }
-
     /**
      * Creates temporary folder for output from the program
      * @param temp - name (from the JSON)
@@ -647,6 +690,11 @@ public class ImageCatalogue {
             message("Directory may already exist for: "+temp);
         }
     }
+
+    /**
+     * Creates all tracks from the FileObjects
+     * @return - returns tracks ArrayList
+     */
     public static Boolean createTracks()
     {
         tracks = new ArrayList<>();
@@ -704,6 +752,11 @@ public class ImageCatalogue {
         addTrack(points,startDate,endDate,lastDay,coordinates);
         return true;
     }
+
+    /**
+     * Writes out message to the console
+     * @param messageString - message string
+     */
     public static void message(String messageString)
     {
         String str=" ";
@@ -733,6 +786,11 @@ public class ImageCatalogue {
          String ss= s.repeat(messageLength);
          System.out.println(ss);
     }
+
+    /**
+     * Reads any existing cameras, places or events if in the json file
+     * @param c - Configuration Object
+     */
     public static void readConfigLists(ConfigObject c)
     {
         if(c.getCameras()!=null)
@@ -777,40 +835,58 @@ public class ImageCatalogue {
         }
 
     }
-
+    /**
+     * Checks if a file directory should be excluded from the processing
+     * @param fdir - directory name to check
+     * @param startDir - start directory for searching
+     * @param excludeDir - array of directories to exclude
+     * @return - either true (excluded) or false(not excluded)
+     */
     public static Boolean isExcluded(String fdir, String startDir, ArrayList<DirectoryObject> excludeDir) {
+        if(excludeDir==null)
+        {
+            return false;
+        }
         for (DirectoryObject i : excludeDir) {
-            if (fdir.equals(startDir + i.getName())) {
-                message("Excluded:" + fdir);
-                return true;
+            if(i.getName()!=null) {
+                if (fdir.equals(startDir + i.getName())) {
+                    message("Excluded:" + fdir);
+                    return true;
+                }
             }
         }
         //  message("Not Excluded:"+fname);
         return false;
     }
-
+    /**
+     * Checks if a file name, based on a prefix,  should be excluded from the processing
+     * @param fname - filename
+     * @param excludePrefix - array of prefixes to exclude
+     * @return - either true (exclude) or false (not excluded)
+     */
     public static Boolean isExcludedPrefix(String fname, ArrayList<DirectoryObject> excludePrefix) {
+        if(excludePrefix==null)
+        {
+            return false;
+        }
         for (DirectoryObject i : excludePrefix) {
-            if (fname.indexOf(i.getName()) == 0) {
-                message("Excluded Prefix:" + fname);
-                return true;
+            if(i.getName()!=null) {
+                if (fname.indexOf(i.getName()) == 0) {
+                    message("Excluded Prefix:" + fname);
+                    return true;
+                }
             }
         }
         //  message("Not Excluded:"+fname);
         return false;
     }
 
-    public static Boolean isVideo(String fname,String extensions) {
-        String[] vids = extensions.toLowerCase().split("~", -1);
-        String result = FilenameUtils.getExtension(fname).toLowerCase();
-        for (int kk = 0; kk < vids.length; kk++) {
-            if (result.equals(vids[kk])) {
-                return true;
-            }
-        }
-        return false;
-    }
-
+    /**
+     * Checks if a file is an image
+     * @param fname - filename
+     * @param extensions - list of valid extensions, separated by tilda (~)
+     * @return - either true (image) or false
+     */
     public static Boolean isImage(String fname,String extensions) {
         String[] pics = extensions.toLowerCase().split("~", -1);
         String result = FilenameUtils.getExtension(fname).toLowerCase();
@@ -822,6 +898,11 @@ public class ImageCatalogue {
         return false;
     }
 
+    /**
+     * gets file date from file attributes
+     * @param file - filename
+     * @return - date
+     */
     private static Date getFileDate(File file) {
         Date d;
         try {
@@ -848,6 +929,11 @@ public class ImageCatalogue {
 
         return d;
     }
+    /**
+     * converts date so it does not have hours, mins and seconds
+     * @param d - date to convert
+     * @return - modified date
+     */
     public static Date getDateWithoutTimeUsingCalendar(Date d) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(d);
@@ -863,8 +949,6 @@ public class ImageCatalogue {
             if (tagName.equals(e.getName())) return e;
         }
         return null;
-
-
     }
     private static ExifTag getExifTagFromName(String tagName) {
 
@@ -872,9 +956,13 @@ public class ImageCatalogue {
             if (tagName.equals(e.getName())) return e;
         }
         return null;
-
-
     }
+
+    /**
+     * Creates a string from the display names for start and end point
+     * @param t - Track Object to create the string
+     * @return - string to be used in display for the track
+     */
     private static String getStartAndEndString(TrackObject t)
     {
         String s="";
@@ -890,6 +978,12 @@ public class ImageCatalogue {
 
         }
     }
+
+    /**
+     * Finds geoObject from its internal key
+     * @param i - key value
+     * @return - ReverseGeocodeObject
+     */
     private static ReverseGeocodeObject getPlace(Integer i)
     {
         for(ReverseGeocodeObject r : geoObjects)
@@ -977,7 +1071,14 @@ public class ImageCatalogue {
                     + field.getValueDescription());
         }
     }
-
+    /**
+     * Updates a file (or displays information only) that has been selected
+     * @param file - File to process
+     * @param thumbName - name of theumbnail
+     * @param config - Configuration Object
+     * @param drive - Drive name
+     * @return - returns true if successful, false if failure
+     */
     public static Boolean processFile(File file, String thumbName,ConfigObject config, DriveObject drive) {
         String make = "";
         String model = "";
@@ -1267,11 +1368,16 @@ public class ImageCatalogue {
         } else {
             fNew.setDisplayName("No Lat and Long date found");
         }
-
         //     List<IPTCDataSet> iptcs =  new ArrayList<IPTCDataSet>();
-        iptcs.add(new IPTCDataSet(IPTCApplicationTag.COPYRIGHT_NOTICE, drive.getIPTCCopyright()));
-        iptcs.add(new IPTCDataSet(IPTCApplicationTag.CATEGORY, drive.getIPTCCategory()));
-        iptcs.add(new IPTCDataSet(IPTCApplicationTag.KEY_WORDS, drive.getIPTCKeywords()));
+        if(!StringUtils.isNullOrEmpty(drive.getIPTCCopyright())) {
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.COPYRIGHT_NOTICE, drive.getIPTCCopyright()));
+        }
+        if(!StringUtils.isNullOrEmpty(drive.getIPTCCategory())) {
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.CATEGORY, drive.getIPTCCategory()));
+        }
+        if(!StringUtils.isNullOrEmpty(drive.getIPTCKeywords())) {
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.KEY_WORDS, drive.getIPTCKeywords()));
+        }
 
         if(config.getUpdate()) {
             try {
@@ -1319,14 +1425,16 @@ public class ImageCatalogue {
         } else {
             return "Unknown";
         }
-
-
     }
+
+    /**
+     *  Reads metadata
+     *  THIS EXAMPLE LARGELY COPIED FROM ICAFE SAMPLE CODE
+     * @param file - file to read
+     * @return - either true (sucessful) or false
+     */
     public static Boolean readMetadata(File file) {
-
-
         try {
-
             Map<MetadataType, Metadata> metadataMap = Metadata.readMetadata(file.getPath());
             for (Map.Entry<MetadataType, Metadata> entry : metadataMap.entrySet()) {
                 Metadata meta = entry.getValue();
@@ -1472,11 +1580,7 @@ public class ImageCatalogue {
                             + gpsLongitudeRef);
 
                 }
-
-
-
                 final List<ImageMetadata.ImageMetadataItem> items = jpegMetadata.getItems();
-
                 for (final ImageMetadata.ImageMetadataItem item : items) {
                     message("    " + "item: " + item);
                 }
@@ -1489,13 +1593,41 @@ public class ImageCatalogue {
             message("Error accessing metadata:"+e);
 
         }
-
-
-
         return true;
-
-
     }
+
+    /**
+     * Set Drive structure if there is no json input file
+     * @param config - config object
+     * @param rootDrive - root drive (passed as an argument at program start)
+     * @param tempDir - temp directory (passed as an argument at program start)
+     * @return - modified config object
+     */
+    public static ConfigObject setDrives(ConfigObject config,String rootDrive,String tempDir)
+    {
+        config.setTempdir(tempDir);
+        DriveObject d= new DriveObject();
+        d.setStartdir(rootDrive);
+        ExcludeSpec es = new ExcludeSpec();
+        DirectoryObject dir = new DirectoryObject();
+        ArrayList<DirectoryObject> directories = new ArrayList<>();
+        directories.add(dir);
+        DirectoryObject prefix = new DirectoryObject();
+        ArrayList<DirectoryObject> fileprefixes = new ArrayList<>();
+        fileprefixes.add(prefix);
+        es.setDirectories(directories);
+        es.setFileprefixes(fileprefixes);
+        d.setExcludespec(es);
+        ArrayList<DriveObject> drives = new ArrayList<>();
+        drives.add(d);
+        config.setDrives(drives);
+        return config;
+    }
+
+    /**
+     * Reads each drive in turn and processes directory content
+     * @param c - config object
+     */
     public static void readDrives(ConfigObject c)
     {
         for (DriveObject d : c.getDrives()) {

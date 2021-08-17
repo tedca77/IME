@@ -1,10 +1,15 @@
 <html>
 <head>
   <title>Tracks</title>
+ <style type="text/css">
+    .padding{
+     padding:2px 10px 2px 2px;
+    }
+    </style>
 </head>
 <body>
   <h1>Tracks</h1>
-<TABLE BORDER>
+<TABLE BORDER >
 <tr>
     <th>Track No</th>
     <th>Number of Points</th>
