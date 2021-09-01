@@ -10,6 +10,7 @@
   <th>File Key</th>
   <th WIDTH=100>Picture</th>
   <th WIDTH=200>Filename</th>
+  <th WIDTH=200>Directory</th>
   <th WIDTH=200>Sub Location</th>
   <th WIDTH=200>City</th>
   <th WIDTH=200>State / Province</th>
@@ -30,6 +31,7 @@
     </#if>
     </td>
     <td>${(photo.fileName)!}</td>
+    <td>${(photo.directory)!}</td>
     <td>${(photo.subLocation)!}</td>
     <td>${(photo.city)!}</td>
     <td>${(photo.stateProvince)!}</td>

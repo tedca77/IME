@@ -8,6 +8,11 @@
     </remote-repository>
     <remote-repository>
       <option name="id" value="oss.sonatype.org" />
+      <option name="name" value="kmlt Repository" />
+      <option name="url" value="https://dl.bintray.com/matsim/matsim" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="oss.sonatype.org" />
       <option name="name" value="Sonatype Snapshot Repository" />
       <option name="url" value="https://oss.sonatype.org/content/repositories/snapshots" />
     </remote-repository>

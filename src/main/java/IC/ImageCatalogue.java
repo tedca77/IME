@@ -41,16 +41,19 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 
 import java.math.BigDecimal;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
+
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-
 import static IC.ImageProcessing.createThumbFromPicture;
+
+
 
 /**
  *
@@ -67,6 +70,7 @@ public class ImageCatalogue {
     static int countDriveGEOCODED = 0;
     static ArrayList<CameraObject> cameras = new ArrayList<>();
     static ArrayList<FileObject> fileObjects = new ArrayList<>();
+    static ArrayList<FileObject> duplicateObjects = new ArrayList<>();
     static ArrayList<ReverseGeocodeObject> geoObjects = new ArrayList<>();
     static ArrayList<TrackObject> tracks = new ArrayList<>();
     // Default Variables - that can be modified..
@@ -90,7 +94,7 @@ public class ImageCatalogue {
         ConfigObject config=null;
         Path fileName=null;
         try {
-            if(FilenameUtils.getExtension(args[0]).toLowerCase().equals("json"))
+            if(FilenameUtils.getExtension(args[0]).equalsIgnoreCase("json"))
             {
                 fileName = Path.of(args[0]);
                 config = readConfig(args[0]);
@@ -102,6 +106,8 @@ public class ImageCatalogue {
                     config = new ConfigObject();
                     setDrives(config,args[0],args[1]);
                     fileName=Path.of(args[1]+"\\"+jsonDefault);
+                    message("Directory to search:"+fileName);
+                    message("Temporary Directory:"+args[1]);
                 }
                 else
                 {
@@ -117,8 +123,8 @@ public class ImageCatalogue {
             // set the ArrayLists with values from the config file
             readConfigLists(config);
             readDrives(config);
-
-
+            fileObjects.sort(Comparator.comparing(FileObject::getFileName));
+            checkDuplicates();
             // sort any ArrayLists....
             fileObjects.sort(Comparator.comparing(FileObject::getBestDate));
             addLinksToPlaces(200,config.getTempdir());
@@ -198,15 +204,15 @@ public class ImageCatalogue {
         //checks args
         for(String s:args)
         {
-            if(s.trim().toLowerCase().equals("update"))
+            if(s.trim().equalsIgnoreCase("update"))
             {
                 config.setUpdate(true);
             }
-            if(s.trim().toLowerCase().equals("overwrite"))
+            if(s.trim().equalsIgnoreCase("overwrite"))
             {
                 config.setOverwrite(true);
             }
-            if(s.trim().toLowerCase().equals("showmetadata"))
+            if(s.trim().equalsIgnoreCase("showmetadata"))
             {
                 config.setShowmetadata(true);
             }
@@ -218,7 +224,7 @@ public class ImageCatalogue {
         if(config.getCountry()==null) {config.setCountry(countryDefault);}
         if(config.getIsocountrycode()==null) {config.setIsocountrycode(isocountryDefault);}
         if(config.getStateprovince()==null) {config.setStateprovince(stateprovinceDefault);}
-        return config;
+       return config;
     }
     /**
      * Writes out HTML reports using freemarker for the main objects.  Freemarker templates are in the project.
@@ -268,6 +274,13 @@ public class ImageCatalogue {
             tkmltemplate.process(tkmlroot, tkmlwriter);
             tkmlwriter.close();
             //
+            Template pkmltemplate = cfg.getTemplate("pointkml.ftl");
+            FileWriter pkmlwriter = new FileWriter(tempDir+"/"+"point.kml");
+            Map<String, Object> pkmlroot = new HashMap<>();
+            pkmlroot.put( "places",geoObjects );
+            pkmltemplate.process(pkmlroot, pkmlwriter);
+            pkmlwriter.close();
+            //
             Template ftemplate = cfg.getTemplate("photosbydate.ftl");
             FileWriter fwriter = new FileWriter(tempDir+"/"+"photosbydate.html");
             Map<String, Object> froot = new HashMap<>();
@@ -275,6 +288,15 @@ public class ImageCatalogue {
             froot.put("root",tempDir);
             ftemplate.process(froot, fwriter);
             twriter.close();
+//
+            Template dtemplate = cfg.getTemplate("duplicates.ftl");
+            FileWriter dwriter = new FileWriter(tempDir+"/"+"duplicates.html");
+            Map<String, Object> droot = new HashMap<>();
+            droot.put( "photos",duplicateObjects );
+            droot.put("root",tempDir);
+            dtemplate.process(droot, dwriter);
+            dwriter.close();
+
 
         } catch (IOException e) {
             message("Cannot write output files to directory - please check the path exists:"+tempDir);
@@ -302,7 +324,7 @@ public class ImageCatalogue {
         if(c.getOverwrite()) {
             message("EXISTING METADATA WILL BE OVERWRITTEN");
         }
-         return;
+
     }
     /**
      * Exports JSON config file with new lists of objects included.  File is same as input file but with date and time added.
@@ -514,6 +536,9 @@ public class ImageCatalogue {
         }
         return s;
     }
+
+
+
     /**
      * this adds some HTML for images to the Place object so we can incorporate into Freemarker report easily
      * @param width - width of image
@@ -630,7 +655,7 @@ public class ImageCatalogue {
         }
         // we have not found a camera, so add a new one to the ArrayList -
         // there may be gaps in numbering, so add one to the highest in the sorted list
-        Integer newKey;
+        int newKey;
         if( cameras.size()==0)
         {
             newKey=1;
@@ -648,6 +673,32 @@ public class ImageCatalogue {
         cNew.setCameracount(1);
         cameras.add(cNew);
         return newKey;
+    }
+    public static void checkDuplicates()
+    {
+
+       FileObject lastObject = new FileObject();
+        for (FileObject f : fileObjects) {
+            try {
+                if(lastObject.getFileName()!=null) {
+                    if (lastObject.getFileName().equals(f.getFileName())) {
+                        if (duplicateObjects.size() > 0) {
+                            // we may need to include the previous lastObject but it may already be included e.g. if there are more than two duplicates
+                            if (!duplicateObjects.get(duplicateObjects.size() - 1).equals(lastObject)) {
+                                duplicateObjects.add(lastObject);
+                            }
+                        } else {
+                            duplicateObjects.add(lastObject);
+                        }
+                        duplicateObjects.add(f);
+                    }
+                }
+                lastObject = f;
+
+            } catch (Exception e) {
+                message("error checking duplicates:" + f.getDisplayName() + e);
+            }
+        }
     }
     /**
      * Checks whether we already have a geocode object - if we do, then we just update the start or end date
@@ -685,6 +736,10 @@ public class ImageCatalogue {
     public static void createTempDirForUser(String temp) {
         try {
             boolean result= new File(temp).mkdir();
+            if(!result)
+            {
+                message("Error creating new temporary directory:"+temp);
+            }
 
         } catch (Exception e) {
             message("Directory may already exist for: "+temp);
@@ -717,7 +772,7 @@ public class ImageCatalogue {
                 if(f.getPlaceKey()!=null) {
                     if (f.getPlaceKey() != placeKey) {
                         points.add(f.getPlaceKey());
-                        coordinates = coordinates + f.getLongitude() + "," + f.getLatitude() + "," + f.getAltitude() + System.getProperty("line.separator");
+                        coordinates = new StringBuilder().append(coordinates).append(f.getLongitude()).append(",").append(f.getLatitude()).append(",").append(f.getAltitude()).append(System.getProperty("line.separator")).toString();
                         placeKey=f.getPlaceKey();
                     }
                 }
@@ -761,7 +816,7 @@ public class ImageCatalogue {
     {
         String str=" ";
 
-        String lines[] = messageString.split("\\R",-1);
+        String[] lines = messageString.split("\\R",-1);
         for(String l: lines) {
             if (l.length() > (messageLength - 4)) {
                 System.out.println("* " + l.substring(0, messageLength - 4) + " *");
@@ -890,8 +945,8 @@ public class ImageCatalogue {
     public static Boolean isImage(String fname,String extensions) {
         String[] pics = extensions.toLowerCase().split("~", -1);
         String result = FilenameUtils.getExtension(fname).toLowerCase();
-        for (int kk = 0; kk < pics.length; kk++) {
-            if (result.equals(pics[kk])) {
+        for (String pic : pics) {
+            if (result.equals(pic)) {
                 return true;
             }
         }
@@ -968,13 +1023,23 @@ public class ImageCatalogue {
         String s="";
         if(t.getPoints().size()==1)
         {
-            return getPlace(t.getPoints().get(0)).getDisplay_name();
+            try {
+                return Objects.requireNonNull(getPlace(t.getPoints().get(0))).getDisplay_name();
+            }
+            catch(Exception e)
+            {
+                return "";
+            }
         }
         else
         {
-            return getPlace(t.getPoints().get(0)).getDisplay_name()+
-                    " to "+
-                    getPlace(t.getPoints().get(t.getPoints().size()-1)).getDisplay_name();
+            try {
+                return Objects.requireNonNull(getPlace(t.getPoints().get(0))).getDisplay_name() + " to " + Objects.requireNonNull(getPlace(t.getPoints().get(t.getPoints().size() - 1))).getDisplay_name();
+            }
+            catch(Exception e)
+            {
+                return "";
+            }
 
         }
     }
@@ -1113,7 +1178,7 @@ public class ImageCatalogue {
         // Create a TIFF EXIF wrapper
         IPTC iptc = new IPTC();
         JpegExif exif = new JpegExif();
-        List<String> existingComments=null;
+        List<String> existingComments;
         ArrayList<String> existingCommentsString=new ArrayList<>();
         try {
             Map<MetadataType, Metadata> metadataMap = Metadata.readMetadata(file.getPath());
@@ -1326,7 +1391,7 @@ public class ImageCatalogue {
                 if (g != null) {
                     message("Adding a new Place:["+(geoObjects.size() + 1) +"]" + g.getDisplay_name());
                     // there may be gaps in numbering, so add one to the highest in the sorted list
-                    Integer newKey;
+                    int newKey;
                     if( geoObjects.size()==0)
                     {
                         newKey=1;
@@ -1461,7 +1526,7 @@ public class ImageCatalogue {
                        printMetadata(item,"IPTC - "+ item.getKey()+":","    ");
                     }
                 } else if (meta instanceof Comments) {
-                    List<String> existingComments = new ArrayList<String>();
+                    List<String> existingComments ;
                     existingComments = ((Comments) meta).getComments();
                     int count=1;
                     for(String s : existingComments)
@@ -1643,7 +1708,6 @@ public class ImageCatalogue {
             message("Photos too small on drive "+d.getStartdir()+" :" + countDriveTooSmall );
             message("Photos geocoded on drive "+d.getStartdir()+" :" + countDriveGEOCODED );
         }
-        return;
     }
     // This method is for testing only
     private static Exif populateExif(Exif exif)  {
@@ -1670,6 +1734,7 @@ public class ImageCatalogue {
             }
         }
     }
+
 
 
 }
