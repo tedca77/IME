@@ -1,16 +1,19 @@
 package IC;
 import IC.openmaps.ReverseGeocodeObject;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
 import java.util.ArrayList;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown=true)
 public class ConfigObject {
     private String tempdir;
     private Long minfilesize;
     private Boolean update;
     private Boolean showmetadata;
     private Boolean overwrite;
+    private Boolean redoGeocode;
     private String thumbsize;
     private ArrayList<DriveObject> drives;
     private ArrayList<CameraObject> cameras;
