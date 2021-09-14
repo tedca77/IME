@@ -1,27 +1,32 @@
 package IC.openmaps;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
+
+import java.util.Date;
+
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class Place {
-    private String placeName;
-    private String placeRegion;
-    private String placeCounty;
-    private String placeGrid;
-
-    @Override
-    public boolean equals (Object object) {
-        boolean result = false;
-        if (object == null || object.getClass() != getClass()) {
-            result = false;
-        } else {
-            Place  place = (Place) object;
-            if (this.placeName.equals(place.getPlaceName())) {
-                result = true;
-            }
-        }
-        return result;
-    }
+    private String display_name;
+    private Long place_id;
+    private String licence;
+    private String osm_type;
+    private Long osm_id;
+    private String lat;
+    private String lon;
+    private AddressObject address;
+    private String IPTCCountryCode;
+    private String IPTCCountry;
+    private String IPTCStateProvince;
+    private String IPTCCity;
+    private String IPTCSublocation;
+    private String friendlyname;
+    private Integer internalKey;
+    private Integer countPlace;
+    private Date endDate;
+    private Date startDate;
+    private Integer trackKey;
+    private String imagelinks;
+    private String cdata;
 }

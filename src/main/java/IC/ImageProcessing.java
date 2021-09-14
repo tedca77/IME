@@ -1,14 +1,9 @@
 package IC;
-
-
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
-
-import static org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants.ORIENTATION_VALUE_ROTATE_270_CW;
-import static org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants.ORIENTATION_VALUE_ROTATE_90_CW;
+import static org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants.*;
 
 public class ImageProcessing {
     //Below is the Code (which will convert PPM(byte array to Buffered image and you can save buffered image to the file)
@@ -19,8 +14,8 @@ public class ImageProcessing {
     //Method Definition
 
     static public BufferedImage ppm(int width, int height, int maxcolval, byte[] data){
+        BufferedImage image=new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
         if(maxcolval<256){
-            BufferedImage image=new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
             int r,g,b,k=0,pixel;
             if(maxcolval==255){                                      // don't scale
                 for(int y=0;y<height;y++){
@@ -44,12 +39,10 @@ public class ImageProcessing {
                     }
                 }
             }
-            return image;
         }
         else{
 
 
-            BufferedImage image=new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
             int r,g,b,k=0,pixel;
             for(int y=0;y<height;y++){
                 for(int x=0;(x<width)&&((k+6)<data.length);x++){
@@ -60,41 +53,29 @@ public class ImageProcessing {
                     image.setRGB(x,y,pixel);
                 }
             }
-            return image;
         }
-    }
-    public static BufferedImage resizeImage(final Image image, int width, int height) {
-        final BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        final Graphics2D graphics2D = bufferedImage.createGraphics();
-        graphics2D.setComposite(AlphaComposite.Src);
-        //below three lines are for RenderingHints for better image quality at cost of higher processing time
-        graphics2D.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        graphics2D.setRenderingHint(RenderingHints.KEY_RENDERING,RenderingHints.VALUE_RENDER_QUALITY);
-        graphics2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
-        graphics2D.drawImage(image, 0, 0, width, height, null);
-        graphics2D.dispose();
-        return bufferedImage;
+        return image;
     }
     public static BufferedImage getScaledImage(BufferedImage src, int w, int h){
         int original_width = src.getWidth();
         int original_height = src.getHeight();
-        int bound_width = w;
-        int bound_height = h;
+
+
         int new_width = original_width;
         int new_height = original_height;
 
         // first check if we need to scale width
-        if (original_width > bound_width) {
+        if (original_width > w) {
             //scale width to fit
-            new_width = bound_width;
+            new_width = w;
             //scale height to maintain aspect ratio
             new_height = (new_width * original_height) / original_width;
         }
 
         // then check if we need to scale even with the new height
-        if (new_height > bound_height) {
+        if (new_height > h) {
             //scale height to fit instead
-            new_height = bound_height;
+            new_height = h;
             //scale width to maintain aspect ratio
             new_width = (new_height * original_width) / original_height;
         }
@@ -109,8 +90,9 @@ public class ImageProcessing {
     }
     public static Boolean createThumbFromPicture(File file,String tempDir,String thumbName,Integer width,Integer height,Integer orientation)
     {
-        String newName="";
-        BufferedImage img = null;
+
+        String newName;
+        BufferedImage img ;
         try {
             try
             {
@@ -120,7 +102,7 @@ public class ImageProcessing {
             {
                 // will create a file that can be used for getting a thumbnail
                 try {
-                    newName = ImageConversion.convertNonJPGFormats(file, tempDir);
+                 //   newName = ImageConversion.convertNonJPGFormats(file, tempDir);
                     img = ImageIO.read(file);
                 }
                 catch(Exception e)
@@ -128,7 +110,7 @@ public class ImageProcessing {
                     return false;
                 }
             }
-            BufferedImage imgThumb=null;
+            BufferedImage imgThumb;
             try
             {
                 imgThumb= ImageProcessing.getScaledImage(img,width,height);
@@ -148,17 +130,22 @@ public class ImageProcessing {
                     return false;
                 }
             }
+            javaxt.io.Image javaxtImage=new javaxt.io.Image(imgThumb);
             if(orientation.equals( ORIENTATION_VALUE_ROTATE_90_CW))
             {
-
+                javaxtImage.rotateClockwise();
             }
             else if(orientation.equals(ORIENTATION_VALUE_ROTATE_270_CW))
             {
-
+                javaxtImage.rotateCounterClockwise();
+            }
+            else if(orientation.equals(ORIENTATION_VALUE_ROTATE_180))
+            {
+              javaxtImage.rotate(180.0d);
             }
             File outputfile = new File(tempDir+"/"+thumbName);
-            ImageIO.write(imgThumb, "jpg", outputfile);
-
+          //  ImageIO.write(imgThumb, "jpg", outputfile);
+            javaxtImage.saveAs(outputfile);
             //upload
 
             return true;
@@ -168,35 +155,6 @@ public class ImageProcessing {
             return false;
         }
     }
-    public static Boolean createJPGFromPicture(String destRoot,File file,String targetName,Integer width,String areaName)
-    {
-        String newName="";
-        String fName="";
-        BufferedImage img = null;
-        try {
-            fName=file.getName();
-            try
-            {
-                img = ImageIO.read(new File(destRoot+"/"+fName));
-            }
-            catch(Exception e2)
-            {
-                // will create a file that can be used for getting a thumbnail
-                newName=ImageConversion.convertNonJPGFormats(file,destRoot);
-                img = ImageIO.read(new File(destRoot+"/"+newName));
-            }
-            File outputfile = new File(destRoot+"/"+targetName);
-            ImageIO.write(img, "jpg", outputfile);
-            System.out.println("picture thumb is :"+targetName);
-            //upload
-            return true;
-
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
-
 }
 
 

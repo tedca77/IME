@@ -1,24 +1,16 @@
 package IC;
-
 import IC.openmaps.OpenMaps;
-import IC.openmaps.ReverseGeocodeObject;
+import IC.openmaps.Place;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.icafe4j.image.meta.Metadata;
 import com.icafe4j.image.meta.MetadataEntry;
 import com.icafe4j.image.meta.MetadataType;
 import com.icafe4j.image.meta.adobe.IRB;
 import com.icafe4j.image.meta.exif.Exif;
-import com.icafe4j.image.meta.exif.ExifTag;
-
 import com.icafe4j.image.meta.image.Comments;
 import com.icafe4j.image.meta.iptc.IPTC;
 import com.icafe4j.image.meta.iptc.IPTCApplicationTag;
 import com.icafe4j.image.meta.iptc.IPTCDataSet;
-import com.icafe4j.image.meta.jpeg.JpegExif;
-
-import com.icafe4j.image.meta.tiff.TiffExif;
-import com.icafe4j.image.tiff.FieldType;
-
 import com.icafe4j.string.StringUtils;
 import com.icafe4j.image.meta.xmp.XMP;
 import freemarker.template.Configuration;
@@ -26,8 +18,6 @@ import freemarker.template.Template;
 import freemarker.template.TemplateExceptionHandler;
 import org.apache.commons.imaging.Imaging;
 import org.apache.commons.imaging.common.ImageMetadata;
-import org.apache.commons.imaging.common.RationalNumber;
-
 import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
 import org.apache.commons.imaging.formats.tiff.TiffField;
 import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
@@ -36,28 +26,24 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.GpsTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants;
-
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
-
 import java.math.BigDecimal;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
-
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+
 import static IC.ImageProcessing.createThumbFromPicture;
 
-
-
 /**
- *
+ * Main class
  */
 public class ImageCatalogue {
     static int count = 0;
@@ -72,7 +58,7 @@ public class ImageCatalogue {
     static ArrayList<CameraObject> cameras = new ArrayList<>();
     static ArrayList<FileObject> fileObjects = new ArrayList<>();
     static ArrayList<FileObject> duplicateObjects = new ArrayList<>();
-    static ArrayList<ReverseGeocodeObject> geoObjects = new ArrayList<>();
+    static ArrayList<Place> geoObjects = new ArrayList<>();
     static ArrayList<TrackObject> tracks = new ArrayList<>();
     // Default Variables - that can be modified..
     static int messageLength=160; //length of Console Message
@@ -80,18 +66,23 @@ public class ImageCatalogue {
     static String imageDefaults="jpg~jpeg~bmp";
     static String jsonDefault="config.json";
     static Long minFileSizeDefault=4000L;
-    static String thumbSizeDefault="480x600";
-    static ArrayList<String> isocountryDefault=new ArrayList<>(Arrays.asList("country_code"));
-    static ArrayList<String> countryDefault=new ArrayList<>(Arrays.asList("country"));
-    static ArrayList<String> stateprovinceDefault=new ArrayList<>(Arrays.asList("county"));
+    static String thumbSizeDefault="240x180";
+    static ArrayList<String> isocountryDefault=new ArrayList<>(Collections.singletonList("country_code"));
+    static ArrayList<String> countryDefault=new ArrayList<>(Collections.singletonList("country"));
+    static ArrayList<String> stateprovinceDefault=new ArrayList<>(Collections.singletonList("county"));
     static ArrayList<String> cityDefault=new ArrayList<>(Arrays.asList("town","city","village"));
-    static ArrayList<String> sublocationDefault=new ArrayList<>(Arrays.asList("house_number","road","hamlet","suburb"));
-    static double cacheDistance=0.001d;
+    static ArrayList<String> sublocationDefault=new ArrayList<>(Arrays.asList("amenity","house_number","road","hamlet","suburb"));
+    static int cacheDistanceDefault=100; // this is the distance from a point that detemrines this is the same place..Metres.
+    static int pauseSecondsDefault=2; // this is the pause before a geocode (to not overload the server...
+    //
+    static Date startTime;
+    static Date endTime;
     /**
      * Main Method for the program - arguments passes as Java arguments..
-     * @param args - either single json file or two files, first one is root directory and second is output file
+     * @param args - either single json file or two files, first one is root directory and second is output file, followed by parameters
      */
     public static void main(String[] args) {
+        startTime= new Date();
         ConfigObject config=null;
         Path fileName=null;
         try {
@@ -109,7 +100,7 @@ public class ImageCatalogue {
                 message("No json file present - requiring two directories");
                 if(args.length>1) {
                     config = new ConfigObject();
-                    setDrives(config,args[0],args[1]);
+                    setDrives(config, args[0], args[1]);
                     fileName=Path.of(args[1]+"\\"+jsonDefault);
                     message("Directory to search:"+fileName);
                     message("Temporary Directory:"+args[1]);
@@ -120,25 +111,26 @@ public class ImageCatalogue {
                 }
             }
             //
-            setDefaults(config,args);
+            setDefaults(Objects.requireNonNull(config), args);
 
             messageLine("*");
             //this prints out the main options
             displayDefaults(config);
             // set the ArrayLists with values from the config file
             readConfigLists(config);
+            createTempDirForUser(config.getTempdir());
             readDrives(config);
             fileObjects.sort(Comparator.comparing(FileObject::getFileName));
             checkDuplicates();
             // sort any ArrayLists....
             fileObjects.sort(Comparator.comparing(FileObject::getBestDate));
-            addLinksToPlaces(200,config.getTempdir());
+            addLinksToPlaces(config.getWidth(),config.getTempdir());
             //create tracks - this will also update the geoObjects
             if(!createTracks())
             {
                 message("Failed to create tracks");
             }
-            addLinksToTracks(200,config.getTempdir());
+            addLinksToTracks(config.getWidth(),config.getTempdir());
             //sets config object with new values
             config.setCameras(cameras);
             config.setPhotos(fileObjects);
@@ -168,11 +160,35 @@ public class ImageCatalogue {
         } catch (Exception e) {
             message("Error reading json file " + e);
         }
+        endTime= new Date();
+        long duration=(endTime.getTime()-startTime.getTime());
+        String durationString= String.format("%02d hrs, %02d min, %02d sec",
+               TimeUnit.MILLISECONDS.toHours(duration),
+               TimeUnit.MILLISECONDS.toMinutes(duration),
+               TimeUnit.MILLISECONDS.toSeconds(duration) -
+               TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(duration)));
+        message("End Time:" + endTime);
+        message("Duration:" + durationString);
 
     }
+    public static void waitForGeo(int dur)
+    {
+        try {
 
+
+            long start = System.currentTimeMillis();
+            Thread.sleep(dur*1000L);
+            message("Sleep time in ms = " + (System.currentTimeMillis() - start));
+        }
+        catch(Exception e)
+        {
+              message("Error pausing"+e);
+        }
+
+
+    }
     /**
-     * Reads a Config File
+     * Reads a JSON Config File - this holds all run parameters
      * @param configFile - filenamee
      * @return - config object
      */
@@ -181,7 +197,7 @@ public class ImageCatalogue {
         ObjectMapper mapper = new ObjectMapper();
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm ss");
         mapper.setDateFormat(df);
-        String result="";
+        String result;
         try {
             Path fileName = Path.of(configFile);
             result = Files.readString(fileName);
@@ -199,16 +215,16 @@ public class ImageCatalogue {
             message("Error in JSON file:"+e);
             return null;
         }
-
     }
     /**
-     * Sets the defaults if the values are not in the JSON
+     * Sets the defaults if the values are not in the JSON (note this is pass by value - and we can change values)
      * @param config - passes ConfigObject
-     * @return - returns modified ConfigObject
      */
-    public static ConfigObject setDefaults(ConfigObject config,String[] args)
+    public static void setDefaults(ConfigObject config,String[] args)
     {
         if(config.getMinfilesize()==null){config.setMinfilesize(minFileSizeDefault);}
+        if(config.getPauseSeconds()==null){config.setPauseSeconds(pauseSecondsDefault);}
+        if(config.getPauseSeconds()<1){config.setPauseSeconds(pauseSecondsDefault);}
         if(config.getThumbsize()==null){config.setThumbsize(thumbSizeDefault);}
         // sets the defaults
         if(config.getUpdate()==null){config.setUpdate(false);}
@@ -242,7 +258,10 @@ public class ImageCatalogue {
         if(config.getCountry()==null) {config.setCountry(countryDefault);}
         if(config.getIsocountrycode()==null) {config.setIsocountrycode(isocountryDefault);}
         if(config.getStateprovince()==null) {config.setStateprovince(stateprovinceDefault);}
-       return config;
+        if (config.getCacheDistance() == null) {
+            config.setCacheDistance(cacheDistanceDefault);
+        }
+        //return config;
     }
     /**
      * Writes out HTML reports using freemarker for the main objects.  Freemarker templates are in the project.
@@ -327,14 +346,12 @@ public class ImageCatalogue {
     }
 
     /**
-     *  Displays what options have been selected on the console
+     *  Displays the options have been selected on the console output
      * @param c - Configuration Object
      */
     public static void displayDefaults(ConfigObject c)
     {
-        if(c.getUpdate()) {
 
-        }
         //
         if(c.getUpdate())
         {
@@ -425,7 +442,7 @@ public class ImageCatalogue {
         message("Count from Makes:" + countFromMake);
 
         messageLine("*");
-        for (ReverseGeocodeObject g : geoObjects) {
+        for (Place g : geoObjects) {
 
             message("Key:[" +g.getInternalKey()+"] ,Lat:"+ g.getLat() + ", Lon:" + g.getLon());
             message( g.getDisplay_name());
@@ -438,7 +455,6 @@ public class ImageCatalogue {
         }
 
     }
-
     /**
      * this method recursively looks at directories and sdubdirectories and identifies image files
      * @param dir - root directory to start
@@ -471,14 +487,14 @@ public class ImageCatalogue {
                                         countDrive++;
                                         messageLine("-");
                                         message("File number:["+count + "], file:" + file.getCanonicalPath());
-                                        message("File size is:" + fileSize);
+                                        message("File size is:" + fileSize +" ( bytes)");
                                         if(config.getShowmetadata()) {
                                             if (!readMetadata(file)) {
                                                 message("Could not read metadata before update");
                                             }
+                                            messageLine("~");
                                         }
                                         String thumbName = makeThumbName(file);
-
                                         if(!processFile(file, thumbName,config, drive))
                                         {
                                             countErrors++;
@@ -510,14 +526,13 @@ public class ImageCatalogue {
             e.printStackTrace();
         }
     }
-
     /**
      * THis adds one or more geocoding fields to a string which is then used to update the metadata fields used
      * @param g - object retrieved from OpenMaps API
      * @param fieldnames - a list of field names we are interested in
      * @return - String to use for metadata field (it is never NULL)
      */
-    public static String assembleLocation(ReverseGeocodeObject g, ArrayList<String> fieldnames) {
+    public static String assembleLocation(Place g, ArrayList<String> fieldnames) {
         String s = "";
         for (String f : fieldnames) {
             if (f.equals("country_code")) {
@@ -560,6 +575,12 @@ public class ImageCatalogue {
             if (f.equals("town")) {
                 s = addIfNotNull(s, g.getAddress().getTown());
             }
+            if (f.equals("suburb")) {
+                s = addIfNotNull(s, g.getAddress().getSuburb());
+            }
+            if (f.equals("amenity")) {
+                s = addIfNotNull(s, g.getAddress().getAmenity());
+            }
         }
         // replace spare comma at the end....
         s = s.trim();
@@ -568,7 +589,6 @@ public class ImageCatalogue {
         }
         return s;
     }
-
     /**
      * adds a comma and a value to a string
      * @param s - string to add to = this is either blank or a value ending in a comma (never null)
@@ -581,9 +601,6 @@ public class ImageCatalogue {
         }
         return s;
     }
-
-
-
     /**
      * this adds some HTML for images to the Place object so we can incorporate into Freemarker report easily
      * @param width - width of image
@@ -591,26 +608,31 @@ public class ImageCatalogue {
      */
     public static void addLinksToPlaces(Integer width, String root)
     {
-        for(ReverseGeocodeObject r : geoObjects)
+        for(Place r : geoObjects)
         {
-            String s= "";
+            StringBuilder s= new StringBuilder();
             for(FileObject f: fileObjects)
             {
                 try {
-                    if (f.getPlaceKey().equals(r.getInternalKey())) {
-                        s = s + "<img src=\"" + root + "\\" + f.getThumbnail() + "\" width=\""+width+"\" class=\"padding\" >";
+                    if(f.getPlaceKey()!=null) {
+                        if (f.getPlaceKey().equals(r.getInternalKey())) {
+                            if (!(f.getOrientation() == 8 || f.getOrientation() == 6)) {
+                                s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(width).append("\" class=\"padding\" >");
+                            } else {
+                                Integer newWidth = width * f.getHeight() / f.getWidth();
+                                s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(newWidth).append("\" class=\"padding\" >");
+                            }
+                        }
                     }
                 }
                 catch(Exception e)
                 {
-                    message("error adding links to decoding:"+f.getDisplayName()+e);
+                    message("error adding links to Places:"+f.getDisplayName()+e);
                 }
             }
-            r.setImagelinks(s);
+            r.setImagelinks(s.toString());
         }
-
     }
-
     /**
      * this adds some HTML for images to the Track object so we can incorporate into Freemarker report easily
      * @param width - width of image
@@ -618,24 +640,30 @@ public class ImageCatalogue {
      */
     public static void addLinksToTracks(Integer width, String root)
     {
-        ArrayList<Integer> usedPoints = new ArrayList<>();
+
         // for each track, get all the photos for the day, as some may not have location...and
         // they could be slotted in, in sequence (i.e. date order)
         for(TrackObject t : tracks) {
-            String s = "";
+            StringBuilder s = new StringBuilder();
                     for (FileObject f : fileObjects) {
                         try {
                             if (getDateWithoutTimeUsingCalendar(f.getBestDate()).equals(t.getTrackDate())) {
-                                s = s + "<img src=\"" + root + "\\" + f.getThumbnail() + "\" width=\""+width+"\" class=\"padding\" >";
+                                if(!(f.getOrientation()==8 || f.getOrientation()==6)) {
+                                    s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(width).append("\" class=\"padding\" >");
+                                }
+                                else
+                                {
+                                    Integer newWidth=width*f.getHeight()/f.getWidth();
+                                    s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(newWidth).append("\" class=\"padding\" >");
+                                }
                             }
                         } catch (Exception e) {
                             message("error adding links to tracks:" + f.getDisplayName() + e);
                         }
             }
-            t.setImagelinks(s);
+            t.setImagelinks(s.toString());
         }
     }
-
     /**
      * Adds tracks to the tracks arraylist
      * @param points - one or more geo points in an array list - referenced by internal key
@@ -719,6 +747,10 @@ public class ImageCatalogue {
         cameras.add(cNew);
         return newKey;
     }
+
+    /**
+     *  Checks for duplifate filenames and adds tot he duplicate list
+     */
     public static void checkDuplicates()
     {
 
@@ -750,13 +782,16 @@ public class ImageCatalogue {
      * @param lat - latitude (of image)
      * @param lon - longitude (of image)
      * @param d - date  (of image)
-     * @return - ReverseGeocodeObject i.e. a place...
+     * @return - Place Object ..
      */
-    public static ReverseGeocodeObject checkCachedGeo(double lat, double lon,Date d) {
-        for (ReverseGeocodeObject g : geoObjects) {
+    public static Place checkCachedGeo(double lat, double lon, Date d, double checkDistance) {
+        for (Place g : geoObjects) {
             double glat = Double.parseDouble(g.getLat());
             double glon = Double.parseDouble(g.getLon());
-            if (Math.abs(glat - lat) < cacheDistance && Math.abs(glon - lon) < cacheDistance) {
+            double distance=distance_Between_LatLong(lat,lon,glat,glon);
+            if ( distance< checkDistance) {
+                message("Found cache entry: distance beeween points (metres)"+distance);
+                // if (Math.abs(glat - lat) < cacheDistance && Math.abs(glon - lon) < cacheDistance) {
                 Date startDate=g.getStartDate();
                 Date endDate=g.getEndDate();
                 int count=g.getCountPlace()+1;
@@ -783,11 +818,11 @@ public class ImageCatalogue {
             boolean result= new File(temp).mkdir();
             if(!result)
             {
-                message("Error creating new temporary directory:"+temp);
+                message("Did not create new output directory - it may already exist:"+temp);
             }
 
         } catch (Exception e) {
-            message("Directory may already exist for: "+temp);
+            message("Error creating new output directory - it may already exist for: "+temp);
         }
     }
 
@@ -805,7 +840,7 @@ public class ImageCatalogue {
         Integer placeKey=0;
         Date startDate=null;
         Date endDate=null;
-        String coordinates="";
+        StringBuilder coordinates = new StringBuilder();
 
         ArrayList<Integer> points = new ArrayList<>();
         for(FileObject f : fileObjects)
@@ -815,9 +850,9 @@ public class ImageCatalogue {
             if(d.equals(lastDay))
             {
                 if(f.getPlaceKey()!=null) {
-                    if (f.getPlaceKey() != placeKey) {
+                    if (!f.getPlaceKey().equals(placeKey)) {
                         points.add(f.getPlaceKey());
-                        coordinates = new StringBuilder().append(coordinates).append(f.getLongitude()).append(",").append(f.getLatitude()).append(",").append(f.getAltitude()).append(System.getProperty("line.separator")).toString();
+                        coordinates.append(f.getLongitude()).append(",").append(f.getLatitude()).append(",").append(f.getAltitude()).append(System.getProperty("line.separator"));
                         placeKey=f.getPlaceKey();
                     }
                 }
@@ -830,12 +865,12 @@ public class ImageCatalogue {
             }
             else
             {
-                addTrack(points,startDate,endDate,lastDay,coordinates);
+                addTrack(points,startDate,endDate,lastDay,coordinates.toString());
                 points = new ArrayList<>();
-                coordinates="";
+                coordinates = new StringBuilder();
                 if(f.getPlaceKey()!=null) {
                     points.add(f.getPlaceKey());
-                    coordinates = f.getLongitude() + "," + f.getLatitude() + "," + f.getAltitude() + System.getProperty("line.separator");
+                    coordinates.append(f.getLongitude()).append(",").append(f.getLatitude()).append(",").append(f.getAltitude()).append(System.getProperty("line.separator"));
                     placeKey=f.getPlaceKey();
                 }
                 else
@@ -849,7 +884,7 @@ public class ImageCatalogue {
             }
         }
         // write out last track
-        addTrack(points,startDate,endDate,lastDay,coordinates);
+        addTrack(points,startDate,endDate,lastDay,coordinates.toString());
         return true;
     }
 
@@ -909,8 +944,8 @@ public class ImageCatalogue {
             message("NUMBER OF PLACES READ FROM CONFIG FILE:"+c.getPlaces().size());
             geoObjects=c.getPlaces();
             //sort in case there are gaps in numbering
-            geoObjects.sort(Comparator.comparing(ReverseGeocodeObject::getInternalKey));
-            for(ReverseGeocodeObject g : geoObjects)
+            geoObjects.sort(Comparator.comparing(Place::getInternalKey));
+            for(Place g : geoObjects)
             {
                 g.setCountPlace(0);
             }
@@ -1043,20 +1078,6 @@ public class ImageCatalogue {
         calendar.set(Calendar.MILLISECOND, 0);
         return calendar.getTime();
     }
-    private static IPTCApplicationTag getTagFromName(String tagName) {
-
-        for (IPTCApplicationTag e : IPTCApplicationTag.values()) {
-            if (tagName.equals(e.getName())) return e;
-        }
-        return null;
-    }
-    private static ExifTag getExifTagFromName(String tagName) {
-
-        for (ExifTag e : ExifTag.values()) {
-            if (tagName.equals(e.getName())) return e;
-        }
-        return null;
-    }
 
     /**
      * Creates a string from the display names for start and end point
@@ -1065,7 +1086,7 @@ public class ImageCatalogue {
      */
     private static String getStartAndEndString(TrackObject t)
     {
-        String s="";
+
         if(t.getPoints().size()==1)
         {
             try {
@@ -1088,15 +1109,14 @@ public class ImageCatalogue {
 
         }
     }
-
     /**
      * Finds geoObject from its internal key
      * @param i - key value
-     * @return - ReverseGeocodeObject
+     * @return - Place Object
      */
-    private static ReverseGeocodeObject getPlace(Integer i)
+    private static Place getPlace(Integer i)
     {
-        for(ReverseGeocodeObject r : geoObjects)
+        for(Place r : geoObjects)
         {
             if(r.getInternalKey().equals(i))
             {
@@ -1170,17 +1190,6 @@ public class ImageCatalogue {
             }
         }
     }
-
-    private static void printTagValue(final JpegImageMetadata jpegMetadata,
-                                      final TagInfo tagInfo) {
-        final TiffField field = jpegMetadata.findEXIFValueWithExactMatch(tagInfo);
-        if (field == null) {
-            message(tagInfo.name + ": " + "Not Found.");
-        } else {
-            message(tagInfo.name + ": "
-                    + field.getValueDescription());
-        }
-    }
     /**
      * Updates a file (or displays information only) that has been selected
      * @param file - File to process
@@ -1194,8 +1203,6 @@ public class ImageCatalogue {
         String model = "";
         String programName = "";
         double fStop =0.0d;
-
-        String dimensions = "";
         Date bestDate = null;
         Date exifDigitisedDate = null;
         Date exifOriginalDate = null;
@@ -1216,10 +1223,9 @@ public class ImageCatalogue {
         String iptcCopyright="";
         String iptcCategory="";
         String iptcKeywords="";
-        ReverseGeocodeObject g=null;
-        Comments currentComments=null;
-        Boolean fileGeocoded=false;
-        Boolean alreadyGeocoded = false;
+        Place g;
+        boolean fileGeocoded=false;
+        boolean alreadyGeocoded = false;
         try {
             BasicFileAttributes attr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
             lastModifiedDate = new Date(attr.lastModifiedTime().toMillis());
@@ -1233,7 +1239,7 @@ public class ImageCatalogue {
         List<IPTCDataSet> iptcs = new ArrayList<>();
         // Create a TIFF EXIF wrapper
         IPTC iptc = new IPTC();
-        JpegExif exif = new JpegExif();
+
         List<String> existingComments;
         ArrayList<String> existingCommentsString=new ArrayList<>();
         try {
@@ -1243,18 +1249,16 @@ public class ImageCatalogue {
                 if (meta instanceof XMP) {
                     XMP.showXMP((XMP) meta);
 
-                } else if (meta instanceof Exif) {
-                    exif=(JpegExif)meta;
                 } else if (meta instanceof Comments) {
-                    currentComments = (Comments)meta;
+
                     existingComments = (((Comments) meta).getComments());
                     for(String s : existingComments)
                     {
                       //  existingCommentsString.add(s);
-                      if(s.indexOf("#geocoded:")>-1 && s.length()==29)
+                      if(s.contains("#geocoded:") && s.length()==29)
                       {
                           alreadyGeocoded=true;
-                          message("file has already been geocoded:"+s);
+                          message("File has already been geocoded:"+s);
                       }
 
                     }
@@ -1262,51 +1266,58 @@ public class ImageCatalogue {
                 } else if (meta instanceof IPTC) {
 
 
-                    iptc= (IPTC)meta;
-                    Iterator<MetadataEntry> iterator = meta.iterator();
-                    while (iterator.hasNext()) {
-                        MetadataEntry item = iterator.next();
+                    iptc = (IPTC) meta;
+                    for (MetadataEntry item : meta) {
                         if (item.getKey().equals(IPTCApplicationTag.CITY.getName())) {
                             if (item.getValue().length() > 0) {
                                 city = item.getValue();
                             }
-                            message("City currently is:" + item.getValue());
+                            message("City current value is:" + item.getValue());
                         } else if (item.getKey().equals(IPTCApplicationTag.COUNTRY_CODE.getName())) {
-                            if (item.getValue().length() > 0 ) {
+                            if (item.getValue().length() > 0) {
                                 country_code = item.getValue();
+                                message("Country code current value is:" + item.getValue());
                             }
                         } else if (item.getKey().equals(IPTCApplicationTag.COUNTRY_NAME.getName())) {
-                            if (item.getValue().length() > 0 ) {
+                            if (item.getValue().length() > 0) {
                                 country = item.getValue();
+                                message("Country name current value is:" + item.getValue());
                             }
                         } else if (item.getKey().equals(IPTCApplicationTag.SUB_LOCATION.getName())) {
-                            if (item.getValue().length() > 0 ) {
+                            if (item.getValue().length() > 0) {
                                 subLocation = item.getValue();
+                                message("Sublocation current value is:" + item.getValue());
                             }
                         } else if (item.getKey().equals(IPTCApplicationTag.PROVINCE_STATE.getName())) {
-                            if (item.getValue().length() > 0 ) {
+                            if (item.getValue().length() > 0) {
                                 stateProvince = item.getValue();
+                                message("Province / State current value is:" + item.getValue());
+                            }
+                        } else if (item.getKey().equals(IPTCApplicationTag.COPYRIGHT_NOTICE.getName())) {
+                            if (item.getValue().length() > 0) {
+                                iptcCopyright = item.getValue();
+                                message("IPTC Copyright value is:" + item.getValue());
+                            }
+
+                        } else if (item.getKey().equals(IPTCApplicationTag.CATEGORY.getName())) {
+                            if (item.getValue().length() > 0) {
+                                iptcCategory = item.getValue();
+                                message("IPTC Category value is:" + item.getValue());
+                            }
+                        } else if (item.getKey().equals(IPTCApplicationTag.KEY_WORDS.getName())) {
+                            if (item.getValue().length() > 0) {
+                                iptcKeywords = item.getValue();
+                                message("IPTC Keywords value is:" + item.getValue());
                             }
                         }
                     }
-
-
-                } else {
-                   // we may want to look at other metadata
                 }
             }
-
-
         } catch (Exception e) {
             message("error reading metadata" + e);
         }
-
-
         try {
             final ImageMetadata metadata = Imaging.getMetadata(file);
-
-            // message(metadata);
-
             if (metadata instanceof JpegImageMetadata) {
                 final JpegImageMetadata jpegMetadata = (JpegImageMetadata) metadata;
 
@@ -1316,17 +1327,16 @@ public class ImageCatalogue {
                 // we could just as easily search for any other tag.
                 //
                 // see the TiffConstants file for a list of TIFF tags.
-
-
-
                 // print out various interesting EXIF tags.
                 make = getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MAKE);
                 model = getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL);
                 fStop = getTagValueDouble(jpegMetadata, ExifTagConstants.EXIF_TAG_FNUMBER);
                 programName = getStringOrUnknown(jpegMetadata, ExifTagConstants.EXIF_TAG_SOFTWARE);
                 orientation=getTagValueInteger(jpegMetadata, TiffTagConstants.TIFF_TAG_ORIENTATION);
-
-              //  dimensions = getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL);
+                if(orientation==null)
+                {
+                    orientation=1;
+                }
                 exifOriginalDate =getTagValueDate(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
                 exifDigitisedDate=getTagValueDate(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_DIGITIZED);
                 tiffDate =    getTagValueDate(jpegMetadata, TiffTagConstants.TIFF_TAG_DATE_TIME);
@@ -1346,9 +1356,8 @@ public class ImageCatalogue {
                     final TiffImageMetadata.GPSInfo gpsInfo = exifMetadata.getGPS();
                     if (null != gpsInfo) {
                         geoFound = true;
-                        countGEOCODED++;
-                        countDriveGEOCODED++;
-                        final String gpsDescription = gpsInfo.toString();
+
+
                         longitude = gpsInfo.getLongitudeAsDegreesEast();
                         latitude = gpsInfo.getLatitudeAsDegreesNorth();
                         message("    "
@@ -1358,17 +1367,14 @@ public class ImageCatalogue {
                     }
                 }
             }
-
         } catch (Exception e) {
-
             message("Error reading metadata:"+e);
-
         }
         if (bestDate == null) {
             bestDate = getFileDate(file);
         }
         Integer cameraKey = addCamera(make, model, bestDate);
-        Boolean thumbResult=createThumbFromPicture(file, config.getTempdir(), thumbName, 400, 400,orientation);
+        Boolean thumbResult=createThumbFromPicture(file, config.getTempdir(), thumbName, config.getWidth(),config.getHeight(),orientation);
         if(thumbResult)
         {
             message("Created Thumbnail:" + thumbName);
@@ -1399,6 +1405,7 @@ public class ImageCatalogue {
         fNew.setTiffDate(tiffDate);
         fNew.setAltitude(altitude);
         fNew.setProgramName(programName);
+        fNew.setOrientation(orientation);
         if(thumbName!=null)
         {
             fNew.setThumbnail(thumbName);
@@ -1417,9 +1424,11 @@ public class ImageCatalogue {
         if (geoFound) {
             fNew.setLatitude(latitude);
             fNew.setLongitude(longitude);
-            g = checkCachedGeo(latitude, longitude,bestDate);
+            g = checkCachedGeo(latitude, longitude,bestDate,  Double.valueOf(config.getCacheDistance()));
             if (g == null) {
-                g = OpenMaps.reverseGeocode(String.valueOf(latitude), String.valueOf(longitude), config);
+                waitForGeo(config.getPauseSeconds());
+
+                g = OpenMaps.reverseGeocode(String.valueOf(latitude), String.valueOf(longitude),config);
 
                 if (g != null) {
                     message("Adding a new Place:["+(geoObjects.size() + 1) +"]" + g.getDisplay_name());
@@ -1437,13 +1446,17 @@ public class ImageCatalogue {
                     g.setEndDate(bestDate);
                     g.setStartDate(bestDate);
                     geoObjects.add(g);
+                    countGEOCODED++;
+                    countDriveGEOCODED++;
                 } else {
-                    fNew.setDisplayName("Could not reverse goecode Lat,Long data");
+                    fNew.setDisplayName("");
                     message("Could not geocode :Lat" + latitude + ", Long:" + longitude);
                 }
             }
             else
             {
+                countGEOCODED++;
+                countDriveGEOCODED++;
                  message("Found Lat / Long in cache : ["+g.getInternalKey()+"]"+g.getDisplay_name());
             }
 
@@ -1460,35 +1473,33 @@ public class ImageCatalogue {
                 //
                 if ((country_code.length() < 1 &&  !alreadyGeocoded)  ||   (config.getOverwrite() &&  !alreadyGeocoded)|| config.getRedoGeocode()) {
                     iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_CODE, fNew.getCountry_code().toUpperCase()));
-                    message("Updated:"+ IPTCApplicationTag.COUNTRY_CODE.toString());
+                    message("New Value found:"+ IPTCApplicationTag.COUNTRY_CODE.toString()+ " - "+ fNew.getCountry_code());
                     fileGeocoded=true;
                 }
                 if ((country.length() < 1 &&  !alreadyGeocoded)  ||  (config.getOverwrite() &&  !alreadyGeocoded)|| config.getRedoGeocode()) {
                     iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_NAME, fNew.getCountry_name()));
-                    message("Updated:"+ IPTCApplicationTag.COUNTRY_NAME.toString());
+                    message("New Value found:"+ IPTCApplicationTag.COUNTRY_NAME.toString()+ " - "+ fNew.getCountry_name());
                     fileGeocoded=true;
                 }
                 if ( (stateProvince.length() < 1 &&  !alreadyGeocoded)  ||  (config.getOverwrite() &&  !alreadyGeocoded)|| config.getRedoGeocode()) {
                     iptcs.add(new IPTCDataSet(IPTCApplicationTag.PROVINCE_STATE,  fNew.getStateProvince()));
-                    message("Updated:"+ IPTCApplicationTag.PROVINCE_STATE.toString());
+                    message("New Value found:"+ IPTCApplicationTag.PROVINCE_STATE.toString()+ " - "+ fNew.getStateProvince());
                     fileGeocoded=true;
                 }
                 if ((subLocation.length() < 1 &&  !alreadyGeocoded)  ||  (config.getOverwrite() &&  !alreadyGeocoded) || config.getRedoGeocode()) {
                     iptcs.add(new IPTCDataSet(IPTCApplicationTag.SUB_LOCATION, fNew.getSubLocation()));
-                    message("Updated:"+ IPTCApplicationTag.SUB_LOCATION.toString());
+                    message("New Value found:"+ IPTCApplicationTag.SUB_LOCATION.toString()+ " - "+ fNew.getSubLocation());
                     fileGeocoded=true;
                 }
                 if ((city.length() < 1 &&  !alreadyGeocoded)  || (config.getOverwrite() && !alreadyGeocoded) || config.getRedoGeocode()) {
                     iptcs.add(new IPTCDataSet(IPTCApplicationTag.CITY, fNew.getCity()));
-                    message("Updated:"+ IPTCApplicationTag.CITY.toString());
+                    message("New Value found:"+ IPTCApplicationTag.CITY.toString()+ " - "+ fNew.getCity());
                     fileGeocoded=true;
                 }
             }
         } else {
             fNew.setDisplayName("No Lat and Long date found");
         }
-
-
         if(config.getUpdate()) {
             try {
                 //     List<IPTCDataSet> iptcs =  new ArrayList<IPTCDataSet>();
@@ -1512,15 +1523,9 @@ public class ImageCatalogue {
                 File outFile = new File(fout_name);
                 FileOutputStream fout = new FileOutputStream(outFile, false);
                 List<Metadata> metaList = new ArrayList<>();
-
-
-                metaList.add(populateExif(exif));
-
                 iptc.addDataSets(iptcs);
                 metaList.add(iptc);
-
                 if(fileGeocoded) {
-                    Date d = new Date();
                     DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
                     existingCommentsString.add("#geocoded:" + formatter.format(new Date()));
                     metaList.add(new Comments(existingCommentsString));
@@ -1547,6 +1552,25 @@ public class ImageCatalogue {
         fileObjects.add(fNew);
         return true;
     }
+    // Points will be converted to radians before calculation
+    // returns value in metres
+    public static double distance_Between_LatLong(double lat1, double lon1, double lat2, double lon2) {
+        lat1 = Math.toRadians(lat1);
+        lon1 = Math.toRadians(lon1);
+        lat2 = Math.toRadians(lat2);
+        lon2 = Math.toRadians(lon2);
+
+        double earthRadius = 6371.01; //Kilometers
+
+        return (earthRadius * Math.acos(Math.sin(lat1)*Math.sin(lat2) + Math.cos(lat1)*Math.cos(lat2)*Math.cos(lon1 - lon2)))*1000;
+
+    }
+    /**
+     * gets either a string or "unknown" string from metadata
+     * @param jpegMetadata - jpegmetadata object
+     * @param tagInfo - tag value
+     * @return - string value
+     */
     public static String getStringOrUnknown(final JpegImageMetadata jpegMetadata, final TagInfo tagInfo)
     {
         String v=getTagValueString(jpegMetadata, tagInfo);
@@ -1590,10 +1614,7 @@ public class ImageCatalogue {
                     for (MetadataEntry item : meta) {
                        printMetadata(item,"IPTC - "+ item.getKey()+":","    ");
                     }
-                } else if (meta instanceof TiffExif) {
-                    for (MetadataEntry item : meta) {
-                        printMetadata(item,"TIFFExif - "+ item.getKey()+":","    ");
-                    }
+
                 } else if (meta instanceof Comments) {
                     List<String> existingComments ;
                     existingComments = ((Comments) meta).getComments();
@@ -1615,15 +1636,13 @@ public class ImageCatalogue {
         }
         return true;
     }
-
     /**
      * Set Drive structure if there is no json input file
      * @param config - config object
      * @param rootDrive - root drive (passed as an argument at program start)
      * @param tempDir - temp directory (passed as an argument at program start)
-     * @return - modified config object
-     */
-    public static ConfigObject setDrives(ConfigObject config,String rootDrive,String tempDir)
+      */
+    public static void setDrives(ConfigObject config,String rootDrive,String tempDir)
     {
         config.setTempdir(tempDir);
         DriveObject d= new DriveObject();
@@ -1641,7 +1660,7 @@ public class ImageCatalogue {
         ArrayList<DriveObject> drives = new ArrayList<>();
         drives.add(d);
         config.setDrives(drives);
-        return config;
+
     }
 
     /**
@@ -1654,8 +1673,8 @@ public class ImageCatalogue {
             countDrive = 0;
             countDriveTooSmall = 0;
             countDriveGEOCODED = 0;
-            message("Starting - drive"+d.getStartdir());
-            createTempDirForUser(c.getTempdir());
+            message("Reading drive: "+d.getStartdir());
+
             //recursively find all files
             readDirectoryContents(new File(d.getStartdir()), d, c.getTempdir(), c);
             messageLine("-");
@@ -1664,20 +1683,7 @@ public class ImageCatalogue {
             message("Photos geocoded on drive "+d.getStartdir()+" :" + countDriveGEOCODED );
         }
     }
-    // This method is for testing only
-    private static Exif populateExif(Exif exif)  {
 
-        exif.addExifField(ExifTag.WINDOWS_XP_AUTHOR, FieldType.WINDOWSXP, "Author");
-        exif.addExifField(ExifTag.WINDOWS_XP_KEYWORDS, FieldType.WINDOWSXP, "Exif Copyright:  Ted Carroll ");
-
-        DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
-
-        // Insert ThumbNailIFD
-        // Since we don't provide thumbnail image, it will be created later from the input stream
-        exif.setThumbnailRequired(true);
-
-        return exif;
-    }
 
     private static void printMetadata(MetadataEntry entry, String indent, String increment) {
         message(indent + entry.getKey() + (StringUtils.isNullOrEmpty(entry.getValue()) ? "" : ": " + entry.getValue()));

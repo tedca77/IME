@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class AddressObject {
-
+    private String amenity;
     private String suburb;
     private String city;
     private String county;

@@ -47,8 +47,19 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
+
+            <repository>
+                <id>javaxt.com</id>
+                <url>http://www.javaxt.com/maven</url>
+            </repository>
+
     </repositories>
     <dependencies>
+        <dependency>
+            <groupId>javaxt</groupId>
+            <artifactId>javaxt-core</artifactId>
+            <version>1.10.6</version>
+        </dependency>
         <dependency>
             <groupId>com.github.dragon66</groupId>
             <artifactId>icafe</artifactId>

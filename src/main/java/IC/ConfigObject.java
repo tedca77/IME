@@ -1,5 +1,5 @@
 package IC;
-import IC.openmaps.ReverseGeocodeObject;
+import IC.openmaps.Place;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
@@ -15,9 +15,11 @@ public class ConfigObject {
     private Boolean overwrite;
     private Boolean redoGeocode;
     private String thumbsize;
+    private Integer cacheDistance;
+    private Integer pauseSeconds;
     private ArrayList<DriveObject> drives;
     private ArrayList<CameraObject> cameras;
-    private ArrayList<ReverseGeocodeObject> places;
+    private ArrayList<Place> places;
     private ArrayList<EventObject> events;
     private ArrayList<FileObject> photos;
     private ArrayList<TrackObject> tracks;
@@ -28,5 +30,44 @@ public class ConfigObject {
     private ArrayList<String> sublocation;
     private String imageextensions;
     private String videoextensions;
+    public Integer getWidth()
+    {
+        Integer width=600;
+        String[] values = thumbsize.split("x",-1);
+        if(values.length!=2)
+        {
+            return width;
+        }
+        else
+        {
+            try {
+                return Integer.parseInt(values[0]);
+              }
+            catch(Exception e)
+            {
+                return width;
+            }
+        }
+     }
+    public Integer getHeight()
+    {
+        Integer height=400;
+        String[] values = thumbsize.split("x",-1);
+        if(values.length!=2)
+        {
+            return height;
+        }
+        else
+        {
+            try {
+                return Integer.parseInt(values[1]);
+            }
+            catch(Exception e)
+            {
+                return height;
+            }
+        }
+    }
+
 
 }
