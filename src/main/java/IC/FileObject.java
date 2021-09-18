@@ -39,5 +39,8 @@ public class FileObject {
     String thumbnail;
     String displayName;
     Integer orientation;
+    String IPTCCopyright;
+    String IPTCKeywords;
+    String IPTCCategory;
 
 }

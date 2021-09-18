@@ -88,7 +88,7 @@ public class ImageProcessing {
         g2.dispose();
         return resizedImg;
     }
-    public static Boolean createThumbFromPicture(File file,String tempDir,String thumbName,Integer width,Integer height,Integer orientation)
+    public static String createThumbFromPicture(File file,String tempDir,String thumbName,Integer width,Integer height,Integer orientation)
     {
 
         String newName;
@@ -107,7 +107,7 @@ public class ImageProcessing {
                 }
                 catch(Exception e)
                 {
-                    return false;
+                    return null;
                 }
             }
             BufferedImage imgThumb;
@@ -127,7 +127,7 @@ public class ImageProcessing {
                 catch(Exception ee)
                 {
                     System.out.println("Cannot create thumb for non jPEG formats"+ee);
-                    return false;
+                    return null;
                 }
             }
             javaxt.io.Image javaxtImage=new javaxt.io.Image(imgThumb);
@@ -148,11 +148,11 @@ public class ImageProcessing {
             javaxtImage.saveAs(outputfile);
             //upload
 
-            return true;
+            return thumbName;
 
         } catch (Exception e) {
             System.out.println("Failed to create thumbnail"+e);
-            return false;
+            return null;
         }
     }
 }
