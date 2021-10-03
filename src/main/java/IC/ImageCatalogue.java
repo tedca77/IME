@@ -122,7 +122,13 @@ public class ImageCatalogue {
             readConfigLists(config);
             createTempDirForUser(config.getTempdir());
             readDrives(config);
-            fileObjects.sort(Comparator.comparing(FileObject::getFileName));
+            try {
+                fileObjects.sort(Comparator.comparing(FileObject::getFileName));
+            }
+            catch(Exception e){
+                message("eerror"+e);
+            }
+
             checkDuplicates();
             // sort any ArrayLists....
             fileObjects.sort(Comparator.comparing(FileObject::getBestDate));
@@ -813,19 +819,25 @@ public class ImageCatalogue {
             double glon = Double.parseDouble(g.getLon());
             double distance=distance_Between_LatLong(lat,lon,glat,glon);
             if ( distance< checkDistance) {
-                message("Found cache entry: distance beeween points (metres)"+distance);
-                // if (Math.abs(glat - lat) < cacheDistance && Math.abs(glon - lon) < cacheDistance) {
-                Date startDate=g.getStartDate();
-                Date endDate=g.getEndDate();
-                int count=g.getCountPlace()+1;
-                g.setCountPlace(count);
-                if(d.before(startDate))
+                message("Found cache entry: distance between points (metres)"+distance);
+                g.setCountPlace(g.getCountPlace()+1);
+                if(g.getStartDate()==null)
                 {
                     g.setStartDate(d);
                 }
-                if(d.after(endDate))
+                else {
+                    if (d.before(g.getStartDate())) {
+                        g.setStartDate(d);
+                    }
+                }
+                if(g.getEndDate()==null)
                 {
                     g.setEndDate(d);
+                }
+                else {
+                    if (d.after(g.getEndDate())) {
+                        g.setEndDate(d);
+                    }
                 }
                 return g;
             }
@@ -1199,7 +1211,7 @@ public class ImageCatalogue {
         }
     }
     /**
-     * Creates a FileObjject and Updates the file metadata (or displays information only, depending on options chosen)
+     * Creates a FileObject and Updates the file metadata (or displays information only, depending on options chosen)
      * @param file - File to process
      * @param thumbName - name of theumbnail
      * @param config - Configuration Object
@@ -1242,7 +1254,11 @@ public class ImageCatalogue {
             if (metadata instanceof JpegImageMetadata) {
                 final JpegImageMetadata jpegMetadata = (JpegImageMetadata) metadata;
                 setFileObjectValues(fNew,existingMetadata,jpegMetadata,file);
-             }
+            }
+            else
+            {
+                setFileObjectValues(fNew,existingMetadata,null,file);
+            }
         } catch (Exception e) {
             message("Error reading metadata:"+e);
         }
@@ -1299,50 +1315,62 @@ public class ImageCatalogue {
      */
     public static void setFileObjectValues(FileObject fNew,FileObject existingMetadata,JpegImageMetadata jpegMetadata,File file)
     {
+        if(jpegMetadata!=null)
+        {
+            fNew.setCameraMaker(getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MAKE));
+            fNew.setCameraModel(getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL));
+            fNew.setFStop(getTagValueDouble(jpegMetadata, ExifTagConstants.EXIF_TAG_FNUMBER));
+            fNew.setProgramName(getStringOrUnknown(jpegMetadata, ExifTagConstants.EXIF_TAG_SOFTWARE));
+            fNew.setOrientation(getTagValueInteger(jpegMetadata, TiffTagConstants.TIFF_TAG_ORIENTATION));
+            fNew.setExifOriginal(getTagValueDate(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL));
+            fNew.setExifDigitised(getTagValueDate(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_DIGITIZED));
+            fNew.setTiffDate( getTagValueDate(jpegMetadata, TiffTagConstants.TIFF_TAG_DATE_TIME));
+            fNew.setBestDate(fNew.getExifOriginal());
+            if (fNew.getBestDate() == null) {
+                fNew.setBestDate(fNew.getExifDigitised());
+            }
+            if (fNew.getBestDate() == null) {
+                fNew.setBestDate(fNew.getTiffDate()) ;
+            }
+            // simple interface to GPS data
+            fNew.setAltitude(getTagValueDouble(jpegMetadata,GpsTagConstants.GPS_TAG_GPS_ALTITUDE));
+            try {
+
+
+                final TiffImageMetadata exifMetadata = jpegMetadata.getExif();
+                if (null != exifMetadata) {
+                    final TiffImageMetadata.GPSInfo gpsInfo = exifMetadata.getGPS();
+                    if (null != gpsInfo) {
+                        fNew.setLongitude(gpsInfo.getLongitudeAsDegreesEast());
+                        fNew.setLatitude(gpsInfo.getLatitudeAsDegreesNorth());
+                        message("    " + "GPS Longitude (Degrees East): " + fNew.getLongitude());
+                        message("    " + "GPS Latitude (Degrees North): " + fNew.getLatitude());
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                message("Error acessing exif metadata");
+            }
+
+        }
         fNew.setFileModified(existingMetadata.getFileModified());
         fNew.setFileAccessed(existingMetadata.getFileAccessed());
         fNew.setFileCreated(existingMetadata.getFileCreated());
-        fNew.setCameraMaker(getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MAKE));
-        fNew.setCameraModel(getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL));
-        fNew.setFStop(getTagValueDouble(jpegMetadata, ExifTagConstants.EXIF_TAG_FNUMBER));
-        fNew.setProgramName(getStringOrUnknown(jpegMetadata, ExifTagConstants.EXIF_TAG_SOFTWARE));
-        fNew.setOrientation(getTagValueInteger(jpegMetadata, TiffTagConstants.TIFF_TAG_ORIENTATION));
         if(fNew.getOrientation()==null)
         {
             fNew.setOrientation(1);
         }
-        fNew.setExifOriginal(getTagValueDate(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL));
-        fNew.setExifDigitised(getTagValueDate(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_DIGITIZED));
-        fNew.setTiffDate( getTagValueDate(jpegMetadata, TiffTagConstants.TIFF_TAG_DATE_TIME));
-        fNew.setBestDate(fNew.getExifOriginal());
-        if (fNew.getBestDate() == null) {
-            fNew.setBestDate(fNew.getExifDigitised());
+        if(fNew.getCameraMaker()==null)
+        {
+            fNew.setCameraMaker("Unknown");
         }
-        if (fNew.getBestDate() == null) {
-            fNew.setBestDate(fNew.getTiffDate()) ;
+        if(fNew.getCameraModel()==null)
+        {
+            fNew.setCameraModel("Unknown");
         }
         if (fNew.getBestDate() == null) {
             fNew.setBestDate(getFileDate(file));
-        }
-        // simple interface to GPS data
-        fNew.setAltitude(getTagValueDouble(jpegMetadata,GpsTagConstants.GPS_TAG_GPS_ALTITUDE));
-        try {
-
-
-            final TiffImageMetadata exifMetadata = jpegMetadata.getExif();
-            if (null != exifMetadata) {
-                final TiffImageMetadata.GPSInfo gpsInfo = exifMetadata.getGPS();
-                if (null != gpsInfo) {
-                    fNew.setLongitude(gpsInfo.getLongitudeAsDegreesEast());
-                    fNew.setLatitude(gpsInfo.getLatitudeAsDegreesNorth());
-                    message("    " + "GPS Longitude (Degrees East): " + fNew.getLongitude());
-                    message("    " + "GPS Latitude (Degrees North): " + fNew.getLatitude());
-                }
-            }
-        }
-        catch(Exception e)
-        {
-            message("Error acessing exif metadata");
         }
         fNew.setFileName(file.getName());
         fNew.setFileSize(new BigDecimal(file.length()));
