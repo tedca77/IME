@@ -49,20 +49,26 @@ import static IC.ImageProcessing.createThumbFromPicture;
  * Main class
  */
 public class ImageCatalogue {
+    static int countFiles = 0;   //total number of images found
     static int countImages = 0;   //total number of images found
     static int countTooSmall = 0; // images too small (images processed is countImages-countTooSmall)
+    static int countProcessed = 0; // images processed (images processed is countImages-countTooSmall)
     static int countLATLONG = 0;  // images with lat/long info
-    static int countALREADYGEOCODED = 0; // images which were successfully geocoded
+    static int countALREADYGEOCODED = 0; // images already geocoded
     static int countGEOCODED = 0; // images which were successfully geocoded
     static int countNOTGEOCODED = 0; // images which were not successfully geocoded (but with lat/long)
+    static int countUPDATED = 0; // images which were not successfully updated
     static int countErrors = 0;   // images where there were errors (e.g. failure of geocode or others)....
 //
+    static int countDriveFiles = 0;
     static int countDriveImages = 0;
     static int countDriveTooSmall = 0;
+    static int countDriveProcessed = 0;
     static int countDriveLATLONG = 0;
     static int countDriveALREADYGEOCODED = 0;
     static int countDriveGEOCODED = 0;
     static int countDriveNOTGEOCODED = 0;
+    static int countDriveUPDATED = 0;
     static int countDriveErrors = 0;
     static ArrayList<CameraObject> cameras = new ArrayList<>();
     static ArrayList<FileObject> fileObjects = new ArrayList<>();
@@ -165,13 +171,15 @@ public class ImageCatalogue {
             // print out total number of photos if more than one drive...
             if(config.getDrives().size()>1) {
                 messageLine("*");
-                message("All Drives -" + "Photos found:" + countImages);
-                message("All Drives - " + "Photos too small:" + countTooSmall);
-                message("All Drives - " + "Photos processed:" + (countImages-countTooSmall));
-                message("All Drives - " + "Photos with Lat Long:" + countLATLONG);
-                message("All Drives - " + "Photos already Geocoded:" + countALREADYGEOCODED);
-                message("All Drives - " + "Photos with Geocodes added:" + countGEOCODED);
-                message("All Drives - " + "Photos with failed Geocoding:" + countNOTGEOCODED);
+                message("All Drives -" + "Files found                      :" + countFiles);
+                message("All Drives -" + "Photos found                     :" + countImages);
+                message("All Drives - " + "Photos too small                :" + countTooSmall);
+                message("All Drives - " + "Photos processed                :" + countProcessed);
+                message("All Drives - " + "Photos with Lat Long            :" + countLATLONG);
+                message("All Drives - " + "Photos already Geocoded         :" + countALREADYGEOCODED);
+                message("All Drives - " + "Photos Geocoded                 :" + countGEOCODED);
+                message("All Drives - " + "Photos with failed Geocoding    :" + countNOTGEOCODED);
+                message("All Drives - " + "Photos Updated                  :" + countUPDATED);
                 message("All Drives - " + "Photos with Errors in processing:" + countErrors);
             }
 
@@ -456,14 +464,18 @@ public class ImageCatalogue {
                                 }
                             }
                         } else {
+                            countFiles++;
+                            countDriveFiles++;
                             if (isImage(file.getName(),config.getImageextensions())) {
                                 if (!isExcludedPrefix(file.getName(), drive.getExcludespec().getFileprefixes())) {
+                                    countImages++;
+                                    countDriveImages++;
                                     long fileSize = file.length();
                                     if (fileSize > config.getMinfilesize()) {
-                                        countImages++;
-                                        countDriveImages++;
+                                        countProcessed++;
+                                        countDriveProcessed++;
                                         messageLine("-");
-                                        message("File number:["+ countImages + "], file:" + file.getCanonicalPath());
+                                        message("File number:["+ countProcessed + "], file:" + file.getCanonicalPath());
                                         message("File size is:" + fileSize +" ( bytes)");
                                         if(config.getShowmetadata()) {
                                             if (!readMetadata(file)) {
@@ -1203,7 +1215,7 @@ public class ImageCatalogue {
     public static Boolean processFile(File file, String thumbName,ConfigObject config, DriveObject drive) {
         FileObject existingMetadata = new FileObject();
         FileObject fNew = new FileObject();
-        Place g;
+
         boolean alreadyGeocoded = false;
         readSystemDates(existingMetadata,file);
         IPTC iptc = new IPTC();
@@ -1248,38 +1260,57 @@ public class ImageCatalogue {
         fNew.setThumbnail(createThumbFromPicture(file, config.getTempdir(), thumbName, config.getWidth(),config.getHeight(),fNew.getOrientation()));
         // Geocodes if lat and long present
         if (fNew.getLatitude()!=null && fNew.getLongitude()!=null) {
-            countLATLONG++;
-            countDriveLATLONG++;
-            g = checkCachedGeo(fNew.getLatitude(), fNew.getLongitude(),fNew.getBestDate(),  Double.valueOf(config.getCacheDistance()));
+            geocode(alreadyGeocoded,config,fNew);
+        } else {
+            fNew.setDisplayName("No Lat and Long date found");
+        }
+        if(config.getUpdate()) {
+            if(!updateFile(config,drive,file,existingCommentsString,iptc,exif,alreadyGeocoded,existingMetadata,fNew))
+            {
+                message("Cannot update File");
+            }
+            else
+            {
+                countUPDATED++;
+                countDriveUPDATED++;
+            }
+        }
+        fileObjects.add(fNew);
+        return true;
+    }
+    public static void geocode(Boolean alreadyGeocoded,ConfigObject config,FileObject fNew)
+    {
+        Place g;
+        countLATLONG++;
+        countDriveLATLONG++;
+        if(!alreadyGeocoded || config.getRedoGeocode() ) {
+            g = checkCachedGeo(fNew.getLatitude(), fNew.getLongitude(), fNew.getBestDate(), Double.valueOf(config.getCacheDistance()));
             if (g == null) {
                 waitForGeo(config.getPauseSeconds());
-                g = OpenMaps.reverseGeocode(String.valueOf(fNew.getLatitude()), String.valueOf(fNew.getLongitude()),config);
+                g = OpenMaps.reverseGeocode(String.valueOf(fNew.getLatitude()), String.valueOf(fNew.getLongitude()), config);
                 if (g != null) {
-                     fNew.setPlaceKey(addPlace(g,fNew.getBestDate()));
+                    fNew.setPlaceKey(addPlace(g, fNew.getBestDate()));
                 } else {
                     countNOTGEOCODED++;
                     countDriveNOTGEOCODED++;
                     fNew.setDisplayName("");
                     message("Could not geocode :Lat" + fNew.getLatitude() + ", Long:" + fNew.getLongitude());
                 }
-            }
-            else
-            {
-                message("Found Lat / Long in cache : ["+g.getInternalKey()+"]"+g.getDisplay_name());
+            } else {
+                message("Found Lat / Long in cache : [" + g.getInternalKey() + "]" + g.getDisplay_name());
                 fNew.setPlaceKey(g.getInternalKey());
             }
-            if(g!=null)
-            {
-                setFileObjectGEOValues(fNew,g);
+            if (g != null) {
+                setFileObjectGEOValues(fNew, g);
+                countGEOCODED++;
+                countDriveGEOCODED++;
             }
-        } else {
-            fNew.setDisplayName("No Lat and Long date found");
         }
-        if(config.getUpdate()) {
-            if(!updateFile(config,drive,file,existingCommentsString,iptc,exif,alreadyGeocoded,existingMetadata,fNew)){message("Cannot update File");}
+        else
+        {
+            countALREADYGEOCODED++;
+            countDriveALREADYGEOCODED++;
         }
-        fileObjects.add(fNew);
-        return true;
     }
     public static void setFileObjectGEOValues(FileObject fNew,Place g)
     {
@@ -1356,7 +1387,7 @@ public class ImageCatalogue {
         fNew.setFileName(file.getName());
         fNew.setFileSize(new BigDecimal(file.length()));
         fNew.setDirectory(FilenameUtils.getFullPath(file.getPath()));
-        fNew.setFileKey(countImages);
+        fNew.setFileKey(countProcessed);
         try {
             BufferedImage bimg = ImageIO.read(file);
             fNew.setWidth(bimg.getWidth());
@@ -1638,12 +1669,15 @@ public class ImageCatalogue {
     public static void readDrives(ConfigObject c)
     {
         for (DriveObject d : c.getDrives()) {
+            countDriveFiles = 0;
             countDriveImages = 0;
             countDriveTooSmall = 0;
+            countDriveProcessed = 0;
             countDriveGEOCODED = 0;
             countDriveALREADYGEOCODED=0;
             countDriveLATLONG=0;
             countDriveNOTGEOCODED=0;
+            countDriveUPDATED=0;
             countDriveErrors=0;
             message("Reading drive: "+d.getStartdir());
 
@@ -1651,17 +1685,16 @@ public class ImageCatalogue {
             readDirectoryContents(new File(d.getStartdir()), d, c.getTempdir(), c);
             messageLine("-");
             String ex=" on drive "+d.getStartdir()+" :";
+            message("Files found                    "+ex + countDriveFiles);
             message("Photos found                    "+ex + countDriveImages);
-            message("Photos too small                "+ex + countTooSmall);
-            message("Photos processed                "+ex + (countImages-countTooSmall));
-            message("Photos with Lat Long            "+ex + countLATLONG);
-            message("Photos already Geocoded         "+ex + countALREADYGEOCODED);
-            message("Photos with Geocodes added      "+ex + countGEOCODED);
-            message("Photos with failed Geocoding    "+ex + countNOTGEOCODED);
-            message("Photos with Errors in processing"+ex + countErrors);
-
-
-
+            message("Photos too small                "+ex + countDriveTooSmall);
+            message("Photos processed                "+ex + countDriveProcessed);
+            message("Photos with Lat Long            "+ex + countDriveLATLONG);
+            message("Photos already Geocoded         "+ex + countDriveALREADYGEOCODED);
+            message("Photos Geocoded                 "+ex + countDriveGEOCODED);
+            message("Photos with failed Geocoding    "+ex + countDriveNOTGEOCODED);
+            message("Photos updated                  "+ex + countDriveUPDATED);
+            message("Photos with Errors in processing"+ex + countDriveErrors);
         }
     }
     private static void printMetadata(MetadataEntry entry, String indent, String increment) {
