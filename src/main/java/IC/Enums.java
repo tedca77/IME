@@ -12,6 +12,8 @@ public class Enums {
            redoGeocoding - will do geocoding even if the metadata says that geocoding has been done before ... default false
            overwriteValues - if the subLocation, country etc. are filled in, then they will not be replaced...default false
           */
-
+       public enum processMode {
+           postcode,geocode,place,latlon,event,date
+        }
 
 }

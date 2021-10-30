@@ -30,6 +30,7 @@ public class ConfigObject {
     private ArrayList<String> sublocation;
     private String imageextensions;
     private String videoextensions;
+    private String openAPIKey;
     public Integer getWidth()
     {
         Integer width=600;

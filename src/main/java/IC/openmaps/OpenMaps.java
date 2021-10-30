@@ -2,8 +2,10 @@ package IC.openmaps;
 import IC.ConfigObject;
 import IC.Rest;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.web.util.WebUtils;
 
 import static IC.ImageCatalogue.assembleLocation;
+import static java.net.URLEncoder.encode;
 
 
 public class OpenMaps {
@@ -35,6 +37,40 @@ public class OpenMaps {
         }
         catch(Exception e)
         {
+            return null;
+        }
+    }
+    /*
+      returns the Grid location for a Place Name - this is compatible with Google and OpenStreetMap coordinates - slightly different from Grid Reference as uses decimal for minutes and seconds
+     */
+    public static String checkPostCode(String query,String apiKey,String countryString)
+    {
+        Rest r = new Rest();
+        String enc = WebUtils.DEFAULT_CHARACTER_ENCODING;
+        if(apiKey==null)
+        {
+            return "NOAPIKEY";
+        }
+        try {
+            String s="https://api.openrouteservice.org/geocode/search?api_key="+apiKey+"&boundary.country="+countryString+"&text="+ encode(query,enc);
+            System.out.println("get Place:"+s);
+            String result = r.doGetString(s);
+            ObjectMapper mapper = new ObjectMapper();
+            OpenMapPlace dResult = mapper.readValue(result, OpenMapPlace.class);
+            if(dResult.getFeatures().size()==1)
+            {
+                System.out.println("result:"+dResult.getBbox().get(0)+","+dResult.getBbox().get(1));
+                return dResult.getBbox().get(1)+","+dResult.getBbox().get(0);
+            }
+            else
+            {
+                return "";
+            }
+
+        }
+        catch(Exception e)
+        {
+            System.out.println("Error in getPlace:"+e);
             return null;
         }
     }

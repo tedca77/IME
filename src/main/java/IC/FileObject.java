@@ -42,5 +42,8 @@ public class FileObject {
     String IPTCCopyright;
     String IPTCKeywords;
     String IPTCCategory;
-
+    String IPTCInstructions;
+    String windowsComments;
+    String windowsTitle;
+    String windowsSubject;
 }
