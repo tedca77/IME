@@ -42,6 +42,10 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -52,6 +56,7 @@ import static IC.openmaps.OpenMaps.checkPostCode;
  * Main class
  */
 public class ImageCatalogue {
+    static ZoneId z;
     static int countFiles = 0;   //total number of images found
     static int countImages = 0;   //total number of images found
     static int countTooSmall = 0; // images too small (images processed is countImages-countTooSmall)
@@ -77,6 +82,8 @@ public class ImageCatalogue {
     static ArrayList<FileObject> fileObjects = new ArrayList<>();
     static ArrayList<FileObject> duplicateObjects = new ArrayList<>();
     static ArrayList<Place> places = new ArrayList<>();
+    static ArrayList<EventObject> events = new ArrayList<>();
+
     static ArrayList<TrackObject> tracks = new ArrayList<>();
     // Default Variables - that can be modified
     static int messageLength=160; //length of Console Message
@@ -85,6 +92,7 @@ public class ImageCatalogue {
     static String jsonDefault="config.json";
     static Long minFileSizeDefault=4000L;
     static String thumbSizeDefault="240x180";
+    static String timeZoneDefault="Europe/London";
     static ArrayList<String> isocountryDefault=new ArrayList<>(Collections.singletonList("country_code"));
     static ArrayList<String> countryDefault=new ArrayList<>(Collections.singletonList("country"));
     static ArrayList<String> stateprovinceDefault=new ArrayList<>(Arrays.asList("county","state_district"));
@@ -100,6 +108,7 @@ public class ImageCatalogue {
      * @param args - either single json file or two files, first one is root directory and second is output file, followed by parameters
      */
     public static void main(String[] args) {
+        z= ZoneId.systemDefault();
         startTime= new Date();
         ConfigObject config=null;
         Path fileName=null;
@@ -225,6 +234,7 @@ public class ImageCatalogue {
     public static ConfigObject readConfig(String configFile)
     {
         ObjectMapper mapper = new ObjectMapper();
+        mapper.findAndRegisterModules();
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm ss");
         mapper.setDateFormat(df);
         String result;
@@ -242,7 +252,7 @@ public class ImageCatalogue {
         }
         catch(Exception e)
         {
-            message("Error in JSON file:"+e);
+            System.out.println("Error in JSON file:"+e);
             return null;
         }
     }
@@ -252,6 +262,8 @@ public class ImageCatalogue {
      */
     public static void setDefaults(ConfigObject config,String[] args)
     {
+        if(config.getTimeZone()==null){config.setTimeZone(z.toString());}
+
         if(config.getMinfilesize()==null){config.setMinfilesize(minFileSizeDefault);}
         if(config.getPauseSeconds()==null){config.setPauseSeconds(pauseSecondsDefault);}
         if(config.getPauseSeconds()<1){config.setPauseSeconds(pauseSecondsDefault);}
@@ -866,6 +878,32 @@ public class ImageCatalogue {
         }
         return null;
     }
+    public static LocalDateTime createLocalDate(String param)
+    {
+        String[] values = param.split("-", -1);
+        try {
+            int year = 1900;
+            int month = 1;
+            int day = 1;
+            if (values.length == 1) {
+                //YYYY
+                year = convertYear(values[0]);
+            } else if (values.length == 2) {
+                year = convertYear(values[0]);
+                month = convertMonth(values[1]);
+
+            } else if (values.length == 3) {
+                year = convertYear(values[0]);
+                month = convertMonth(values[1]);
+                day = convertDay(values[2]);
+            }
+            LocalDateTime c = LocalDateTime.of(year, month, day, 0, 0);
+            return c;
+        }
+        catch(Exception e) {
+            return null;
+        }
+    }
     /**
      * Creates temporary folder for output from the program
      * @param temp - name (from the JSON)
@@ -1001,6 +1039,20 @@ public class ImageCatalogue {
             {
                 g.setCountPlace(0);
             }
+        }
+        if(c.getEvents()!=null)
+        {
+            int numEvents=c.getEvents().size();
+            message("NUMBER OF EVENTS READ FROM CONFIG FILE: "+c.getEvents().size());
+            events =c.getEvents();
+            checkEvents();
+            if(numEvents!=c.getEvents().size())
+            {
+                message("NUMBER OF EVENTS AFTER CHECKING IS: "+c.getEvents().size());
+
+            }
+            //sort in case there are gaps in numbering
+            events.sort(Comparator.comparing(EventObject::getEventid));
         }
     }
     /**
@@ -1233,6 +1285,68 @@ public class ImageCatalogue {
             }
         }
     }
+    public static Enums.processMode processForwardCode(ConfigObject config,FileObject fNew,ArrayList<String> existingCommentsString)
+    {
+        Enums.processMode processMode=null;
+        processMode= forwardCode(fNew.getWindowsComments(),config,fNew);
+        if(processMode!=null)
+        {
+            fNew.setWindowsComments(updateInstructions(fNew.getWindowsComments(),processMode));
+            addComment(existingCommentsString,processMode);
+        }
+        else
+        {
+            processMode=forwardCode(fNew.getIPTCInstructions(),config,fNew);
+            if(processMode!=null)
+            {
+                fNew.setIPTCInstructions(updateInstructions(fNew.getIPTCInstructions(),processMode));
+                addComment(existingCommentsString,processMode);
+            }
+
+        }
+        return processMode;
+    }
+    public static Boolean processEvents(FileObject fNew,ArrayList<String> existingCommentsString)
+    {
+        Boolean eventFound=false;
+        LocalDateTime d= convertToLocalDateTimeViaInstant(fNew.getBestDate());
+        for(EventObject e : events)
+        {
+            //event date
+
+            if((d.isAfter(e.getExactStartTime()) || d.isEqual(e.getExactStartTime()))
+                    &&
+                    (d.isBefore(e.getExactEndTime()) || d.isEqual(e.getExactEndTime()))
+                    )
+            {
+                // we have a match... so process..
+                eventFound=true;
+
+
+            }
+        }
+        return eventFound;
+    }
+    public static Boolean processDates(FileObject fNew,ArrayList<String> existingCommentsString)
+    {
+        Boolean dateUpdated=false;
+        dateUpdated=updateDate(fNew.getWindowsComments(),fNew);
+        if(dateUpdated)
+        {
+            fNew.setWindowsComments(updateInstructions(fNew.getWindowsComments(),Enums.processMode.date));
+            addComment(existingCommentsString,Enums.processMode.date);
+        }
+        else
+        {
+            dateUpdated=updateDate(fNew.getIPTCInstructions(),fNew);
+            if(dateUpdated)
+            {
+                fNew.setIPTCInstructions(updateInstructions(fNew.IPTCInstructions,Enums.processMode.date));
+                addComment(existingCommentsString,Enums.processMode.date);
+            }
+        }
+        return dateUpdated;
+    }
     /**
      * Creates a FileObject and Updates the file metadata (or displays information only, depending on options chosen)
      * @param file - File to process
@@ -1279,43 +1393,15 @@ public class ImageCatalogue {
         fNew.setThumbnail(createThumbFromPicture(file, config.getTempdir(), thumbName, config.getWidth(),config.getHeight(),fNew.getOrientation()));
         // Geocodes if lat and long present
 
-        Boolean dateUpdated=false;
+        Boolean dateUpdated=processDates(fNew,existingCommentsString);
         Enums.processMode processMode=null;
-        dateUpdated=updateDate(fNew.getWindowsComments(),fNew);
-        if(dateUpdated)
-        {
-            fNew.setWindowsComments(updateInstructions(fNew.getWindowsComments(),Enums.processMode.date));
-            addComment(existingCommentsString,Enums.processMode.date);
-        }
-        else
-        {
-            dateUpdated=updateDate(fNew.getIPTCInstructions(),fNew);
-            if(dateUpdated)
-            {
-                fNew.setIPTCInstructions(updateInstructions(fNew.IPTCInstructions,Enums.processMode.date));
-                addComment(existingCommentsString,Enums.processMode.date);
-            }
-        }
+
         if (fNew.getLatitude()!=null && fNew.getLongitude()!=null) {
             geocodeLatLong(alreadyGeocoded,config,fNew);
 
         } else {
-            processMode= forwardCode(fNew.getWindowsComments(),config,fNew);
-            if(processMode!=null)
-            {
-                fNew.setWindowsComments(updateInstructions(fNew.getWindowsComments(),processMode));
-                addComment(existingCommentsString,processMode);
-            }
-            else
-            {
-                processMode=forwardCode(fNew.getIPTCInstructions(),config,fNew);
-                if(processMode!=null)
-                {
-                    fNew.setIPTCInstructions(updateInstructions(fNew.getIPTCInstructions(),processMode));
-                    addComment(existingCommentsString,processMode);
-                }
+            processForwardCode(config,fNew,existingCommentsString);
 
-            }
         }
         updateFile(config,drive,file,existingCommentsString,iptc,exif,alreadyGeocoded,fNew);
         fileObjects.add(fNew);
@@ -1427,36 +1513,24 @@ public class ImageCatalogue {
         String param = getParam(instructions, "#"+Enums.processMode.date.toString()+":");
         if(param.length()<1)
         {
-            return false;
+             return false;
         }
-        String[] values = param.split("-", -1);
-        try {
-               int year=1900;
-               int month=1;
-               int day=1;
-                if (values.length == 1) {
-                    //YYYY
-                    year=convertYear(values[0]);
-                } else if (values.length == 2) {
-                    year=convertYear(values[0]);
-                    month=convertMonth(values[1]);
-
-                } else if (values.length== 3) {
-                    year=convertYear(values[0]);
-                    month=convertMonth(values[1]);
-                    day=convertDay(values[1]);
-                }
-            Calendar c = Calendar.getInstance();
-            c.set(year, month, day, 0, 0);
-            fNew.setExifOriginal(c.getTime());
-
+        LocalDateTime c =createLocalDate(param);
+        if(c!=null) {
+            fNew.setExifOriginal(convertToDateViaInstant(c));
             return true;
-
-        }catch(Exception e)
-        {
-            return false;
         }
-
+        return false;
+    }
+    public static LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
+        return dateToConvert.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+    }
+    public static Date convertToDateViaInstant(LocalDateTime dateToConvert) {
+        return java.util.Date
+                .from(dateToConvert.atZone(ZoneId.systemDefault())
+                        .toInstant());
     }
     public static Enums.processMode forwardCode(String instructions, ConfigObject config, FileObject fNew) {
         countLATLONG++;
@@ -1775,7 +1849,10 @@ public class ImageCatalogue {
                 File outFile = new File(fout_name);
                 FileOutputStream fout = new FileOutputStream(outFile, false);
                 List<Metadata> metaList = new ArrayList<>();
+                DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
                 exif.addImageField(TiffTag.WINDOWS_XP_COMMENT,FieldType.WINDOWSXP,fNew.getWindowsComments());
+                exif.addExifField(ExifTag.DATE_TIME_ORIGINAL, FieldType.ASCII, formatter.format(fNew.getExifOriginal()));
+
                 metaList.add(exif);
                 iptc.addDataSets(iptcs);
                 metaList.add(iptc);
@@ -1798,7 +1875,7 @@ public class ImageCatalogue {
                 countUPDATED++;
                 countDriveUPDATED++;
             } catch (Exception e) {
-                message("Cannot update File");
+                message("Cannot update File"+e);
             }
         }
     }
@@ -1898,6 +1975,77 @@ public class ImageCatalogue {
             return null;
         }
         return null;
+    }
+    public static void checkEvents()
+    {
+        Iterator i = events.iterator();
+        EventObject e;
+        while (i.hasNext()) {
+
+            e = (EventObject) i.next();
+            if(e.getEventdate()==null && e.getEventcalendar()==null )
+            {
+                message("Event calendar or event date must be specified - event :"+e.getEventid()+" "+e.getTitle());
+            }
+            else {
+                if (e.getEventcalendar() != null &&
+                        (e.getEventdate() != null || e.getEndtime() != null ||
+                                e.getEventtime()!=null || e.getEnddate() != null))
+                {
+                    message("Event calendar cannot be used if other dates or times have been used - event :" + e.getEventid() + " " + e.getTitle());
+                    i.remove();
+
+                }
+                else
+                {
+                    if (e.getEventcalendar() != null) {
+                        // we have a valid calendar
+                        // alendar so set start and end times
+                        LocalDateTime d = createLocalDate(e.getEventcalendar());
+                        if (d != null) {
+                            e.setExactStartTime(d);
+                            e.setExactEndTime(d.plusDays(1).minusNanos(1));
+
+                        } else {
+
+                            message("Cannot parse calendar for Event:" + e.getEventid() + " " + e.getTitle());
+                            i.remove();
+                        }
+                    }
+                    else
+                    {
+                        //this has start time which should hhave parsed
+                        e.setExactStartTime(e.getEventdate());
+
+                        if(e.getEnddate()==null)
+                        {
+                            e.setExactEndTime(e.getExactStartTime().plusDays(1).minusNanos(1));
+                        }
+                        else
+                        {
+
+                          dstart.plusHours(e.getEventtime().getHour());
+                          dstart.plusMinutes(e.getEventtime().getMinute());
+                          dstart.plusSeconds(e.getEventtime().getSecond());
+                          dstart.plusNanos(e.getEventtime().getNano());
+                        }
+                        if(e.getEndtime()!=null)
+                        {
+                            dend.plusHours(e.getEndtime().getHour());
+                            dend.plusMinutes(e.getEndtime().getMinute());
+                            dend.plusSeconds(e.getEndtime().getSecond());
+                            dend.plusNanos(e.getEventtime().getNano());
+                        }
+                        //nowe add an object we can check against easily...
+
+                        e.setExactStartTime(dstart);
+                        e.setExactEndTime(dend);
+
+                    }
+                }
+            }
+        }
+
     }
     /**
      *  Reads metadata
