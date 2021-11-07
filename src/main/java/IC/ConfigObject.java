@@ -17,6 +17,7 @@ public class ConfigObject {
     private String thumbsize;
     private Integer cacheDistance;
     private Integer pauseSeconds;
+    private String timeZone;
     private ArrayList<DriveObject> drives;
     private ArrayList<CameraObject> cameras;
     private ArrayList<Place> places;
