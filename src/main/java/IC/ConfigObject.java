@@ -9,6 +9,7 @@ import java.util.ArrayList;
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class ConfigObject {
     private String tempdir;
+    private String newdir;
     private Long minfilesize;
     private Boolean update;
     private Boolean showmetadata;
@@ -29,6 +30,7 @@ public class ConfigObject {
     private ArrayList<String> stateprovince;
     private ArrayList<String> city;
     private ArrayList<String> sublocation;
+    private ArrayList<String> newfileNames;
     private String imageextensions;
     private String videoextensions;
     private String openAPIKey;

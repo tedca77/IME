@@ -21,6 +21,7 @@ import com.icafe4j.image.meta.xmp.XMP;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateExceptionHandler;
+import no.api.freemarker.java8.Java8ObjectWrapper;
 import org.apache.commons.imaging.Imaging;
 import org.apache.commons.imaging.common.ImageMetadata;
 import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
@@ -44,7 +45,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -93,11 +93,12 @@ public class ImageCatalogue {
     static Long minFileSizeDefault=4000L;
     static String thumbSizeDefault="240x180";
     static String timeZoneDefault="Europe/London";
+    static ArrayList<String> newfileNamesDefault=new ArrayList<>(Arrays.asList("camera","day"));
     static ArrayList<String> isocountryDefault=new ArrayList<>(Collections.singletonList("country_code"));
     static ArrayList<String> countryDefault=new ArrayList<>(Collections.singletonList("country"));
-    static ArrayList<String> stateprovinceDefault=new ArrayList<>(Arrays.asList("county","state_district"));
+    static ArrayList<String> stateprovinceDefault=new ArrayList<>();
     static ArrayList<String> cityDefault=new ArrayList<>(Arrays.asList("town","city","village"));
-    static ArrayList<String> sublocationDefault=new ArrayList<>(Arrays.asList("amenity","house_number","road","hamlet","suburb"));
+    static ArrayList<String> sublocationDefault=new ArrayList<>(Arrays.asList("amenity","leisure","house_number","road","hamlet","suburb","city_district"));
     static int cacheDistanceDefault=100; // this is the distance from a point that detemrines this is the same place..Metres.
     static int pauseSecondsDefault=2; // this is the pause before a geocode (to not overload the server...
     //
@@ -105,7 +106,7 @@ public class ImageCatalogue {
     static Date endTime;
     /**
      * Main Method for the program - arguments passes as Java arguments..
-     * @param args - either single json file or two files, first one is root directory and second is output file, followed by parameters
+     * @param args - either single json file or two/three args, first one is root directory, second is output file, third is followed by parameters
      */
     public static void main(String[] args) {
         z= ZoneId.systemDefault();
@@ -131,6 +132,10 @@ public class ImageCatalogue {
                     fileName=Path.of(args[1]+"\\"+jsonDefault);
                     message("Directory to search:"+fileName);
                     message("Temporary Directory:"+args[1]);
+                    if(args.length>2)
+                    {
+
+                    }
                 }
                 else
                 {
@@ -168,6 +173,7 @@ public class ImageCatalogue {
             config.setPhotos(fileObjects);
             config.setPlaces(places);
             config.setTracks(tracks);
+            config.setEvents(events);
             // exports JSON
             if(!exportConfig(config,fileName))
             {
@@ -314,7 +320,7 @@ public class ImageCatalogue {
     public static Boolean exportHTML(String tempDir)
     {
         Configuration cfg = new Configuration(Configuration.VERSION_2_3_29);
-
+        cfg.setObjectWrapper(new Java8ObjectWrapper(Configuration.VERSION_2_3_23));
         cfg.setClassForTemplateLoading(ImageCatalogue.class, "/Templates");
         // Recommended settings for new projects:
         cfg.setDefaultEncoding("UTF-8");
@@ -438,8 +444,9 @@ public class ImageCatalogue {
     {
         ObjectMapper objectMapper = new ObjectMapper();
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss");
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm ss");
-        objectMapper.setDateFormat(df);
+     //   SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm ss");
+      //  objectMapper.setDateFormat(df);
+        objectMapper.findAndRegisterModules();
         String fileName=inputPath.getFileName().toString();
         String newName = c.getTempdir() + "\\"+  FilenameUtils.getBaseName(fileName)+format.format(new Date()) + "."+FilenameUtils.getExtension(fileName);
         try {
@@ -604,6 +611,13 @@ public class ImageCatalogue {
             if (f.equals("amenity")) {
                 s = addIfNotNull(s, g.getAddress().getAmenity());
             }
+            if (f.equals("city_district")) {
+                s = addIfNotNull(s, g.getAddress().getCity_district());
+            }
+            if (f.equals("leisure")) {
+                s = addIfNotNull(s, g.getAddress().getLeisure());
+            }
+
         }
         // replace spare comma at the end....
         s = s.trim();
@@ -670,7 +684,9 @@ public class ImageCatalogue {
             StringBuilder s = new StringBuilder();
                     for (FileObject f : fileObjects) {
                         try {
-                            if (getDateWithoutTimeUsingCalendar(f.getBestDate()).equals(t.getTrackDate())) {
+                            System.out.println("best date:"+f.getBestDate().toLocalDate());
+                            System.out.println("trackdate date:"+t.getTrackDate());
+                            if (f.getBestDate().toLocalDate().equals(t.getTrackDate())) {
                                 if(!(f.getOrientation()==8 || f.getOrientation()==6)) {
                                     s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(width).append("\" class=\"padding\" >");
                                 }
@@ -684,7 +700,8 @@ public class ImageCatalogue {
                             message("error adding links to tracks:" + f.getDisplayName() + e);
                         }
             }
-            t.setImagelinks(s.toString());
+            t.setImageLinks(s.toString());
+                    System.out.println("image links"+t.getImageLinks());
         }
     }
     /**
@@ -695,15 +712,15 @@ public class ImageCatalogue {
      * @param trackDay - Date time, normalised to be 12 midnight
      * @param coordinates - a String containing all coordinates with CR between each value
      */
-    public static void addTrack(ArrayList<Integer> points, Date startDate,Date endDate, Date trackDay,String coordinates)
+    public static void addTrack(ArrayList<Integer> points, LocalDateTime startDate,LocalDateTime endDate, LocalDate trackDay,String coordinates)
     {
         // write out track
         if(points.size()>0) {
             TrackObject t = new TrackObject();
             t.setPoints(points);
             t.setTrackKey(tracks.size() + 1);
-            t.setStartDate(startDate);
-            t.setEndDate(endDate);
+            t.setStartDate( startDate);
+            t.setEndDate( endDate);
             t.setPlaceCount(points.size());
             t.setTrackDate(trackDay);
             t.setCoordinates(coordinates);
@@ -718,7 +735,7 @@ public class ImageCatalogue {
      * @param bestDate - Date for PlaceObject
      * @return - key value
      */
-    public static Integer addPlace(Place g,Date bestDate)
+    public static Integer addPlace(Place g,LocalDateTime bestDate)
     {
         message("Adding a new Place:["+(places.size() + 1) +"]" + g.getDisplay_name());
         // there may be gaps in numbering, so add one to the highest in the sorted list
@@ -737,10 +754,10 @@ public class ImageCatalogue {
         places.add(g);
         return newKey;
     }
-    public static void addComment(List<String> existingCommentsString,Enums.processMode pMode)
+    public static void addComment(List<String> existingCommentsString,String newComment)
     {
         DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
-        existingCommentsString.add("#"+pMode.toString()+"DONE:" + formatter.format(new Date()));
+        existingCommentsString.add("#"+newComment+"DONE:" + formatter.format(new Date()));
     }
     /**
      * Adds a new camera if it does not exist in the array and sets start and end date
@@ -751,15 +768,15 @@ public class ImageCatalogue {
      * @param d - date (of photo)
      * @return - returns camera key
      */
-    public static Integer addCamera(String make, String model, Date d) {
+    public static Integer addCamera(String make, String model, LocalDateTime d) {
         for (CameraObject c : cameras) {
             if (make.equals(c.getCameramaker())) {
                 if (model != null) {
                     if (model.equals(c.getCameramodel())) {
-                        if (d.before(c.getStartdate())) {
+                        if (d.isBefore(c.getStartdate())) {
                             c.setStartdate(d);
                         }
-                        if (d.after(c.getEnddate())) {
+                        if (d.isAfter(c.getEnddate())) {
                             c.setEnddate(d);
                         }
                         c.setCameracount(c.getCameracount() + 1);
@@ -767,10 +784,10 @@ public class ImageCatalogue {
                     }
                 } else {
                     if (c.getCameramodel() == null) {
-                        if (d.before(c.getStartdate())) {
+                        if (d.isBefore(c.getStartdate())) {
                             c.setStartdate(d);
                         }
-                        if (d.after(c.getEnddate())) {
+                        if (d.isAfter(c.getEnddate())) {
                             c.setEnddate(d);
                         }
                         c.setCameracount(c.getCameracount() + 1);
@@ -800,13 +817,13 @@ public class ImageCatalogue {
         cameras.add(cNew);
         return newKey;
     }
-    public static boolean checkIPTCComments( List<String> existingComments)
+    public static boolean checkIPTCComments( List<String> existingComments,String test)
     {
         for(String s : existingComments)
         {
-            if(s.contains("#geocodeDONE:"))
+            if(s.contains(test))
             {
-                message("File has already been geocoded:"+s);
+
                 return true;
             }
         }
@@ -847,7 +864,7 @@ public class ImageCatalogue {
      * @param d - date  (of image)
      * @return - Place Object ..
      */
-    public static Place checkCachedGeo(double lat, double lon, Date d, double checkDistance) {
+    public static Place checkCachedGeo(double lat, double lon, LocalDateTime d, double checkDistance) {
         for (Place g : places) {
             double glat = Double.parseDouble(g.getLat());
             double glon = Double.parseDouble(g.getLon());
@@ -860,7 +877,7 @@ public class ImageCatalogue {
                     g.setStartDate(d);
                 }
                 else {
-                    if (d.before(g.getStartDate())) {
+                    if (d.isBefore(g.getStartDate())) {
                         g.setStartDate(d);
                     }
                 }
@@ -869,7 +886,7 @@ public class ImageCatalogue {
                     g.setEndDate(d);
                 }
                 else {
-                    if (d.after(g.getEndDate())) {
+                    if (d.isAfter(g.getEndDate())) {
                         g.setEndDate(d);
                     }
                 }
@@ -929,16 +946,16 @@ public class ImageCatalogue {
         tracks = new ArrayList<>();
         // Each Place can be part of one or more tracks...
         // if we already have a track for this date... do we redo it...
-        Date lastDay=null;
+        LocalDate lastDay=null;
         Integer placeKey=0;
-        Date startDate=null;
-        Date endDate=null;
+        LocalDateTime startDate=null;
+        LocalDateTime endDate=null;
         StringBuilder coordinates = new StringBuilder();
         ArrayList<Integer> points = new ArrayList<>();
         for(FileObject f : fileObjects)
         {
             //
-            Date d= getDateWithoutTimeUsingCalendar(f.getBestDate());
+            LocalDate d= f.getBestDate().toLocalDate();
             if(d.equals(lastDay))
             {
                 if(f.getPlaceKey()!=null) {
@@ -971,7 +988,7 @@ public class ImageCatalogue {
                 }
                 startDate=f.getBestDate();
                 endDate=f.getBestDate();
-                lastDay=getDateWithoutTimeUsingCalendar(f.getBestDate());
+                lastDay=f.getBestDate().toLocalDate();
 
             }
         }
@@ -1054,6 +1071,28 @@ public class ImageCatalogue {
             //sort in case there are gaps in numbering
             events.sort(Comparator.comparing(EventObject::getEventid));
         }
+    }
+    public static Boolean moveFiles()
+    {
+        //
+        String rootOutput="R:/TestNew";
+        for(FileObject f: fileObjects)
+        {
+            //getYear
+
+            //getmonth
+
+            //if rename files - change the name and directory....
+            f.setDirectory("newname");
+            //CREATE THE DIRECTORY IF IT DOES NOT EXIST
+
+            f.setFileName("newNAME");
+            //MOVE THE FILE
+
+            //DO WE NEED TO UPDATE THE file METADATA ?
+
+        }
+        return true;
     }
     /**
      * Makes a thumbnail name replacing slashes and colon with underscores - as we need to create a valid file name
@@ -1285,6 +1324,16 @@ public class ImageCatalogue {
             }
         }
     }
+    public static Enums.processMode processForwardCodeFromLocation(ConfigObject config,FileObject fNew,ArrayList<String> existingCommentsString,String location)
+    {
+        Enums.processMode processMode=null;
+        processMode= forwardCode(location,config,fNew);
+        if(processMode!=null)
+        {
+            addComment(existingCommentsString,processMode.toString());
+        }
+        return processMode;
+    }
     public static Enums.processMode processForwardCode(ConfigObject config,FileObject fNew,ArrayList<String> existingCommentsString)
     {
         Enums.processMode processMode=null;
@@ -1292,7 +1341,7 @@ public class ImageCatalogue {
         if(processMode!=null)
         {
             fNew.setWindowsComments(updateInstructions(fNew.getWindowsComments(),processMode));
-            addComment(existingCommentsString,processMode);
+            addComment(existingCommentsString,processMode.toString());
         }
         else
         {
@@ -1300,32 +1349,47 @@ public class ImageCatalogue {
             if(processMode!=null)
             {
                 fNew.setIPTCInstructions(updateInstructions(fNew.getIPTCInstructions(),processMode));
-                addComment(existingCommentsString,processMode);
+                addComment(existingCommentsString,processMode.toString());
             }
 
         }
         return processMode;
     }
-    public static Boolean processEvents(FileObject fNew,ArrayList<String> existingCommentsString)
+    public static Integer processEvents(ConfigObject config,FileObject fNew,ArrayList<String> existingCommentsString)
     {
-        Boolean eventFound=false;
-        LocalDateTime d= convertToLocalDateTimeViaInstant(fNew.getBestDate());
+        Integer eventFound=0;
+        LocalDateTime d= fNew.getBestDate();
         for(EventObject e : events)
         {
-            //event date
+            if(checkIPTCComments(existingCommentsString,"#Event:"+e.getEventid()+"DONE:")!=true || config.getOverwrite()) {
 
-            if((d.isAfter(e.getExactStartTime()) || d.isEqual(e.getExactStartTime()))
-                    &&
-                    (d.isBefore(e.getExactEndTime()) || d.isEqual(e.getExactEndTime()))
-                    )
-            {
-                // we have a match... so process..
-                eventFound=true;
-
+                //event date
+                if (e.eventcalendar != null) {
+                    if (d.getMonth() == e.getExactStartTime().getMonth() && d.getDayOfMonth() == e.getExactStartTime().getDayOfMonth()) {
+                       if(updateEvent(config, fNew, e, existingCommentsString, e.getLocation()))
+                        {
+                            eventFound++;
+                        };
+                        message("Event calendar match for event:" + e.getEventid() + " " + e.getTitle());
+                    }
+                } else {
+                    if ((d.isAfter(e.getExactStartTime()) || d.isEqual(e.getExactStartTime()))
+                            &&
+                            (d.isBefore(e.getExactEndTime()) || d.isEqual(e.getExactEndTime()))
+                    ) {
+                        // we have a match... so process..
+                        message("Event date match for event:" + e.getEventid() + " " + e.getTitle());
+                        if(updateEvent(config, fNew, e, existingCommentsString, e.getLocation()))
+                        {
+                            eventFound++;
+                        }
+                    }
+                }
 
             }
         }
-        return eventFound;
+         return eventFound;
+
     }
     public static Boolean processDates(FileObject fNew,ArrayList<String> existingCommentsString)
     {
@@ -1334,7 +1398,7 @@ public class ImageCatalogue {
         if(dateUpdated)
         {
             fNew.setWindowsComments(updateInstructions(fNew.getWindowsComments(),Enums.processMode.date));
-            addComment(existingCommentsString,Enums.processMode.date);
+            addComment(existingCommentsString,Enums.processMode.date.toString());
         }
         else
         {
@@ -1342,7 +1406,7 @@ public class ImageCatalogue {
             if(dateUpdated)
             {
                 fNew.setIPTCInstructions(updateInstructions(fNew.IPTCInstructions,Enums.processMode.date));
-                addComment(existingCommentsString,Enums.processMode.date);
+                addComment(existingCommentsString,Enums.processMode.date.toString());
             }
         }
         return dateUpdated;
@@ -1379,7 +1443,11 @@ public class ImageCatalogue {
                     fNew.setWindowsSubject(exif.getImageIFD().getFieldAsString(ExifTag.WINDOWS_XP_SUBJECT));
                 } else if (meta instanceof Comments) {
                     existingComments = (((Comments) meta).getComments());
-                    alreadyGeocoded=checkIPTCComments(existingComments);
+                    alreadyGeocoded=checkIPTCComments(existingComments,"#geocodeDONE:");
+                    if(alreadyGeocoded)
+                    {
+                        message("File has already been geocoded:"+file.getName());
+                    }
                 } else if (meta instanceof IPTC) {
                     iptc = (IPTC) meta;
                     if(!readIPTCdata(fNew,meta)){message("Cannot read IPTC data");}
@@ -1392,7 +1460,8 @@ public class ImageCatalogue {
         //create thumbnail and update FileObject
         fNew.setThumbnail(createThumbFromPicture(file, config.getTempdir(), thumbName, config.getWidth(),config.getHeight(),fNew.getOrientation()));
         // Geocodes if lat and long present
-
+        Enums.processMode forwardUpdated;
+        Integer eventsUpdated=0;
         Boolean dateUpdated=processDates(fNew,existingCommentsString);
         Enums.processMode processMode=null;
 
@@ -1400,8 +1469,8 @@ public class ImageCatalogue {
             geocodeLatLong(alreadyGeocoded,config,fNew);
 
         } else {
-            processForwardCode(config,fNew,existingCommentsString);
-
+            forwardUpdated=processForwardCode(config,fNew,existingCommentsString);
+            eventsUpdated=processEvents(config,fNew,existingCommentsString);
         }
         updateFile(config,drive,file,existingCommentsString,iptc,exif,alreadyGeocoded,fNew);
         fileObjects.add(fNew);
@@ -1506,8 +1575,42 @@ public class ImageCatalogue {
         }
         return day;
     }
+    public static Boolean updateEvent(ConfigObject config, FileObject fNew, EventObject e,ArrayList<String> existingCommentsString,String location)
+    {
+        Boolean updateDone=false;
+        if(e.getTitle()!=null)
+        {
+            fNew.setWindowsTitle(e.getTitle() + " "+ fNew.getWindowsTitle());
+            updateDone=true;
+        }
+        if(e.getKeywords()!=null)
+        {
+            fNew.setWindowsTitle(e.getKeywords()+" "+fNew.getIPTCKeywords());
+            updateDone=true;
+        }
+        if(e.getDescription()!=null)
+        {
+            fNew.setWindowsSubject(e.getDescription()+" "+fNew.getWindowsSubject());
+            updateDone=true;
+        }
+        if(location!=null)
+        {
+            Enums.processMode processMode=null;
+            processMode=processForwardCodeFromLocation(config,fNew,existingCommentsString,location);
+            if(processMode!=null)
+            {
+                updateDone=true;
+                addComment(existingCommentsString,processMode.toString());
+            }
+        }
+        if(updateDone) {
+            addComment(existingCommentsString,Enums.processMode.event+":"+e.getEventid());
+            return true;
+        }
+        return false;
+    }
     /*
-    updates the date in ExifOriginal - this wil become the Bestdate...
+    updates the date in ExifOriginal - and also the BestDate...
      */
     public static Boolean updateDate(String instructions, FileObject fNew) {
         String param = getParam(instructions, "#"+Enums.processMode.date.toString()+":");
@@ -1517,12 +1620,22 @@ public class ImageCatalogue {
         }
         LocalDateTime c =createLocalDate(param);
         if(c!=null) {
-            fNew.setExifOriginal(convertToDateViaInstant(c));
+            fNew.setExifOriginal(c);
+            fNew.setBestDate(fNew.getExifOriginal());
             return true;
         }
         return false;
     }
+    public static LocalDate convertToLocalDateViaInstant(Date dateToConvert) {
+        return dateToConvert.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate();
+    }
     public static LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
+        if(dateToConvert==null)
+        {
+            return null;
+        }
         return dateToConvert.toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();
@@ -1645,9 +1758,9 @@ public class ImageCatalogue {
             fNew.setFStop(getTagValueDouble(jpegMetadata, ExifTagConstants.EXIF_TAG_FNUMBER));
             fNew.setProgramName(getStringOrUnknown(jpegMetadata, ExifTagConstants.EXIF_TAG_SOFTWARE));
             fNew.setOrientation(getTagValueInteger(jpegMetadata, TiffTagConstants.TIFF_TAG_ORIENTATION));
-            fNew.setExifOriginal(getTagValueDate(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL));
-            fNew.setExifDigitised(getTagValueDate(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_DIGITIZED));
-            fNew.setTiffDate( getTagValueDate(jpegMetadata, TiffTagConstants.TIFF_TAG_DATE_TIME));
+            fNew.setExifOriginal(convertToLocalDateTimeViaInstant(getTagValueDate(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL)));
+            fNew.setExifDigitised(convertToLocalDateTimeViaInstant(getTagValueDate(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_DIGITIZED)));
+            fNew.setTiffDate( convertToLocalDateTimeViaInstant(getTagValueDate(jpegMetadata, TiffTagConstants.TIFF_TAG_DATE_TIME)));
             fNew.setBestDate(fNew.getExifOriginal());
             if (fNew.getBestDate() == null) {
                 fNew.setBestDate(fNew.getExifDigitised());
@@ -1689,7 +1802,7 @@ public class ImageCatalogue {
             fNew.setCameraModel("Unknown");
         }
         if (fNew.getBestDate() == null) {
-            fNew.setBestDate(getFileDate(file));
+            fNew.setBestDate(convertToLocalDateTimeViaInstant(getFileDate(file)));
         }
         fNew.setFileName(file.getName());
         fNew.setFileSize(new BigDecimal(file.length()));
@@ -1714,11 +1827,11 @@ public class ImageCatalogue {
     {
         try {
             BasicFileAttributes attr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-            f.setFileModified(new Date(attr.lastModifiedTime().toMillis()));
-            f.setFileCreated(new Date(attr.creationTime().toMillis()));
+            f.setFileModified(convertToLocalDateTimeViaInstant(new Date(attr.lastModifiedTime().toMillis())));
+            f.setFileCreated(convertToLocalDateTimeViaInstant(new Date(attr.creationTime().toMillis())));
 
             message("System Creation Date/Time: " +  f.getFileCreated());
-            f.setFileAccessed(new Date(attr.lastAccessTime().toMillis()));
+            f.setFileAccessed(convertToLocalDateTimeViaInstant(new Date(attr.lastAccessTime().toMillis())));
            // f.setWindowsComments(getWindowsMetadata(file,"WindowsXP Comment"));
 
         } catch (Exception e) {
@@ -1841,6 +1954,12 @@ public class ImageCatalogue {
                         iptcs.add(new IPTCDataSet(IPTCApplicationTag.KEY_WORDS, drive.getIPTCKeywords()));
                     }
                 }
+                if (!StringUtils.isNullOrEmpty(fNew.getWindowsTitle()) || config.getOverwrite()) {
+                    iptcs.add(new IPTCDataSet(IPTCApplicationTag.BY_LINE_TITLE,fNew.getWindowsTitle() ));
+                }
+                if (!StringUtils.isNullOrEmpty(fNew.getWindowsSubject()) || config.getOverwrite()) {
+                     iptcs.add(new IPTCDataSet(IPTCApplicationTag.CAPTION_ABSTRACT, fNew.getWindowsSubject()));
+                }
                 if (!StringUtils.isNullOrEmpty(fNew.getIPTCInstructions()) || config.getOverwrite()) {
                     iptcs.add(new IPTCDataSet(IPTCApplicationTag.SPECIAL_INSTRUCTIONS, fNew.getIPTCInstructions()));
                 }
@@ -1850,8 +1969,11 @@ public class ImageCatalogue {
                 FileOutputStream fout = new FileOutputStream(outFile, false);
                 List<Metadata> metaList = new ArrayList<>();
                 DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+
+                exif.addImageField(TiffTag.WINDOWS_XP_TITLE,FieldType.WINDOWSXP,fNew.getWindowsTitle());
+                exif.addImageField(TiffTag.WINDOWS_XP_SUBJECT,FieldType.WINDOWSXP,fNew.getWindowsSubject());
                 exif.addImageField(TiffTag.WINDOWS_XP_COMMENT,FieldType.WINDOWSXP,fNew.getWindowsComments());
-                exif.addExifField(ExifTag.DATE_TIME_ORIGINAL, FieldType.ASCII, formatter.format(fNew.getExifOriginal()));
+                exif.addExifField(ExifTag.DATE_TIME_ORIGINAL, FieldType.ASCII,formatter.format( convertToDateViaInstant(fNew.getExifOriginal())));
 
                 metaList.add(exif);
                 iptc.addDataSets(iptcs);
@@ -1869,9 +1991,9 @@ public class ImageCatalogue {
                 if (!outFile.delete()) {
                     message("Cannot delete file:" + outFile.getPath());
                 }
-                Files.setAttribute(file.toPath(), "creationTime", FileTime.fromMillis(fNew.getFileCreated().getTime()));
-                Files.setAttribute(file.toPath(), "lastAccessTime", FileTime.fromMillis(fNew.getFileAccessed().getTime()));
-                Files.setAttribute(file.toPath(), "lastModifiedTime", FileTime.fromMillis(fNew.getFileModified().getTime()));
+                Files.setAttribute(file.toPath(), "creationTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileCreated()).getTime()));
+                Files.setAttribute(file.toPath(), "lastAccessTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileAccessed()).getTime()));
+                Files.setAttribute(file.toPath(), "lastModifiedTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileModified()).getTime()));
                 countUPDATED++;
                 countDriveUPDATED++;
             } catch (Exception e) {
@@ -2014,33 +2136,30 @@ public class ImageCatalogue {
                     }
                     else
                     {
-                        //this has start time which should hhave parsed
-                        e.setExactStartTime(e.getEventdate());
-
-                        if(e.getEnddate()==null)
+                        //set the start date and time
+                        e.setExactStartTime(e.getEventdate().atStartOfDay());
+                        //set the end date and time
+                        e.setExactEndTime(e.getEventdate().atStartOfDay().plusDays(1).minusNanos(1));
+                        //if start time is present, then adjust
+                        if(e.getEventtime()!=null)
                         {
-                            e.setExactEndTime(e.getExactStartTime().plusDays(1).minusNanos(1));
+                           e.setExactStartTime(e.getExactStartTime().plusHours(e.getEventtime().getHour()));
+                           e.setExactStartTime( e.getExactStartTime().plusMinutes(e.getEventtime().getMinute()));
+                           e.setExactStartTime( e.getExactStartTime().plusSeconds(e.getEventtime().getSecond()));
+                           e.setExactStartTime( e.getExactStartTime().plusNanos(e.getEventtime().getNano()));
                         }
-                        else
+                        //if end date is provided then modify to the end of the day
+                        if(e.getEnddate()!=null)
                         {
-
-                          dstart.plusHours(e.getEventtime().getHour());
-                          dstart.plusMinutes(e.getEventtime().getMinute());
-                          dstart.plusSeconds(e.getEventtime().getSecond());
-                          dstart.plusNanos(e.getEventtime().getNano());
+                            e.setExactEndTime(e.getEnddate().atStartOfDay().plusDays(1).minusNanos(1));
                         }
                         if(e.getEndtime()!=null)
                         {
-                            dend.plusHours(e.getEndtime().getHour());
-                            dend.plusMinutes(e.getEndtime().getMinute());
-                            dend.plusSeconds(e.getEndtime().getSecond());
-                            dend.plusNanos(e.getEventtime().getNano());
+                            e.setExactEndTime(e.getExactEndTime().plusHours(e.getEventtime().getHour()));
+                            e.setExactEndTime(e.getExactEndTime().plusMinutes(e.getEventtime().getMinute()));
+                            e.setExactEndTime(e.getExactEndTime().plusSeconds(e.getEventtime().getSecond()));
+                            e.setExactEndTime(e.getExactEndTime().plusNanos(e.getEventtime().getNano()));
                         }
-                        //nowe add an object we can check against easily...
-
-                        e.setExactStartTime(dstart);
-                        e.setExactEndTime(dend);
-
                     }
                 }
             }

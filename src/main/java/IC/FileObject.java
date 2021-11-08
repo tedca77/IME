@@ -1,6 +1,7 @@
 package IC;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Date;
 import lombok.Data;
 
@@ -9,13 +10,13 @@ public class FileObject {
     String fileName;
     Integer fileKey;
     BigDecimal fileSize;
-    Date bestDate;
-    Date exifOriginal;
-    Date exifDigitised;
-    Date tiffDate;
-    Date fileCreated;
-    Date fileModified;
-    Date fileAccessed;
+    LocalDateTime bestDate;
+    LocalDateTime exifOriginal;
+    LocalDateTime exifDigitised;
+    LocalDateTime tiffDate;
+    LocalDateTime fileCreated;
+    LocalDateTime fileModified;
+    LocalDateTime fileAccessed;
     String directory;
     String metaData;
     Integer width;

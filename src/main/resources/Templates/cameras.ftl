@@ -20,8 +20,8 @@
     <td>${(camera.cameramaker)!}</td>
     <td>${(camera.cameramodel)!}</td>
     <td>${(camera.programname)!}</td>
-    <td>${(camera.startdate?datetime)!}</td>
-    <td>${(camera.enddate?datetime)!}</td>
+    <td>${(camera.startdate.format('yyyy-MM-dd  HH:mm:ss'))!}</td>
+    <td>${(camera.enddate.format('yyyy-MM-dd  HH:mm:ss'))!}</td>
     <td>${(camera.cameracount)!}</td>
 </tr>
 </#list>

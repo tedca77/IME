@@ -35,8 +35,8 @@
     <td>${(place.IPTCStateProvince)!}</td>
     <td>${(place.IPTCCountry)!}</td>
     <td>${(place.countPlace)!}</td>
-    <td>${(place.startDate?datetime)!}</td>
-    <td>${(place.endDate?datetime)!}</td>
+    <td>${(place.startDate.format('yyyy-MM-dd  HH:mm:ss'))!}</td>
+    <td>${(place.endDate.format('yyyy-MM-dd  HH:mm:ss'))!}</td>
 </tr>
 <tr>
 <td COLSPAN=11 WIDTH=1000>${(place.imagelinks)!}</td>

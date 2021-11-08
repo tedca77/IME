@@ -1,18 +1,24 @@
 package IC;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
+
 @Data
 public class TrackObject {
-    private Date startDate;
-    private Date endDate;
-    private Date trackDate;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime startDate;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime endDate;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private LocalDate trackDate;
     private Integer trackKey;
     private Integer placeCount=0;
     private ArrayList<Integer> points = new ArrayList<>();
-    private String imagelinks;
+    private String imageLinks;
     private String coordinates;
     private String startAndEndPlace;
 }

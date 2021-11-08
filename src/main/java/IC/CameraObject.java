@@ -1,5 +1,7 @@
 package IC;
 import lombok.Data;
+
+import java.time.LocalDateTime;
 import java.util.Date;
 @Data
 public class CameraObject {
@@ -7,8 +9,8 @@ public class CameraObject {
     String cameramaker;
     String cameramodel;
     String programname;
-    Date startdate;
-    Date enddate;
+    LocalDateTime startdate;
+    LocalDateTime enddate;
     Integer camerakey;
     Integer cameracount=0;
 }

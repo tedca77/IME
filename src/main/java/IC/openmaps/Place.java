@@ -1,8 +1,10 @@
 package IC.openmaps;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
-import java.util.Date;
+import java.time.LocalDateTime;
+
 
 
 @Data
@@ -24,8 +26,10 @@ public class Place {
     private String friendlyname;
     private Integer internalKey;
     private Integer countPlace;
-    private Date endDate;
-    private Date startDate;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime endDate;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime startDate;
     private Integer trackKey;
     private String imagelinks;
     private String cdata;

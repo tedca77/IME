@@ -1,5 +1,6 @@
 package IC;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -21,6 +22,8 @@ public class EventObject {
     String eventcalendar;
     Integer eventid;
     String location; //either placeKey, lat,long or postcode
+    @JsonSerialize(using = CustomLocalDateTimeSerializer.class)
     public LocalDateTime exactStartTime;
+    @JsonSerialize(using = CustomLocalDateTimeSerializer.class)
     public LocalDateTime exactEndTime;
 }

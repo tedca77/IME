@@ -31,7 +31,7 @@
     <td>${(photo.directory)!}</td>
     <td>${(photo.displayName)!}</td>
     <td>${(photo.placeKey)!}</td>
-    <td>${(photo.bestDate?datetime)!}</td>
+    <td>${(photo.bestDate.format('yyyy-MM-dd  HH:mm:ss'))!}</td>
 </tr>
 </#list>
 </TABLE>

@@ -124,6 +124,11 @@
             <version>2.3.31</version>
         </dependency>
         <dependency>
+            <groupId>no.api.freemarker</groupId>
+            <artifactId>freemarker-java8</artifactId>
+            <version>1.1.2</version>
+        </dependency>
+        <dependency>
             <groupId>de.micromata.jak</groupId>
             <artifactId>JavaAPIforKml</artifactId>
             <version>2.2.0</version>

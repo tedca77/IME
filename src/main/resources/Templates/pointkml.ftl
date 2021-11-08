@@ -63,7 +63,7 @@
 <Placemark>
  <styleUrl>#line-0000FF-5000</styleUrl>
  <name>Point: ${(place.display_name)!} </name>
-<description> ${(place.cdata)!} ${(place.startDate?datetime)!} </description>
+<description> ${(place.cdata)!} ${(place.startDate.format('yyyy-MM-dd HH:mm:ss'))!} </description>
 <Point>
 <coordinates>
 ${(place.lon)!},${(place.lat)!},0

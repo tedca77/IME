@@ -20,5 +20,6 @@ public class AddressObject {
     private String hamlet;
     private String house_number;
     private String town;
-
-}
+    private String city_district;
+    private String leisure;
+ }
