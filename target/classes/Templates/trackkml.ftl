@@ -62,7 +62,7 @@
 <#list tracks as track>
 <Placemark>
  <styleUrl>#line-0000FF-5000</styleUrl>
- <name>Track: ${(track.trackKey)!} Date: ${(track.startDate?datetime)!}</name>
+ <name>Track: ${(track.trackKey)!} Date: ${(track.startDate.format('yyyy-MM-dd HH:mm:ss'))!}</name>
 <description> ${(track.startAndEndPlace)!} </description>
 <LineString>
 <tessellate>1</tessellate>

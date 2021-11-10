@@ -33,4 +33,25 @@ public class Place {
     private Integer trackKey;
     private String imagelinks;
     private String cdata;
+
+    public Double getLatAsDouble()
+    {
+        try
+        {
+            return Double.parseDouble(lat);
+        }
+        catch(Exception e){
+            return null;
+        }
+    }
+    public Double getLonAsDouble()
+    {
+        try
+        {
+            return Double.parseDouble(lon);
+        }
+        catch(Exception e){
+            return null;
+        }
+    }
 }

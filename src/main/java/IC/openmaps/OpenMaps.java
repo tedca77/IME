@@ -7,10 +7,10 @@ import org.springframework.web.util.WebUtils;
 import static IC.ImageCatalogue.assembleLocation;
 import static java.net.URLEncoder.encode;
 
-
 public class OpenMaps {
 
     /**
+     * Converts a lat,lon pair to a place - and creates the 5 IPTC fields which are added to a Place object
      * @param lat - latitude
      * @param lon - longtitude
      * @param config - config object
@@ -40,10 +40,18 @@ public class OpenMaps {
             return null;
         }
     }
-    /*
-      returns the Grid location for a Place Name - this is compatible with Google and OpenStreetMap coordinates - slightly different from Grid Reference as uses decimal for minutes and seconds
+
+    /**
+     *  returns the Grid Ref (lat, lon) for a Postcode - this is compatible with Google and OpenStreetMap coordinates -
+     *  slightly different from Grid Reference as uses decimal for minutes and seconds
+     *
+     * @param query -postcode to check
+     * @param apiKey - API key for OpenStreetMap
+     * @param countryString - Country String used in the search e.g. GBR
+     * @return
      */
     public static String checkPostCode(String query,String apiKey,String countryString)
+
     {
         Rest r = new Rest();
         String enc = WebUtils.DEFAULT_CHARACTER_ENCODING;
@@ -59,7 +67,7 @@ public class OpenMaps {
             OpenMapPlace dResult = mapper.readValue(result, OpenMapPlace.class);
             if(dResult.getFeatures().size()==1)
             {
-                System.out.println("result:"+dResult.getBbox().get(0)+","+dResult.getBbox().get(1));
+              //  System.out.println("result:"+dResult.getBbox().get(0)+","+dResult.getBbox().get(1));
                 return dResult.getBbox().get(1)+","+dResult.getBbox().get(0);
             }
             else
@@ -70,7 +78,7 @@ public class OpenMaps {
         }
         catch(Exception e)
         {
-            System.out.println("Error in getPlace:"+e);
+            System.out.println("Error in checkPostCode:"+e);
             return null;
         }
     }

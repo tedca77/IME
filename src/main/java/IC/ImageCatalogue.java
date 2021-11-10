@@ -65,6 +65,12 @@ public class ImageCatalogue {
     static int countALREADYGEOCODED = 0; // images already geocoded
     static int countGEOCODED = 0; // images which were successfully geocoded
     static int countNOTGEOCODED = 0; // images which were not successfully geocoded (but with lat/long)
+    static int countDateUpdate = 0;   // images where the date was updated.
+    static int countEventsFound = 0;   // images where events were found through date checks...
+    static int countAddedPlace = 0;   // images where a place has been specified
+    static int countAddedLATLONG = 0;   // images where a LatLon has been added (either directly or via an event)
+    static int countAddedPostcode = 0;   // images where a postcode has been used to determine LatLon (either directly or via an event)
+    static int countAddedEvent = 0;   // images where an event has been added  manually
     static int countUPDATED = 0; // images which were not successfully updated
     static int countErrors = 0;   // images where there were errors (e.g. failure of geocode or others)....
 //
@@ -76,6 +82,12 @@ public class ImageCatalogue {
     static int countDriveALREADYGEOCODED = 0;
     static int countDriveGEOCODED = 0;
     static int countDriveNOTGEOCODED = 0;
+    static int countDriveDateUpdate = 0;
+    static int countDriveEventsFound = 0;
+    static int countDriveAddedPlace = 0;
+    static int countDriveAddedLATLONG = 0;
+    static int countDriveAddedPostcode = 0;
+    static int countDriveAddedEvent = 0;
     static int countDriveUPDATED = 0;
     static int countDriveErrors = 0;
     static ArrayList<CameraObject> cameras = new ArrayList<>();
@@ -189,16 +201,22 @@ public class ImageCatalogue {
             // print out total number of photos if more than one drive...
             if(config.getDrives().size()>1) {
                 messageLine("*");
-                message("All Drives -" + "Files found                      :" + countFiles);
-                message("All Drives -" + "Photos found                     :" + countImages);
-                message("All Drives - " + "Photos too small                :" + countTooSmall);
-                message("All Drives - " + "Photos processed                :" + countProcessed);
-                message("All Drives - " + "Photos with Lat Long            :" + countLATLONG);
-                message("All Drives - " + "Photos already Geocoded         :" + countALREADYGEOCODED);
-                message("All Drives - " + "Photos Geocoded                 :" + countGEOCODED);
-                message("All Drives - " + "Photos with failed Geocoding    :" + countNOTGEOCODED);
-                message("All Drives - " + "Photos Updated                  :" + countUPDATED);
-                message("All Drives - " + "Photos with Errors in processing:" + countErrors);
+                message("All Drives -" + "Files found                         :" + countFiles);
+                message("All Drives -" + "Photos found                        :" + countImages);
+                message("All Drives - " + "Photos too small                   :" + countTooSmall);
+                message("All Drives - " + "Photos processed                   :" + countProcessed);
+                message("All Drives - " + "Photos with Lat Long               :" + countLATLONG);
+                message("All Drives - " + "Photos already Geocoded            :" + countALREADYGEOCODED);
+                message("All Drives - " + "Photos Geocoded                    :" + countGEOCODED);
+                message("All Drives - " + "Photos with failed Geocoding       :" + countNOTGEOCODED);
+                message("All Drives - " + "Photos where date added            :" + countDateUpdate);
+                message("All Drives - " + "Photos where Events found from date:" + countEventsFound);
+                message("All Drives - " + "Photos with Place added            :" + countAddedPlace);
+                message("All Drives - " + "Photos with Lat Lon added          :" + countAddedLATLONG);
+                message("All Drives - " + "Photos with Postcode added         :" + countAddedPostcode);
+                message("All Drives - " + "Photos with Event added            :" + countAddedEvent);
+                message("All Drives - " + "Photos Updated                     :" + countUPDATED);
+                message("All Drives - " + "Photos with Errors in processing   :" + countErrors);
             }
 
         } catch (Exception e) {
@@ -1242,7 +1260,7 @@ public class ImageCatalogue {
         }
     }
     /**
-     * Finds geoObject from its internal key
+     * Finds Place from its internal key
      * @param i - key value
      * @return - Place Object
      */
@@ -1258,7 +1276,23 @@ public class ImageCatalogue {
         message("Error -could not retrieve Place with a key of:"+i);
         return null;
     }
-
+    /**
+     * Finds Event from its internal key
+     * @param i - key value
+     * @return - Event Object
+     */
+    private static EventObject getEvent(Integer i)
+    {
+        for(EventObject r : events)
+        {
+            if(r.getEventid().equals(i))
+            {
+                return r;
+            }
+        }
+        message("Error -could not retrieve Event with a key of:"+i);
+        return null;
+    }
     private static String getTagValueString(final JpegImageMetadata jpegMetadata,
                                             final TagInfo tagInfo) {
         final TiffField field = jpegMetadata.findEXIFValueWithExactMatch(tagInfo);
@@ -1327,7 +1361,7 @@ public class ImageCatalogue {
     public static Enums.processMode processForwardCodeFromLocation(ConfigObject config,FileObject fNew,ArrayList<String> existingCommentsString,String location)
     {
         Enums.processMode processMode=null;
-        processMode= forwardCode(location,config,fNew);
+        processMode= forwardCode(location,config,fNew,existingCommentsString);
         if(processMode!=null)
         {
             addComment(existingCommentsString,processMode.toString());
@@ -1337,56 +1371,58 @@ public class ImageCatalogue {
     public static Enums.processMode processForwardCode(ConfigObject config,FileObject fNew,ArrayList<String> existingCommentsString)
     {
         Enums.processMode processMode=null;
-        processMode= forwardCode(fNew.getWindowsComments(),config,fNew);
+        processMode= forwardCode(fNew.getWindowsComments(),config,fNew,existingCommentsString);
         if(processMode!=null)
         {
             fNew.setWindowsComments(updateInstructions(fNew.getWindowsComments(),processMode));
-            addComment(existingCommentsString,processMode.toString());
         }
         else
         {
-            processMode=forwardCode(fNew.getIPTCInstructions(),config,fNew);
+            processMode=forwardCode(fNew.getIPTCInstructions(),config,fNew,existingCommentsString);
             if(processMode!=null)
             {
                 fNew.setIPTCInstructions(updateInstructions(fNew.getIPTCInstructions(),processMode));
-                addComment(existingCommentsString,processMode.toString());
+            }
+        }
+        return processMode;
+    }
+    public static Integer checkEvent(ConfigObject config,FileObject fNew,EventObject e,ArrayList<String> existingCommentsString)
+    {
+        LocalDateTime d= fNew.getBestDate();
+        if(checkIPTCComments(existingCommentsString,"#Event:"+e.getEventid()+"DONE:")!=true || config.getOverwrite()) {
+            //event date
+            if (e.eventcalendar != null) {
+                if (d.getMonth() == e.getExactStartTime().getMonth() && d.getDayOfMonth() == e.getExactStartTime().getDayOfMonth()) {
+                    if(updateEvent(config, fNew, e, existingCommentsString, e.getLocation()))
+                    {
+                        return 1;
+                    };
+                    message("Event calendar match for event:" + e.getEventid() + " " + e.getTitle());
+                }
+            } else {
+                if ((d.isAfter(e.getExactStartTime()) || d.isEqual(e.getExactStartTime()))
+                        &&
+                        (d.isBefore(e.getExactEndTime()) || d.isEqual(e.getExactEndTime()))
+                ) {
+                    // we have a match... so process..
+                    message("Event date match for event:" + e.getEventid() + " " + e.getTitle());
+                    if(updateEvent(config, fNew, e, existingCommentsString, e.getLocation()))
+                    {
+                        return 1;
+                    }
+                }
             }
 
         }
-        return processMode;
+        return 0;
     }
     public static Integer processEvents(ConfigObject config,FileObject fNew,ArrayList<String> existingCommentsString)
     {
         Integer eventFound=0;
-        LocalDateTime d= fNew.getBestDate();
+
         for(EventObject e : events)
         {
-            if(checkIPTCComments(existingCommentsString,"#Event:"+e.getEventid()+"DONE:")!=true || config.getOverwrite()) {
-
-                //event date
-                if (e.eventcalendar != null) {
-                    if (d.getMonth() == e.getExactStartTime().getMonth() && d.getDayOfMonth() == e.getExactStartTime().getDayOfMonth()) {
-                       if(updateEvent(config, fNew, e, existingCommentsString, e.getLocation()))
-                        {
-                            eventFound++;
-                        };
-                        message("Event calendar match for event:" + e.getEventid() + " " + e.getTitle());
-                    }
-                } else {
-                    if ((d.isAfter(e.getExactStartTime()) || d.isEqual(e.getExactStartTime()))
-                            &&
-                            (d.isBefore(e.getExactEndTime()) || d.isEqual(e.getExactEndTime()))
-                    ) {
-                        // we have a match... so process..
-                        message("Event date match for event:" + e.getEventid() + " " + e.getTitle());
-                        if(updateEvent(config, fNew, e, existingCommentsString, e.getLocation()))
-                        {
-                            eventFound++;
-                        }
-                    }
-                }
-
-            }
+           eventFound=eventFound+checkEvent(config,fNew,e,existingCommentsString);
         }
          return eventFound;
 
@@ -1443,7 +1479,7 @@ public class ImageCatalogue {
                     fNew.setWindowsSubject(exif.getImageIFD().getFieldAsString(ExifTag.WINDOWS_XP_SUBJECT));
                 } else if (meta instanceof Comments) {
                     existingComments = (((Comments) meta).getComments());
-                    alreadyGeocoded=checkIPTCComments(existingComments,"#geocodeDONE:");
+                    alreadyGeocoded=checkIPTCComments(existingComments,"#"+Enums.processMode.geocode+"DONE:");
                     if(alreadyGeocoded)
                     {
                         message("File has already been geocoded:"+file.getName());
@@ -1464,32 +1500,32 @@ public class ImageCatalogue {
         Integer eventsUpdated=0;
         Boolean dateUpdated=processDates(fNew,existingCommentsString);
         Enums.processMode processMode=null;
-
         if (fNew.getLatitude()!=null && fNew.getLongitude()!=null) {
-            geocodeLatLong(alreadyGeocoded,config,fNew);
-
-        } else {
-            forwardUpdated=processForwardCode(config,fNew,existingCommentsString);
-            eventsUpdated=processEvents(config,fNew,existingCommentsString);
+            geocodeLatLong(alreadyGeocoded,config,fNew,existingCommentsString);
         }
+        forwardUpdated=processForwardCode(config,fNew,existingCommentsString);
+        eventsUpdated=processEvents(config,fNew,existingCommentsString);
+
         updateFile(config,drive,file,existingCommentsString,iptc,exif,alreadyGeocoded,fNew);
         fileObjects.add(fNew);
         return true;
     }
-    public static void geocodeLatLong(Boolean alreadyGeocoded,ConfigObject config,FileObject fNew)
+    public static void geocodeLatLong(Boolean alreadyGeocoded,ConfigObject config,FileObject fNew,ArrayList<String> existingCommentsString)
     {
         countLATLONG++;
         countDriveLATLONG++;
-        if(!alreadyGeocoded || config.getRedoGeocode() ) {
-            geocode(fNew, fNew.getLatitude(),fNew.getLongitude(),config);
-        }
-        else
+        if(alreadyGeocoded)
         {
             countALREADYGEOCODED++;
             countDriveALREADYGEOCODED++;
         }
+        if(!alreadyGeocoded || config.getRedoGeocode() ) {
+            if(geocode(fNew, fNew.getLatitude(),fNew.getLongitude(),config)) {
+                addComment(existingCommentsString, Enums.processMode.geocode.toString());
+            }
+        }
     }
-    public static void geocode(FileObject fNew,Double lat,Double lon,ConfigObject config)
+    public static Boolean geocode(FileObject fNew,Double lat,Double lon,ConfigObject config)
     {
         Place g;
         g = checkCachedGeo(lat,lon, fNew.getBestDate(), Double.valueOf(config.getCacheDistance()));
@@ -1512,7 +1548,9 @@ public class ImageCatalogue {
             setFileObjectGEOValues(fNew, g);
             countGEOCODED++;
             countDriveGEOCODED++;
+            return true;
         }
+        return false;
      }
     public static Enums.processMode testOptions(String s)
     {
@@ -1585,12 +1623,12 @@ public class ImageCatalogue {
         }
         if(e.getKeywords()!=null)
         {
-            fNew.setWindowsTitle(e.getKeywords()+" "+fNew.getIPTCKeywords());
+            fNew.setWindowsSubject(e.getKeywords()+" "+fNew.getWindowsSubject());
             updateDone=true;
         }
         if(e.getDescription()!=null)
         {
-            fNew.setWindowsSubject(e.getDescription()+" "+fNew.getWindowsSubject());
+            fNew.setWindowsComments(e.getDescription()+" "+fNew.getWindowsSubject());
             updateDone=true;
         }
         if(location!=null)
@@ -1608,6 +1646,20 @@ public class ImageCatalogue {
             return true;
         }
         return false;
+    }
+    public static Boolean updateLatLon(Double lat, Double lon,FileObject fNew,ConfigObject config)
+    {
+        if((fNew.getLatitude()==null && fNew.getLongitude()==null) || config.getOverwrite())
+        {
+            fNew.setLatitude(lat);
+            fNew.setLongitude(lon);
+            return true;
+        }
+        else
+        {
+            message("Will not overwrite existing Lat and Lon information for this file:");
+            return false;
+        }
     }
     /*
     updates the date in ExifOriginal - and also the BestDate...
@@ -1645,9 +1697,8 @@ public class ImageCatalogue {
                 .from(dateToConvert.atZone(ZoneId.systemDefault())
                         .toInstant());
     }
-    public static Enums.processMode forwardCode(String instructions, ConfigObject config, FileObject fNew) {
-        countLATLONG++;
-        countDriveLATLONG++;
+    public static Enums.processMode forwardCode(String instructions, ConfigObject config, FileObject fNew,ArrayList<String> existingCommentsString) {
+
             String param = "";
             Enums.processMode p = testOptions(instructions);
             if(p==null)
@@ -1664,18 +1715,41 @@ public class ImageCatalogue {
                         geocode(fNew, lat, lon, config);
                         // we should also set lat and lon if it is correct
                         if (fNew.getPlaceKey() != null) {
-                            fNew.setLatitude(lat);
-                            fNew.setLongitude(lon);
+                            if(updateLatLon(lat,lon,fNew,config)) {
+                                countAddedLATLONG++;
+                                countDriveAddedLATLONG++;
+                                addComment(existingCommentsString, p.toString());
+                            }
+
                             return p;
                         }
                     } catch (Exception e) {
                         message("could not convert provided values to lat long:" + param);
                     }
                 } else {
-                    message("Incorrect number of paramters for lat long:" + param);
+                    message("Incorrect number of parameters for lat long:" + param);
                 }
                 return null;
-
+            } else if (p.equals(Enums.processMode.event)) {
+                param = getParam(instructions, "#"+Enums.processMode.event.toString()+":");
+                try {
+                    EventObject e;
+                    e= getEvent(Integer.valueOf(param));
+                    if (e == null) {
+                        message("This Event has not been found in the JSON - event:" + param);
+                    } else {
+                        message("Event has been found - event:" + param);
+                        if(checkEvent(config,fNew,e,existingCommentsString)>0)
+                        {
+                            countAddedEvent++;
+                            countDriveAddedEvent++;
+                        }
+                        return p;
+                    }
+                } catch (Exception e) {
+                    message("could not convert provided values to a place:" + param);
+                }
+                return null;
             } else if (p.equals(Enums.processMode.place)) {
                 param = getParam(instructions, "#"+Enums.processMode.place.toString()+":");
                 try {
@@ -1685,8 +1759,13 @@ public class ImageCatalogue {
                         message("This place has not been added in the JSON - place:" + param);
                     } else {
                         message("Place has been found - place:" + param);
-                        fNew.setPlaceKey(g.getInternalKey());
-                        setFileObjectGEOValues(fNew, g);
+                        if(updateLatLon(g.getLatAsDouble(),g.getLonAsDouble(),fNew,config)) {
+                            fNew.setPlaceKey(g.getInternalKey());
+                            setFileObjectGEOValues(fNew, g);
+                            countAddedPlace++;
+                            countDriveAddedPlace++;
+                            addComment(existingCommentsString, p.toString());
+                        }
                         return p;
                     }
                 } catch (Exception e) {
@@ -1708,11 +1787,14 @@ public class ImageCatalogue {
                         String[] values2 = newLat.split(",", -1);
                         Double lat = Double.valueOf(values2[0]);
                         Double lon = Double.valueOf(values2[1]);
-                        geocode(fNew, lat, lon, config);
+                        Boolean result=geocode(fNew, lat, lon, config);
                         // we should also set lat and lon if it is correct
                         if (fNew.getPlaceKey() != null) {
-                            fNew.setLatitude(lat);
-                            fNew.setLongitude(lon);
+                            if(updateLatLon(lat,lon,fNew,config)) {
+                                countAddedPostcode++;
+                                countDriveAddedPostcode++;
+                                addComment(existingCommentsString, p.toString());
+                            }
                             return p;
                         }
                     }
@@ -1740,7 +1822,6 @@ public class ImageCatalogue {
         fNew.setCountry_name(g.getIPTCCountry());
         fNew.setStateProvince(g.getIPTCStateProvince());
         fNew.setSubLocation(g.getIPTCSublocation());
-
     }
     /**
      * @param fNew - this sets values on the new FileObject
@@ -2251,10 +2332,16 @@ public class ImageCatalogue {
             countDriveImages = 0;
             countDriveTooSmall = 0;
             countDriveProcessed = 0;
-            countDriveGEOCODED = 0;
-            countDriveALREADYGEOCODED=0;
             countDriveLATLONG=0;
+            countDriveALREADYGEOCODED=0;
+            countDriveGEOCODED = 0;
             countDriveNOTGEOCODED=0;
+            countDriveDateUpdate=0;
+            countDriveEventsFound=0;
+            countDriveAddedPlace=0;
+            countDriveAddedLATLONG=0;
+            countDriveAddedPostcode=0;
+            countDriveAddedEvent=0;
             countDriveUPDATED=0;
             countDriveErrors=0;
             message("Reading drive: "+d.getStartdir());
@@ -2263,16 +2350,22 @@ public class ImageCatalogue {
             readDirectoryContents(new File(d.getStartdir()), d, c.getTempdir(), c);
             messageLine("-");
             String ex=" on drive "+d.getStartdir()+" :";
-            message("Files found                    "+ex + countDriveFiles);
-            message("Photos found                    "+ex + countDriveImages);
-            message("Photos too small                "+ex + countDriveTooSmall);
-            message("Photos processed                "+ex + countDriveProcessed);
-            message("Photos with Lat Long            "+ex + countDriveLATLONG);
-            message("Photos already Geocoded         "+ex + countDriveALREADYGEOCODED);
-            message("Photos Geocoded                 "+ex + countDriveGEOCODED);
-            message("Photos with failed Geocoding    "+ex + countDriveNOTGEOCODED);
-            message("Photos updated                  "+ex + countDriveUPDATED);
-            message("Photos with Errors in processing"+ex + countDriveErrors);
+            message("Files found                        "+ex + countDriveFiles);
+            message("Photos found                       "+ex + countDriveImages);
+            message("Photos too small                   "+ex + countDriveTooSmall);
+            message("Photos processed                   "+ex + countDriveProcessed);
+            message("Photos with Lat Long               "+ex + countDriveLATLONG);
+            message("Photos already Geocoded            "+ex + countDriveALREADYGEOCODED);
+            message("Photos Geocoded                    "+ex + countDriveGEOCODED);
+            message("Photos with failed Geocoding       "+ex + countDriveNOTGEOCODED);
+            message("Photos where date added            "+ex + countDriveDateUpdate);
+            message("Photos where Events found from date"+ex + countDriveEventsFound);
+            message("Photos with Place added            "+ex + countDriveAddedPlace);
+            message("Photos with Lat Lon added          "+ex + countDriveAddedLATLONG);
+            message("Photos with Postcode added         "+ex + countDriveAddedPostcode);
+            message("Photos with Event added            "+ex + countDriveAddedEvent);
+            message("Photos updated                     "+ex + countDriveUPDATED);
+            message("Photos with Errors in processing   "+ex + countDriveErrors);
         }
     }
     private static void printMetadata(MetadataEntry entry, String indent, String increment) {

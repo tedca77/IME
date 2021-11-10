@@ -20,14 +20,14 @@
 <tr>
     <td>${(track.trackKey)!}</td>
     <td>${(track.placeCount)!}</td>
-    <td>${(track.startDate?datetime)!}</td>
-    <td>${(track.endDate?datetime)!}</td>
+    <td>${(track.startDate.format('yyyy-MM-dd HH:mm:ss'))!}</td>
+    <td>${(track.endDate.format('yyyy-MM-dd HH:mm:ss'))!}</td>
 </tr>
 <tr>
  <td COLSPAN=4>${(track.startAndEndPlace)!}</td>
 </tr>
 <tr>
-<td COLSPAN=4, WIDTH=1000>${(track.imagelinks)!}</td>
+<td COLSPAN=4, WIDTH=1000>${(track.imageLinks)!}</td>
 </tr>
 </#list>
 </TABLE>
