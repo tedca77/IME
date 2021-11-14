@@ -17,6 +17,7 @@
   <th WIDTH=400>Display Name</th>
   <th>Place Key</th>
   <th>Date</th>
+  <th>Events</th>
 </tr>
 <#list photos as photo>
 <tr>
@@ -38,6 +39,7 @@
     <td>${(photo.displayName)!}</td>
     <td>${(photo.placeKey)!}</td>
     <td>${(photo.bestDate.format('yyyy-MM-dd  HH:mm:ss'))!}</td>
+    <td>${(photo.eventKeys)!}</td>
 </tr>
 </#list>
 </TABLE>

@@ -27,6 +27,7 @@ public class FileObject {
     String cameraName;
     Integer cameraKey;
     Integer placeKey;
+    String eventKeys;
     String programName;
     Double fStop;
     Double latitude;

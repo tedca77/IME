@@ -10,6 +10,7 @@ import java.time.LocalTime;
 public class EventObject {
     String title;
     String description;
+    String imagelinks;
     String keywords;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     LocalDate eventdate;

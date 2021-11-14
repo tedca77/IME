@@ -108,7 +108,7 @@ public class ImageCatalogue {
     static ArrayList<String> newfileNamesDefault=new ArrayList<>(Arrays.asList("camera","day"));
     static ArrayList<String> isocountryDefault=new ArrayList<>(Collections.singletonList("country_code"));
     static ArrayList<String> countryDefault=new ArrayList<>(Collections.singletonList("country"));
-    static ArrayList<String> stateprovinceDefault=new ArrayList<>();
+    static ArrayList<String> stateprovinceDefault=new ArrayList<>(Arrays.asList("county","state_district"));
     static ArrayList<String> cityDefault=new ArrayList<>(Arrays.asList("town","city","village"));
     static ArrayList<String> sublocationDefault=new ArrayList<>(Arrays.asList("amenity","leisure","house_number","road","hamlet","suburb","city_district"));
     static int cacheDistanceDefault=100; // this is the distance from a point that detemrines this is the same place..Metres.
@@ -140,14 +140,12 @@ public class ImageCatalogue {
                 message("No json file present - requiring two directories");
                 if(args.length>1) {
                     config = new ConfigObject();
-                    setDrives(config, args[0], args[1]);
+                    setDrives(config, args[0]);
+                    config.setTempdir(args[1]);
                     fileName=Path.of(args[1]+"\\"+jsonDefault);
                     message("Directory to search:"+fileName);
                     message("Temporary Directory:"+args[1]);
-                    if(args.length>2)
-                    {
 
-                    }
                 }
                 else
                 {
@@ -155,7 +153,8 @@ public class ImageCatalogue {
                 }
             }
             //
-            setDefaults(Objects.requireNonNull(config), args);
+            readRestOfArgs(config, args);
+            setDefaults(Objects.requireNonNull(config));
             messageLine("*");
             //this prints out the main options
             displayDefaults(config);
@@ -173,7 +172,9 @@ public class ImageCatalogue {
             checkDuplicates();
             // sort any ArrayLists....
             fileObjects.sort(Comparator.comparing(FileObject::getBestDate));
+
             addLinksToPlaces(config.getWidth(),config.getTempdir());
+            addLinksToEvents(config.getWidth(),config.getTempdir());
             //create tracks - this will also update the geoObjects
             if(!createTracks())
             {
@@ -280,11 +281,47 @@ public class ImageCatalogue {
             return null;
         }
     }
+    public static void readRestOfArgs(ConfigObject config,String[] args)
+    {
+        //checks args - first 3 may not be
+        int count=0;
+        for(String s:args)
+        {
+            count++;
+            if(s.trim().equalsIgnoreCase(Enums.argOptions.update.toString()))
+            {
+                config.setUpdate(true);
+            }
+            else if(s.trim().equalsIgnoreCase(Enums.argOptions.overwriteValues.toString()))
+            {
+                config.setOverwrite(true);
+            }
+            else if(s.trim().equalsIgnoreCase(Enums.argOptions.showmetadata.toString()))
+            {
+                config.setShowmetadata(true);
+            }
+            else if(s.trim().equalsIgnoreCase(Enums.argOptions.redoGeocoding.toString()))
+            {
+                config.setRedoGeocode(true);
+            }
+            else
+            {
+                //  the third parameter can be the newdirectory - if this is set, then files will be moved, if update is set to true
+                if(count==3)
+                {
+                    config.setNewdir(s.trim());
+                }
+            }
+
+        }
+
+
+    }
     /**
      * Sets the defaults if the values are not in the JSON (note this is pass by value - and we can change values)
      * @param config - passes ConfigObject
      */
-    public static void setDefaults(ConfigObject config,String[] args)
+    public static void setDefaults(ConfigObject config)
     {
         if(config.getTimeZone()==null){config.setTimeZone(z.toString());}
 
@@ -297,26 +334,6 @@ public class ImageCatalogue {
         if(config.getShowmetadata()==null) {config.setShowmetadata(false);}
         if(config.getOverwrite()==null) {config.setOverwrite(false);}
         if(config.getRedoGeocode()==null) {config.setRedoGeocode(false);}
-        //checks args
-        for(String s:args)
-        {
-            if(s.trim().equalsIgnoreCase(Enums.argOptions.update.toString()))
-            {
-                config.setUpdate(true);
-            }
-            if(s.trim().equalsIgnoreCase(Enums.argOptions.overwriteValues.toString()))
-            {
-                config.setOverwrite(true);
-            }
-            if(s.trim().equalsIgnoreCase(Enums.argOptions.showmetadata.toString()))
-            {
-                config.setShowmetadata(true);
-            }
-            if(s.trim().equalsIgnoreCase(Enums.argOptions.redoGeocoding.toString()))
-            {
-                config.setRedoGeocode(true);
-            }
-        }
         if(config.getImageextensions()==null) {config.setImageextensions(imageDefaults);}
         if(config.getVideoextensions()==null) {config.setVideoextensions(videoDefaults);}
         if(config.getSublocation()==null) {config.setSublocation(sublocationDefault);}
@@ -327,7 +344,7 @@ public class ImageCatalogue {
         if (config.getCacheDistance() == null) {
             config.setCacheDistance(cacheDistanceDefault);
         }
-        //return config;
+
     }
     /**
      * Writes out HTML reports using freemarker for the main objects.  Freemarker templates are in the project.
@@ -399,6 +416,14 @@ public class ImageCatalogue {
             droot.put("root",tempDir);
             dtemplate.process(droot, dwriter);
             dwriter.close();
+            //
+            Template etemplate = cfg.getTemplate("events.ftl");
+            FileWriter ewriter = new FileWriter(tempDir+"/"+"events.html");
+            Map<String, Object> eroot = new HashMap<>();
+            eroot.put( "events",events );
+            eroot.put("root",tempDir);
+            etemplate.process(eroot, ewriter);
+            ewriter.close();
         } catch (IOException e) {
             message("Cannot write output files to directory - please check the path exists:"+tempDir);
         }
@@ -551,12 +576,7 @@ public class ImageCatalogue {
                                             countDriveErrors++;
                                             message("Could not process file:"+file.getCanonicalPath());
                                         }
-                                        if(config.getShowmetadata() && config.getUpdate()) {
-                                            messageLine("~");
-                                            if (!readMetadata(file)) {
-                                                message("Could not read metadata after update");
-                                            }
-                                        }
+
                                     } else {
                                         countTooSmall++;
                                         countDriveTooSmall++;
@@ -655,6 +675,41 @@ public class ImageCatalogue {
             return s + valString + ", ";
         }
         return s;
+    }
+    public static void addLinksToEvents(Integer width, String root)
+    {
+        for(EventObject r : events)
+        {
+            StringBuilder s= new StringBuilder();
+            for(FileObject f: fileObjects)
+            {
+                try {
+                    if(f.getEventKeys().length()>0) {
+                        String[] keys = f.getEventKeys().split(";",-1);
+                        for(String k : keys)
+                        {
+                            if (k.equals(r.getEventid().toString())) {
+                                if (!(f.getOrientation() == 8 || f.getOrientation() == 6)) {
+                                    s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(width).append("\" class=\"padding\" >");
+                                } else {
+                                    Integer newWidth = width * f.getHeight() / f.getWidth();
+                                    s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(newWidth).append("\" class=\"padding\" >");
+                                }
+                            }
+                        }
+
+
+                    }
+                }
+                catch(Exception e)
+                {
+                    message("error adding links to Events:"+f.getDisplayName()+e);
+                }
+            }
+            if(s.toString().length()>0) {
+                r.setImagelinks(s.toString());
+            }
+        }
     }
     /**
      * this adds some HTML for images to the Place object so we can incorporate into Freemarker report easily
@@ -932,8 +987,7 @@ public class ImageCatalogue {
                 month = convertMonth(values[1]);
                 day = convertDay(values[2]);
             }
-            LocalDateTime c = LocalDateTime.of(year, month, day, 0, 0);
-            return c;
+            return  LocalDateTime.of(year, month, day, 0, 0);
         }
         catch(Exception e) {
             return null;
@@ -1086,31 +1140,47 @@ public class ImageCatalogue {
                 message("NUMBER OF EVENTS AFTER CHECKING IS: "+c.getEvents().size());
 
             }
+            for(EventObject e : events)
+            {
+                e.setImagelinks("No files found");
+            }
             //sort in case there are gaps in numbering
             events.sort(Comparator.comparing(EventObject::getEventid));
         }
     }
-    public static Boolean moveFiles()
+    public static String moveFile(ConfigObject config, FileObject f)
     {
         //
-        String rootOutput="R:/TestNew";
-        for(FileObject f: fileObjects)
-        {
+            int lastYear=0;
+            int lastMonth=0;
             //getYear
-
+            int year=f.getBestDate().getYear();
+            int month=f.getBestDate().getMonth().getValue();
+            String newDirectory = config.getNewdir()+"/"+year+"/"+month;
             //getmonth
+            if(year!=lastYear || month!=lastMonth)
+            {
+                // create directory
+                createTempDirForUser(config.getNewdir()+"/"+year);
+                createTempDirForUser(newDirectory);
+            }
+            File oldFile= new File(f.getDirectory()+"/"+f.getFileName());
+            File newFile =new File(newDirectory+"/"+f.getFileName());
+            String oldThumbName=makeThumbName(oldFile);
+            oldFile.renameTo( newFile);
+            String newThumbName=makeThumbName(newFile);
+
+            File oldThumb= new File(config.getTempdir()+"/"+oldThumbName);
+            File newThumb= new File(config.getTempdir()+"/"+newThumbName);
+            //rename file
+            oldThumb.renameTo(newThumb);
 
             //if rename files - change the name and directory....
-            f.setDirectory("newname");
-            //CREATE THE DIRECTORY IF IT DOES NOT EXIST
+            f.setDirectory(newDirectory);
+            f.setThumbnail(newThumbName);
+            //thee fiule name st
 
-            f.setFileName("newNAME");
-            //MOVE THE FILE
-
-            //DO WE NEED TO UPDATE THE file METADATA ?
-
-        }
-        return true;
+        return newDirectory;
     }
     /**
      * Makes a thumbnail name replacing slashes and colon with underscores - as we need to create a valid file name
@@ -1396,7 +1466,7 @@ public class ImageCatalogue {
                     if(updateEvent(config, fNew, e, existingCommentsString, e.getLocation()))
                     {
                         return 1;
-                    };
+                    }
                     message("Event calendar match for event:" + e.getEventid() + " " + e.getTitle());
                 }
             } else {
@@ -1508,6 +1578,12 @@ public class ImageCatalogue {
 
         updateFile(config,drive,file,existingCommentsString,iptc,exif,alreadyGeocoded,fNew);
         fileObjects.add(fNew);
+        if(config.getShowmetadata() && config.getUpdate()) {
+            messageLine("~");
+            if (!readMetadata(new File(fNew.getDirectory()+"/"+fNew.getFileName()))) {
+                message("Could not read metadata after update");
+            }
+        }
         return true;
     }
     public static void geocodeLatLong(Boolean alreadyGeocoded,ConfigObject config,FileObject fNew,ArrayList<String> existingCommentsString)
@@ -1615,21 +1691,21 @@ public class ImageCatalogue {
     }
     public static Boolean updateEvent(ConfigObject config, FileObject fNew, EventObject e,ArrayList<String> existingCommentsString,String location)
     {
-        Boolean updateDone=false;
+
         if(e.getTitle()!=null)
         {
             fNew.setWindowsTitle(e.getTitle() + " "+ fNew.getWindowsTitle());
-            updateDone=true;
+
         }
         if(e.getKeywords()!=null)
         {
             fNew.setWindowsSubject(e.getKeywords()+" "+fNew.getWindowsSubject());
-            updateDone=true;
+
         }
         if(e.getDescription()!=null)
         {
             fNew.setWindowsComments(e.getDescription()+" "+fNew.getWindowsSubject());
-            updateDone=true;
+
         }
         if(location!=null)
         {
@@ -1637,14 +1713,12 @@ public class ImageCatalogue {
             processMode=processForwardCodeFromLocation(config,fNew,existingCommentsString,location);
             if(processMode!=null)
             {
-                updateDone=true;
-                addComment(existingCommentsString,processMode.toString());
+               addComment(existingCommentsString,processMode.toString());
             }
         }
-        if(updateDone) {
-            addComment(existingCommentsString,Enums.processMode.event+":"+e.getEventid());
-            return true;
-        }
+        fNew.setEventKeys(fNew.getEventKeys()+e.getEventid()+";");
+        addComment(existingCommentsString,Enums.processMode.event+":"+e.getEventid());
+
         return false;
     }
     public static Boolean updateLatLon(Double lat, Double lon,FileObject fNew,ConfigObject config)
@@ -1674,6 +1748,8 @@ public class ImageCatalogue {
         if(c!=null) {
             fNew.setExifOriginal(c);
             fNew.setBestDate(fNew.getExifOriginal());
+            countDriveDateUpdate++;
+            countDateUpdate++;
             return true;
         }
         return false;
@@ -1868,8 +1944,7 @@ public class ImageCatalogue {
                 message("Error acessing exif metadata");
             }
         }
-
-
+        fNew.setEventKeys(""); //set this to blank at start....
         if(fNew.getOrientation()==null)
         {
             fNew.setOrientation(1);
@@ -1964,12 +2039,12 @@ public class ImageCatalogue {
                         f.setIPTCKeywords(item.getValue());
                         message("IPTC Keywords value is:" + item.getValue());
                     }
-                } else if (item.getKey().equals(IPTCApplicationTag.SPECIAL_INSTRUCTIONS)) {
-                if (item.getValue().length() > 0) {
-                    f.setIPTCInstructions(item.getValue());
-                    message("IPTC Instructions is:" + item.getValue());
+                } else if (item.getKey().equals(IPTCApplicationTag.SPECIAL_INSTRUCTIONS.getName())) {
+                    if (item.getValue().length() > 0) {
+                        f.setIPTCInstructions(item.getValue());
+                        message("IPTC Instructions is:" + item.getValue());
+                    }
                 }
-            }
             }
             return true;
         } catch (Exception e) {
@@ -2054,7 +2129,7 @@ public class ImageCatalogue {
                 exif.addImageField(TiffTag.WINDOWS_XP_TITLE,FieldType.WINDOWSXP,fNew.getWindowsTitle());
                 exif.addImageField(TiffTag.WINDOWS_XP_SUBJECT,FieldType.WINDOWSXP,fNew.getWindowsSubject());
                 exif.addImageField(TiffTag.WINDOWS_XP_COMMENT,FieldType.WINDOWSXP,fNew.getWindowsComments());
-                exif.addExifField(ExifTag.DATE_TIME_ORIGINAL, FieldType.ASCII,formatter.format( convertToDateViaInstant(fNew.getExifOriginal())));
+                exif.addExifField(ExifTag.DATE_TIME_ORIGINAL, FieldType.ASCII,formatter.format( convertToDateViaInstant(fNew.getBestDate())));
 
                 metaList.add(exif);
                 iptc.addDataSets(iptcs);
@@ -2072,9 +2147,21 @@ public class ImageCatalogue {
                 if (!outFile.delete()) {
                     message("Cannot delete file:" + outFile.getPath());
                 }
-                Files.setAttribute(file.toPath(), "creationTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileCreated()).getTime()));
-                Files.setAttribute(file.toPath(), "lastAccessTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileAccessed()).getTime()));
-                Files.setAttribute(file.toPath(), "lastModifiedTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileModified()).getTime()));
+                File finalFile=file;
+                if(config.getNewdir()!=null)
+                {
+                    String newDirectory=moveFile(config,fNew);
+                    if(newDirectory!=null) {
+                        finalFile = new File(newDirectory + "/" + fNew.getFileName());
+                    }
+                    else
+                    {
+                        message("Could not move file");
+                    }
+                }
+                Files.setAttribute(finalFile.toPath(), "creationTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileCreated()).getTime()));
+                Files.setAttribute(finalFile.toPath(), "lastAccessTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileAccessed()).getTime()));
+                Files.setAttribute(finalFile.toPath(), "lastModifiedTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileModified()).getTime()));
                 countUPDATED++;
                 countDriveUPDATED++;
             } catch (Exception e) {
@@ -2300,11 +2387,10 @@ public class ImageCatalogue {
      * Set Drive structure if there is no json input file
      * @param config - config object
      * @param rootDrive - root drive (passed as an argument at program start)
-     * @param tempDir - temp directory (passed as an argument at program start)
       */
-    public static void setDrives(ConfigObject config,String rootDrive,String tempDir)
+    public static void setDrives(ConfigObject config,String rootDrive)
     {
-        config.setTempdir(tempDir);
+
         DriveObject d= new DriveObject();
         d.setStartdir(rootDrive);
         ExcludeSpec es = new ExcludeSpec();
