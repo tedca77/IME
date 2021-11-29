@@ -93,6 +93,7 @@ public class ImageCatalogue {
     static ArrayList<CameraObject> cameras = new ArrayList<>();
     static ArrayList<FileObject> fileObjects = new ArrayList<>();
     static ArrayList<FileObject> duplicateObjects = new ArrayList<>();
+    static ArrayList<ErrorObject> errorObjects = new ArrayList<>();
     static ArrayList<Place> places = new ArrayList<>();
     static ArrayList<EventObject> events = new ArrayList<>();
 
@@ -125,6 +126,8 @@ public class ImageCatalogue {
         startTime= new Date();
         ConfigObject config=null;
         Path fileName=null;
+
+
         try {
             if(FilenameUtils.getExtension(args[0]).equalsIgnoreCase("json"))
             {
@@ -424,6 +427,14 @@ public class ImageCatalogue {
             eroot.put("root",tempDir);
             etemplate.process(eroot, ewriter);
             ewriter.close();
+            //
+            Template rtemplate = cfg.getTemplate("errors.ftl");
+            FileWriter rwriter = new FileWriter(tempDir+"/"+"errors.html");
+            Map<String, Object> rroot = new HashMap<>();
+            rroot.put( "comments",errorObjects );
+            rroot.put("root",tempDir);
+            rtemplate.process(rroot, rwriter);
+            rwriter.close();
         } catch (IOException e) {
             message("Cannot write output files to directory - please check the path exists:"+tempDir);
         }
@@ -509,6 +520,8 @@ public class ImageCatalogue {
         message("Number of Files found:"+fileObjects.size());
         message("Number of Cameras found:"+cameras.size());
         message("Number of Places found:"+places.size());
+        message("Number of Errors:"+errorObjects.size());
+        message("Number of Duplicates found:"+duplicateObjects.size());
         messageLine("*");
 
     }
@@ -544,7 +557,7 @@ public class ImageCatalogue {
                     try {
                         if (file.isDirectory()) {
                             //message("directory:" + file.getCanonicalPath());
-                            if (!isExcluded(file.getCanonicalPath(), drive.getStartdir(), drive.getExcludespec().getDirectories())) {
+                            if (!isExcluded(file.getCanonicalPath(), drive)) {
                                 if (!file.getCanonicalPath().equals(tempDir)) {
                                     readDirectoryContents(file, drive, tempDir, config);
                                 }
@@ -553,7 +566,7 @@ public class ImageCatalogue {
                             countFiles++;
                             countDriveFiles++;
                             if (isImage(file.getName(),config.getImageextensions())) {
-                                if (!isExcludedPrefix(file.getName(), drive.getExcludespec().getFileprefixes())) {
+                                if (!isExcludedPrefix(file.getName(), drive)) {
                                     countImages++;
                                     countDriveImages++;
                                     long fileSize = file.length();
@@ -757,8 +770,8 @@ public class ImageCatalogue {
             StringBuilder s = new StringBuilder();
                     for (FileObject f : fileObjects) {
                         try {
-                            System.out.println("best date:"+f.getBestDate().toLocalDate());
-                            System.out.println("trackdate date:"+t.getTrackDate());
+                           // System.out.println("best date:"+f.getBestDate().toLocalDate());
+                           // System.out.println("trackdate date:"+t.getTrackDate());
                             if (f.getBestDate().toLocalDate().equals(t.getTrackDate())) {
                                 if(!(f.getOrientation()==8 || f.getOrientation()==6)) {
                                     s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(width).append("\" class=\"padding\" >");
@@ -774,7 +787,7 @@ public class ImageCatalogue {
                         }
             }
             t.setImageLinks(s.toString());
-                    System.out.println("image links"+t.getImageLinks());
+
         }
     }
     /**
@@ -826,6 +839,15 @@ public class ImageCatalogue {
         g.setStartDate(bestDate);
         places.add(g);
         return newKey;
+    }
+    public static void addError(String fileName,String directory,LocalDateTime d,String message)
+    {
+        ErrorObject error = new ErrorObject();
+        error.setFileName(fileName);
+        error.setFileDate(d);
+        error.setMessage(message);
+        error.setDirectory(directory);
+        errorObjects.add(error);
     }
     public static void addComment(List<String> existingCommentsString,String newComment)
     {
@@ -993,6 +1015,31 @@ public class ImageCatalogue {
             return null;
         }
     }
+    public static LocalDateTime createLocalDateCalendar(String param)
+    {
+        String[] values = param.split("-", -1);
+        try {
+            int year = 1900;
+            int month = 1;
+            int day = 1;
+            if (values.length == 1) {
+                //YYYY
+                return null;
+            } else if (values.length == 2) {
+                month = convertMonth(values[0]);
+                day = convertDay(values[1]);
+
+            } else if (values.length == 3) {
+                year = convertYear(values[0]);
+                month = convertMonth(values[1]);
+                day = convertDay(values[2]);
+            }
+            return  LocalDateTime.of(year, month, day, 0, 0);
+        }
+        catch(Exception e) {
+            return null;
+        }
+    }
     /**
      * Creates temporary folder for output from the program
      * @param temp - name (from the JSON)
@@ -1107,6 +1154,7 @@ public class ImageCatalogue {
      */
     public static void readConfigLists(ConfigObject c)
     {
+
         if(c.getCameras()!=null)
         {
             message("NUMBER OF CAMERAS READ FROM CONFIG FILE:"+c.getCameras().size());
@@ -1148,36 +1196,52 @@ public class ImageCatalogue {
             events.sort(Comparator.comparing(EventObject::getEventid));
         }
     }
+    public static String getNewDirectory(ConfigObject config,FileObject f)
+    {
+        int lastYear=0;
+        int lastMonth=0;
+        //getYear
+        int year=f.getBestDate().getYear();
+        // create directory
+        createTempDirForUser(config.getNewdir()+"/"+year);
+        int month=f.getBestDate().getMonth().getValue();
+        String newDirectory= config.getNewdir()+"/"+year+"/"+month;
+        createTempDirForUser(newDirectory);
+        return newDirectory;
+    }
+    /**
+     * Moves a file if it does not already exist in the new structure
+     * @param config - config Object (contains program variables)
+     * @param f - fileObject to be moved
+     * @return - returns new directory or null
+     */
     public static String moveFile(ConfigObject config, FileObject f)
     {
         //
-            int lastYear=0;
-            int lastMonth=0;
-            //getYear
-            int year=f.getBestDate().getYear();
-            int month=f.getBestDate().getMonth().getValue();
-            String newDirectory = config.getNewdir()+"/"+year+"/"+month;
-            //getmonth
-            if(year!=lastYear || month!=lastMonth)
-            {
-                // create directory
-                createTempDirForUser(config.getNewdir()+"/"+year);
-                createTempDirForUser(newDirectory);
-            }
+
+            String newDirectory = getNewDirectory(config,f);
             File oldFile= new File(f.getDirectory()+"/"+f.getFileName());
             File newFile =new File(newDirectory+"/"+f.getFileName());
-            String oldThumbName=makeThumbName(oldFile);
-            oldFile.renameTo( newFile);
-            String newThumbName=makeThumbName(newFile);
+            if(newFile.exists()) {
+                addError(f.getFileName(),newDirectory,f.getBestDate(),"File already exists in the new directory structure - it will not be copied");
+                newDirectory=null;
+            }
+            else
+            {
+                String oldThumbName = makeThumbName(oldFile);
+                oldFile.renameTo(newFile);
+                String newThumbName = makeThumbName(newFile);
 
-            File oldThumb= new File(config.getTempdir()+"/"+oldThumbName);
-            File newThumb= new File(config.getTempdir()+"/"+newThumbName);
-            //rename file
-            oldThumb.renameTo(newThumb);
+                File oldThumb = new File(config.getTempdir() + "/" + oldThumbName);
+                File newThumb = new File(config.getTempdir() + "/" + newThumbName);
+                //rename file
+                oldThumb.renameTo(newThumb);
 
-            //if rename files - change the name and directory....
-            f.setDirectory(newDirectory);
-            f.setThumbnail(newThumbName);
+                //if rename files - change the name and directory....
+                f.setDirectory(newDirectory);
+                f.setThumbnail(newThumbName);
+            }
+
             //thee fiule name st
 
         return newDirectory;
@@ -1206,14 +1270,21 @@ public class ImageCatalogue {
      * @param excludeDir - array of directories to exclude
      * @return - either true (excluded) or false(not excluded)
      */
-    public static Boolean isExcluded(String fdir, String startDir, ArrayList<DirectoryObject> excludeDir) {
-        if(excludeDir==null)
+    public static Boolean isExcluded(String fdir, DriveObject drive) {
+
+        if(drive.getExcludespec()==null)
         {
             return false;
         }
-        for (DirectoryObject i : excludeDir) {
+        if(drive.getExcludespec().getDirectories()==null)
+        {
+            return false;
+        }
+        for (DirectoryObject i : drive.getExcludespec().getDirectories()) {
+           System.out.println("exclude"+fdir+ ",start:"+drive.getStartdir()+i.getName());
+            System.out.println("exclude"+fixSlash(fdir)+ ",start:"+drive.getStartdir()+fixSlash(i.getName()));
             if(i.getName()!=null) {
-                if (fdir.equals(startDir + i.getName())) {
+                if (fixSlash(fdir).equals(drive.getStartdir() + fixSlash(i.getName()))) {
                     message("Excluded:" + fdir);
                     return true;
                 }
@@ -1228,12 +1299,16 @@ public class ImageCatalogue {
      * @param excludePrefix - array of prefixes to exclude
      * @return - either true (exclude) or false (not excluded)
      */
-    public static Boolean isExcludedPrefix(String fname, ArrayList<DirectoryObject> excludePrefix) {
-        if(excludePrefix==null)
+    public static Boolean isExcludedPrefix(String fname, DriveObject drive) {
+        if(drive.getExcludespec()==null)
         {
             return false;
         }
-        for (DirectoryObject i : excludePrefix) {
+        if(drive.getExcludespec().getFileprefixes()==null)
+        {
+            return false;
+        }
+        for (DirectoryObject i : drive.getExcludespec().getFileprefixes()) {
             if(i.getName()!=null) {
                 if (fname.indexOf(i.getName()) == 0) {
                     message("Excluded Prefix:" + fname);
@@ -1243,6 +1318,22 @@ public class ImageCatalogue {
         }
         //  message("Not Excluded:"+fname);
         return false;
+    }
+    public static String fixSlash(String s)
+    {
+        return s.replace("\\","/");
+    }
+    public static ArrayList<String> joinKeys(ArrayList<String> current,ArrayList<String> newKeys)
+    {
+
+
+        for(String n : newKeys)
+
+        {
+            current.add(n);
+
+        }
+        return current;
     }
     /**
      * Checks if a file is an image
@@ -1413,15 +1504,17 @@ public class ImageCatalogue {
         } else {
             try {
                 SimpleDateFormat inputFormatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
-                return inputFormatter.parse(field.getValueDescription().replace("'", ""));
+                //some dates have slashes instead of colons
+                return inputFormatter.parse(field.getValueDescription().replace("'", "").replace("/",":"));
 
             } catch (Exception e) {
                 try {
                     SimpleDateFormat inputFormatter = new SimpleDateFormat("dd MMM yyyy HH:mm:ss", Locale.ENGLISH);
-                    return inputFormatter.parse(field.getValueDescription().replace("'", ""));
+                    return inputFormatter.parse(field.getValueDescription().replace("'", "").replace("/",":"));
 
                 } catch (Exception ee) {
                     message("******* error converting date:" + field.getValueDescription() + e);
+                    addError("-","-",null,"error parsing date:"+field);
                     return null;
                 }
 
@@ -1596,12 +1689,12 @@ public class ImageCatalogue {
             countDriveALREADYGEOCODED++;
         }
         if(!alreadyGeocoded || config.getRedoGeocode() ) {
-            if(geocode(fNew, fNew.getLatitude(),fNew.getLongitude(),config)) {
+            if(geocode(fNew, fNew.getLatitude(),fNew.getLongitude(),config,alreadyGeocoded)) {
                 addComment(existingCommentsString, Enums.processMode.geocode.toString());
             }
         }
     }
-    public static Boolean geocode(FileObject fNew,Double lat,Double lon,ConfigObject config)
+    public static Boolean geocode(FileObject fNew,Double lat,Double lon,ConfigObject config,Boolean alreadyGeocoded)
     {
         Place g;
         g = checkCachedGeo(lat,lon, fNew.getBestDate(), Double.valueOf(config.getCacheDistance()));
@@ -1615,13 +1708,14 @@ public class ImageCatalogue {
                 countDriveNOTGEOCODED++;
                 fNew.setDisplayName("");
                 message("Could not geocode :Lat" + fNew.getLatitude() + ", Long:" + fNew.getLongitude());
+                addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"could not geocode:"+fNew.getLongitude()+","+fNew.getLatitude());
             }
         } else {
             message("Found Lat / Long in cache : [" + g.getInternalKey() + "]" + g.getDisplay_name());
             fNew.setPlaceKey(g.getInternalKey());
         }
         if (g != null) {
-            setFileObjectGEOValues(fNew, g);
+            setFileObjectGEOValues(fNew, g,alreadyGeocoded,config);
             countGEOCODED++;
             countDriveGEOCODED++;
             return true;
@@ -1643,6 +1737,24 @@ public class ImageCatalogue {
 
         }
         return null;
+    }
+    public static ArrayList<String> convertPathToKeywords(String dir,String root)
+    {
+        // change all slashes to forward
+        // remove root and then replace slashes with spaces and return an array of values
+        ArrayList<String> keys = new ArrayList<String>();
+        String news=fixSlash(dir).replace(fixSlash(root),"").replace("/"," ").trim();
+        String[] ss = news.split(" ",-1);
+        if(ss.length==0)
+        {
+            return keys;
+        }
+
+        for(String s:ss)
+        {
+            keys.add(s);
+        }
+        return keys;
     }
     public static int convertYear(String s)
     {
@@ -1788,7 +1900,7 @@ public class ImageCatalogue {
                     try {
                         Double lat = Double.valueOf(values[0]);
                         Double lon = Double.valueOf(values[1]);
-                        geocode(fNew, lat, lon, config);
+                        geocode(fNew, lat, lon, config,false);
                         // we should also set lat and lon if it is correct
                         if (fNew.getPlaceKey() != null) {
                             if(updateLatLon(lat,lon,fNew,config)) {
@@ -1801,9 +1913,11 @@ public class ImageCatalogue {
                         }
                     } catch (Exception e) {
                         message("could not convert provided values to lat long:" + param);
+                        addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"could not convert provided values to lat, lon:"+param);
                     }
                 } else {
                     message("Incorrect number of parameters for lat long:" + param);
+                    addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Incorrect number of parameters for lat lon:"+param);
                 }
                 return null;
             } else if (p.equals(Enums.processMode.event)) {
@@ -1813,6 +1927,7 @@ public class ImageCatalogue {
                     e= getEvent(Integer.valueOf(param));
                     if (e == null) {
                         message("This Event has not been found in the JSON - event:" + param);
+                        addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Event not found for:"+param);
                     } else {
                         message("Event has been found - event:" + param);
                         if(checkEvent(config,fNew,e,existingCommentsString)>0)
@@ -1824,6 +1939,7 @@ public class ImageCatalogue {
                     }
                 } catch (Exception e) {
                     message("could not convert provided values to a place:" + param);
+                    addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not convert provided values to a place:"+param);
                 }
                 return null;
             } else if (p.equals(Enums.processMode.place)) {
@@ -1833,11 +1949,12 @@ public class ImageCatalogue {
                     g = getPlace(Integer.valueOf(param));
                     if (g == null) {
                         message("This place has not been added in the JSON - place:" + param);
+                        addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"This place does not exist in the JSON:"+param);
                     } else {
                         message("Place has been found - place:" + param);
                         if(updateLatLon(g.getLatAsDouble(),g.getLonAsDouble(),fNew,config)) {
                             fNew.setPlaceKey(g.getInternalKey());
-                            setFileObjectGEOValues(fNew, g);
+                            setFileObjectGEOValues(fNew, g,false,config);
                             countAddedPlace++;
                             countDriveAddedPlace++;
                             addComment(existingCommentsString, p.toString());
@@ -1846,6 +1963,7 @@ public class ImageCatalogue {
                     }
                 } catch (Exception e) {
                     message("could not convert provided values to a place:" + param);
+                    addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not convert provided values to a place:"+param);
                 }
                 return null;
             } else if (p.equals(Enums.processMode.postcode)) {
@@ -1863,7 +1981,7 @@ public class ImageCatalogue {
                         String[] values2 = newLat.split(",", -1);
                         Double lat = Double.valueOf(values2[0]);
                         Double lon = Double.valueOf(values2[1]);
-                        Boolean result=geocode(fNew, lat, lon, config);
+                        Boolean result=geocode(fNew, lat, lon, config,false);
                         // we should also set lat and lon if it is correct
                         if (fNew.getPlaceKey() != null) {
                             if(updateLatLon(lat,lon,fNew,config)) {
@@ -1873,10 +1991,14 @@ public class ImageCatalogue {
                             }
                             return p;
                         }
+                        else
+                        {
+                            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not find postcode:"+param);
+                        }
                     }
                     else
                     {
-
+                        addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"API not available:"+param);
                     }
                 } catch (Exception e) {
                     message("could not convert provided values to a postcode:" + param);
@@ -1890,14 +2012,14 @@ public class ImageCatalogue {
 
 
     }
-    public static void setFileObjectGEOValues(FileObject fNew,Place g)
+    public static void setFileObjectGEOValues(FileObject fNew,Place g,Boolean alreadyGeocoded, ConfigObject config)
     {
-        fNew.setDisplayName(g.getDisplay_name());
-        fNew.setCity(g.getIPTCCity());
-        fNew.setCountry_code(g.getIPTCCountryCode());
-        fNew.setCountry_name(g.getIPTCCountry());
-        fNew.setStateProvince(g.getIPTCStateProvince());
-        fNew.setSubLocation(g.getIPTCSublocation());
+        fNew.setDisplayName(conditionallyUpdateGeoField(fNew.getDisplayName(),g.getDisplay_name(),"Display Name,",alreadyGeocoded,config));
+        fNew.setCity(conditionallyUpdateGeoField(fNew.getCity(),g.getIPTCCity(),"City",alreadyGeocoded,config));
+        fNew.setCountry_code(conditionallyUpdateGeoField(fNew.getCountry_code(),g.getIPTCCountryCode(),"Country Code",alreadyGeocoded,config));
+        fNew.setCountry_name(conditionallyUpdateGeoField(fNew.getCountry_name(),g.getIPTCCountry(),"Country Name",alreadyGeocoded,config));
+        fNew.setStateProvince(conditionallyUpdateGeoField(fNew.getStateProvince(),g.getIPTCStateProvince(),"State / Province",alreadyGeocoded,config));
+        fNew.setSubLocation(conditionallyUpdateGeoField(fNew.getSubLocation(),g.getIPTCSublocation(),"Sub Location",alreadyGeocoded,config));
     }
     /**
      * @param fNew - this sets values on the new FileObject
@@ -2051,50 +2173,44 @@ public class ImageCatalogue {
             return false;
         }
     }
+    public static String conditionallyUpdateGeoField(String currentValue, String newValue,String fieldName,Boolean alreadyGeocoded,ConfigObject config)
+    {
+        // we update field if:
+        // 1. it has not already been geocoded and the existing field is empty OR
+        // 2. overwrite is set (i.e. it will overwrite existing values) but not if it has  already been geocoded
+        // 3. we have asked to force redo the geocoding
+
+        // note the new value might be blank after geocoding....
+        if (StringUtils.isNullOrEmpty(currentValue) && !alreadyGeocoded || (config.getOverwrite() && !alreadyGeocoded) || config.getRedoGeocode()) {
+            if(!StringUtils.isNullOrEmpty(currentValue)) {
+                message("New Value found and overwritten for:" + fieldName + " - " + newValue + "  , current value:" + currentValue);
+            }
+            else
+            {
+                message("New Value found and written for:" + fieldName + " - " + newValue + "  , current value:" + currentValue);
+            }
+            return newValue;
+        }
+        else
+        {
+            if(!StringUtils.isNullOrEmpty(currentValue)) {
+                message("New Value not overwritten:" + fieldName + " - " + newValue + "  , current value:" + currentValue);
+            }
+            return currentValue;
+        }
+    }
     public static void updateFile(ConfigObject config,DriveObject drive, File file,ArrayList<String> existingCommentsString,IPTC iptc,JpegExif exif,Boolean alreadyGeocoded,FileObject fNew)
     {
-        boolean fileGeocoded=false;
+
         if(config.getUpdate()) {
             try {
                 List<IPTCDataSet> iptcs = new ArrayList<>();
-                // update if the existing value is not set, or if update is forced by overwrite or redogeocode
-                //
-                if ((!StringUtils.isNullOrEmpty(fNew.getCountry_code()) && !alreadyGeocoded) || (config.getOverwrite() && !alreadyGeocoded) || config.getRedoGeocode()) {
-                    if (fNew.getCountry_code() != null) {
-                        iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_CODE, fNew.getCountry_code().toUpperCase()));
-                        message("New Value found:" + IPTCApplicationTag.COUNTRY_CODE + " - " + fNew.getCountry_code());
-                        fileGeocoded = true;
-                    }
-                }
-                if ((!StringUtils.isNullOrEmpty(fNew.getCountry_name()) && !alreadyGeocoded) || (config.getOverwrite() && !alreadyGeocoded) || config.getRedoGeocode()) {
-                    if (fNew.getCountry_name() != null) {
-                        iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_NAME, fNew.getCountry_name()));
-                        message("New Value found:" + IPTCApplicationTag.COUNTRY_NAME + " - " + fNew.getCountry_name());
-                        fileGeocoded = true;
-                    }
-                }
-                if ((!StringUtils.isNullOrEmpty(fNew.getStateProvince()) && !alreadyGeocoded) || (config.getOverwrite() && !alreadyGeocoded) || config.getRedoGeocode()) {
-                    if (fNew.getStateProvince() != null) {
-                        iptcs.add(new IPTCDataSet(IPTCApplicationTag.PROVINCE_STATE, fNew.getStateProvince()));
-                        message("New Value found:" + IPTCApplicationTag.PROVINCE_STATE + " - " + fNew.getStateProvince());
-                        fileGeocoded = true;
-                    }
-                }
-                if ((!StringUtils.isNullOrEmpty(fNew.getSubLocation()) && !alreadyGeocoded) || (config.getOverwrite() && !alreadyGeocoded) || config.getRedoGeocode()) {
-                    if (fNew.getSubLocation() != null) {
-                        iptcs.add(new IPTCDataSet(IPTCApplicationTag.SUB_LOCATION, fNew.getSubLocation()));
-                        message("New Value found:" + IPTCApplicationTag.SUB_LOCATION + " - " + fNew.getSubLocation());
-                        fileGeocoded = true;
-                    }
-                }
-                if ((!StringUtils.isNullOrEmpty(fNew.getCity()) && !alreadyGeocoded) || (config.getOverwrite() && !alreadyGeocoded) || config.getRedoGeocode()) {
-                    if (fNew.getCity() != null) {
-                        iptcs.add(new IPTCDataSet(IPTCApplicationTag.CITY, fNew.getCity()));
-                        message("New Value found:" + IPTCApplicationTag.CITY + " - " + fNew.getCity());
-                        fileGeocoded = true;
-                    }
-                }
-                //     List<IPTCDataSet> iptcs =  new ArrayList<IPTCDataSet>();
+                iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_CODE, fNew.getCountry_code()));
+                iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_NAME, fNew.getCountry_name()));
+                iptcs.add(new IPTCDataSet(IPTCApplicationTag.PROVINCE_STATE, fNew.getStateProvince()));
+                iptcs.add(new IPTCDataSet(IPTCApplicationTag.SUB_LOCATION, fNew.getSubLocation()));
+                iptcs.add(new IPTCDataSet(IPTCApplicationTag.CITY, fNew.getCity()));
+
                 if (!StringUtils.isNullOrEmpty(fNew.getIPTCCopyright()) || config.getOverwrite()) {
                     if (!StringUtils.isNullOrEmpty(drive.getIPTCCopyright())) {
                         iptcs.add(new IPTCDataSet(IPTCApplicationTag.COPYRIGHT_NOTICE, drive.getIPTCCopyright()));
@@ -2105,10 +2221,16 @@ public class ImageCatalogue {
                         iptcs.add(new IPTCDataSet(IPTCApplicationTag.CATEGORY, drive.getIPTCCategory()));
                     }
                 }
-                if (!StringUtils.isNullOrEmpty(fNew.getIPTCKeywords()) || config.getOverwrite()) {
-                    if (!StringUtils.isNullOrEmpty(drive.getIPTCKeywords())) {
-                        iptcs.add(new IPTCDataSet(IPTCApplicationTag.KEY_WORDS, drive.getIPTCKeywords()));
-                    }
+                ArrayList<String> newKeys = new ArrayList<String>();
+                if(drive.getIPTCKeywords()!=null) {
+                    newKeys = new ArrayList<String>(Arrays.asList(drive.getIPTCKeywords().split(";", -1)));
+                }
+                if(config.getNewdir()!=null)
+                {
+                   newKeys=joinKeys(newKeys,convertPathToKeywords(fNew.getDirectory(),drive.getStartdir()));
+                }
+                for(String n : newKeys) {
+                    iptcs.add(new IPTCDataSet(IPTCApplicationTag.KEY_WORDS, n));
                 }
                 if (!StringUtils.isNullOrEmpty(fNew.getWindowsTitle()) || config.getOverwrite()) {
                     iptcs.add(new IPTCDataSet(IPTCApplicationTag.BY_LINE_TITLE,fNew.getWindowsTitle() ));
@@ -2125,18 +2247,37 @@ public class ImageCatalogue {
                 FileOutputStream fout = new FileOutputStream(outFile, false);
                 List<Metadata> metaList = new ArrayList<>();
                 DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
-
-                exif.addImageField(TiffTag.WINDOWS_XP_TITLE,FieldType.WINDOWSXP,fNew.getWindowsTitle());
-                exif.addImageField(TiffTag.WINDOWS_XP_SUBJECT,FieldType.WINDOWSXP,fNew.getWindowsSubject());
-                exif.addImageField(TiffTag.WINDOWS_XP_COMMENT,FieldType.WINDOWSXP,fNew.getWindowsComments());
+                String newDirectory=null;
+                if(config.getNewdir()!=null) {
+                    newDirectory = getNewDirectory(config,fNew);
+                    File newFile = new File(newDirectory + "/" + fNew.getFileName());
+                    if (!newFile.exists()) {
+                        addComment(existingCommentsString, "Moved file from:" + fNew.getDirectory());
+                        fNew.setWindowsComments(fNew.getWindowsComments()+"Moved file from:"+ fNew.getDirectory());
+                    }
+                    else
+                    {
+                        newDirectory=null;
+                    }
+                }
+                if(fNew.getPlaceKey()!=null)
+                {
+                    fNew.setWindowsComments(fNew.getWindowsComments()+"Geocoded:");
+                }
+                if(fNew.getEventKeys().length()>0)
+                {
+                    fNew.setWindowsComments(fNew.getWindowsComments()+"Event:"+ fNew.getDirectory());
+                }
+                exif.addImageField(TiffTag.WINDOWS_XP_TITLE,FieldType.WINDOWSXP,fNew.getWindowsTitle()+"this is the title");
+                exif.addImageField(TiffTag.WINDOWS_XP_SUBJECT,FieldType.WINDOWSXP,fNew.getWindowsSubject()+"this is te subject");
+                exif.addImageField(TiffTag.WINDOWS_XP_COMMENT,FieldType.WINDOWSXP,fNew.getWindowsComments() +"this is the comments");
                 exif.addExifField(ExifTag.DATE_TIME_ORIGINAL, FieldType.ASCII,formatter.format( convertToDateViaInstant(fNew.getBestDate())));
 
                 metaList.add(exif);
                 iptc.addDataSets(iptcs);
                 metaList.add(iptc);
-                if (fileGeocoded) {
-                    metaList.add(new Comments(existingCommentsString));
-                }
+
+                metaList.add(new Comments(existingCommentsString));
                 Metadata.insertMetadata(metaList, fin, fout);
                 fin.close();
                 fout.close();
@@ -2148,20 +2289,21 @@ public class ImageCatalogue {
                     message("Cannot delete file:" + outFile.getPath());
                 }
                 File finalFile=file;
-                if(config.getNewdir()!=null)
+                if(newDirectory!=null)
                 {
-                    String newDirectory=moveFile(config,fNew);
-                    if(newDirectory!=null) {
+                    String ok=moveFile(config,fNew);
+                    if(ok!=null) {
                         finalFile = new File(newDirectory + "/" + fNew.getFileName());
                     }
                     else
                     {
-                        message("Could not move file");
+                        message("Did not move file"+fNew.getFileName());
                     }
                 }
                 Files.setAttribute(finalFile.toPath(), "creationTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileCreated()).getTime()));
                 Files.setAttribute(finalFile.toPath(), "lastAccessTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileAccessed()).getTime()));
                 Files.setAttribute(finalFile.toPath(), "lastModifiedTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileModified()).getTime()));
+
                 countUPDATED++;
                 countDriveUPDATED++;
             } catch (Exception e) {
@@ -2276,29 +2418,39 @@ public class ImageCatalogue {
             if(e.getEventdate()==null && e.getEventcalendar()==null )
             {
                 message("Event calendar or event date must be specified - event :"+e.getEventid()+" "+e.getTitle());
+                addError("-","-",null,"Error in Event ID: "+e.getEventid() +"- Calendar or Event date not specified");
+                i.remove();
             }
             else {
-                if (e.getEventcalendar() != null &&
-                        (e.getEventdate() != null || e.getEndtime() != null ||
-                                e.getEventtime()!=null || e.getEnddate() != null))
-                {
-                    message("Event calendar cannot be used if other dates or times have been used - event :" + e.getEventid() + " " + e.getTitle());
-                    i.remove();
 
-                }
-                else
-                {
+
                     if (e.getEventcalendar() != null) {
                         // we have a valid calendar
                         // alendar so set start and end times
-                        LocalDateTime d = createLocalDate(e.getEventcalendar());
-                        if (d != null) {
+                        LocalDateTime d = createLocalDateCalendar(e.getEventcalendar());
+
+                        if(d!=null) {
                             e.setExactStartTime(d);
-                            e.setExactEndTime(d.plusDays(1).minusNanos(1));
-
-                        } else {
-
-                            message("Cannot parse calendar for Event:" + e.getEventid() + " " + e.getTitle());
+                            e.setExactEndTime( d.plusDays(1).minusNanos(1));
+                            if(e.getEventtime()!=null)
+                            {
+                                e.setExactStartTime(e.getExactStartTime().plusHours(e.getEventtime().getHour()));
+                                e.setExactStartTime( e.getExactStartTime().plusMinutes(e.getEventtime().getMinute()));
+                                e.setExactStartTime( e.getExactStartTime().plusSeconds(e.getEventtime().getSecond()));
+                                e.setExactStartTime( e.getExactStartTime().plusNanos(e.getEventtime().getNano()));
+                            }
+                            if(e.getEndtime()!=null)
+                            {
+                                e.setExactEndTime(e.getExactEndTime().plusHours(e.getEventtime().getHour()));
+                                e.setExactEndTime(e.getExactEndTime().plusMinutes(e.getEventtime().getMinute()));
+                                e.setExactEndTime(e.getExactEndTime().plusSeconds(e.getEventtime().getSecond()));
+                                e.setExactEndTime(e.getExactEndTime().plusNanos(e.getEventtime().getNano()));
+                            }
+                        }
+                        else
+                        {
+                            addError("-","-",null,"Error in Event ID: "+e.getEventid() +"-cannot parse event");
+                            message("cannot parse date for event"+e.getEventid());
                             i.remove();
                         }
                     }
@@ -2329,7 +2481,7 @@ public class ImageCatalogue {
                             e.setExactEndTime(e.getExactEndTime().plusNanos(e.getEventtime().getNano()));
                         }
                     }
-                }
+
             }
         }
 
@@ -2401,8 +2553,8 @@ public class ImageCatalogue {
         ArrayList<DirectoryObject> fileprefixes = new ArrayList<>();
         fileprefixes.add(prefix);
         es.setDirectories(directories);
-        es.setFileprefixes(fileprefixes);
-        d.setExcludespec(es);
+       es.setFileprefixes(fileprefixes);
+     //   d.setExcludespec(es);
         ArrayList<DriveObject> drives = new ArrayList<>();
         drives.add(d);
         config.setDrives(drives);
