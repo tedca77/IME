@@ -43,7 +43,6 @@ public class FileObject {
     Integer orientation;
     String IPTCCopyright;
     String IPTCKeywords;
-    String IPTCCategory;
     String IPTCInstructions;
     String windowsComments;
     String windowsTitle;

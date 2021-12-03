@@ -1198,8 +1198,6 @@ public class ImageCatalogue {
     }
     public static String getNewDirectory(ConfigObject config,FileObject f)
     {
-        int lastYear=0;
-        int lastMonth=0;
         //getYear
         int year=f.getBestDate().getYear();
         // create directory
@@ -1266,9 +1264,7 @@ public class ImageCatalogue {
     /**
      * Checks if a file directory should be excluded from the processing
      * @param fdir - directory name to check
-     * @param startDir - start directory for searching
-     * @param excludeDir - array of directories to exclude
-     * @return - either true (excluded) or false(not excluded)
+        * @return - either true (excluded) or false(not excluded)
      */
     public static Boolean isExcluded(String fdir, DriveObject drive) {
 
@@ -1296,7 +1292,7 @@ public class ImageCatalogue {
     /**
      * Checks if a file name, based on a prefix,  should be excluded from the processing
      * @param fname - filename
-     * @param excludePrefix - array of prefixes to exclude
+
      * @return - either true (exclude) or false (not excluded)
      */
     public static Boolean isExcludedPrefix(String fname, DriveObject drive) {
@@ -1538,6 +1534,7 @@ public class ImageCatalogue {
         if(processMode!=null)
         {
             fNew.setWindowsComments(updateInstructions(fNew.getWindowsComments(),processMode));
+            fNew.setIPTCInstructions(updateInstructions(fNew.getIPTCInstructions(),processMode));
         }
         else
         {
@@ -1545,6 +1542,7 @@ public class ImageCatalogue {
             if(processMode!=null)
             {
                 fNew.setIPTCInstructions(updateInstructions(fNew.getIPTCInstructions(),processMode));
+                fNew.setWindowsComments(updateInstructions(fNew.getWindowsComments(),Enums.processMode.date));
             }
         }
         return processMode;
@@ -1597,6 +1595,7 @@ public class ImageCatalogue {
         if(dateUpdated)
         {
             fNew.setWindowsComments(updateInstructions(fNew.getWindowsComments(),Enums.processMode.date));
+            fNew.setIPTCInstructions(updateInstructions(fNew.getIPTCInstructions(),Enums.processMode.date));
             addComment(existingCommentsString,Enums.processMode.date.toString());
         }
         else
@@ -1604,7 +1603,8 @@ public class ImageCatalogue {
             dateUpdated=updateDate(fNew.getIPTCInstructions(),fNew);
             if(dateUpdated)
             {
-                fNew.setIPTCInstructions(updateInstructions(fNew.IPTCInstructions,Enums.processMode.date));
+                fNew.setWindowsComments(updateInstructions(fNew.getWindowsComments(),Enums.processMode.date));
+                fNew.setIPTCInstructions(updateInstructions(fNew.getIPTCInstructions(),Enums.processMode.date));
                 addComment(existingCommentsString,Enums.processMode.date.toString());
             }
         }
@@ -1637,7 +1637,8 @@ public class ImageCatalogue {
                     XMP.showXMP((XMP) meta);
                 } else if (meta instanceof Exif) {
                     exif=(JpegExif)meta;
-                    fNew.setWindowsComments(exif.getImageIFD().getFieldAsString(ExifTag.WINDOWS_XP_COMMENT));
+
+                    fNew.setWindowsComments(exif.getExifIFD().getFieldAsString(ExifTag.WINDOWS_XP_COMMENT));
                     fNew.setWindowsTitle(exif.getImageIFD().getFieldAsString(ExifTag.WINDOWS_XP_TITLE));
                     fNew.setWindowsSubject(exif.getImageIFD().getFieldAsString(ExifTag.WINDOWS_XP_SUBJECT));
                 } else if (meta instanceof Comments) {
@@ -1775,7 +1776,7 @@ public class ImageCatalogue {
     {
         int month=0;
         try {
-            month= Integer.valueOf(s);
+            month= Integer.parseInt(s);
             if (month < 1 || month >12) {
                 month=1;
             }
@@ -1790,7 +1791,7 @@ public class ImageCatalogue {
     {
         int day=0;
         try {
-            day= Integer.valueOf(s);
+            day= Integer.parseInt(s);
             if (day < 1 || day >31) {
                 day=1;
             }
@@ -1811,12 +1812,12 @@ public class ImageCatalogue {
         }
         if(e.getKeywords()!=null)
         {
-            fNew.setWindowsSubject(e.getKeywords()+" "+fNew.getWindowsSubject());
+            fNew.setIPTCKeywords(e.getKeywords()+";"+fNew.getIPTCKeywords());
 
         }
         if(e.getDescription()!=null)
         {
-            fNew.setWindowsComments(e.getDescription()+" "+fNew.getWindowsSubject());
+            fNew.setWindowsSubject(e.getDescription()+" "+fNew.getWindowsSubject());
 
         }
         if(location!=null)
@@ -2031,7 +2032,7 @@ public class ImageCatalogue {
     {
         if(jpegMetadata!=null)
         {
-
+                        fNew.setWindowsComments(getStringOrUnknown(jpegMetadata, ExifTagConstants.EXIF_TAG_USER_COMMENT));
             fNew.setCameraMaker(getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MAKE));
             fNew.setCameraModel(getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL));
             fNew.setFStop(getTagValueDouble(jpegMetadata, ExifTagConstants.EXIF_TAG_FNUMBER));
@@ -2119,6 +2120,12 @@ public class ImageCatalogue {
     }
     public static boolean readIPTCdata(FileObject f, Metadata meta) {
         try {
+            // some of these fields may legitimately be blank so we need to set to blank not null.
+            f.setCountry_code("");
+            f.setCity("");
+            f.setStateProvince("");
+            f.setCountry_name("");
+            f.setSubLocation("");
             for (MetadataEntry item : meta) {
                 if (item.getKey().equals(IPTCApplicationTag.CITY.getName())) {
                     if (item.getValue().length() > 0) {
@@ -2150,12 +2157,6 @@ public class ImageCatalogue {
                         f.setIPTCCopyright(item.getValue());
                         message("IPTC Copyright value is:" + item.getValue());
                     }
-
-                } else if (item.getKey().equals(IPTCApplicationTag.CATEGORY.getName())) {
-                    if (item.getValue().length() > 0) {
-                        f.setIPTCCategory(item.getValue());
-                        message("IPTC Category value is:" + item.getValue());
-                    }
                 } else if (item.getKey().equals(IPTCApplicationTag.KEY_WORDS.getName())) {
                     if (item.getValue().length() > 0) {
                         f.setIPTCKeywords(item.getValue());
@@ -2166,7 +2167,28 @@ public class ImageCatalogue {
                         f.setIPTCInstructions(item.getValue());
                         message("IPTC Instructions is:" + item.getValue());
                     }
+                } else if (item.getKey().equals(IPTCApplicationTag.CAPTION_ABSTRACT.getName())) {
+                    if (item.getValue().length() > 0) {
+                        if (f.getWindowsSubject().length() < 1) {
+                            f.setWindowsSubject(item.getValue());
+                        } else {
+                            message("title conflict" + item.getValue() + " : " + f.getWindowsSubject());
+                        }
+                        message("IPTC Description / Caption is:" + item.getValue());
+                    }
+
+                } else if (item.getKey().equals(IPTCApplicationTag.OBJECT_NAME.getName())) {
+                    if (item.getValue().length() > 0) {
+                        if (f.getWindowsTitle().length() < 1) {
+                            f.setWindowsTitle(item.getValue());
+                        } else {
+                            message("title conflict" + item.getValue() + " : " + f.getWindowsTitle());
+                        }
+                        message("IPTC title is:" + item.getValue());
+                    }
                 }
+
+
             }
             return true;
         } catch (Exception e) {
@@ -2216,11 +2238,7 @@ public class ImageCatalogue {
                         iptcs.add(new IPTCDataSet(IPTCApplicationTag.COPYRIGHT_NOTICE, drive.getIPTCCopyright()));
                     }
                 }
-                if (!StringUtils.isNullOrEmpty(fNew.getIPTCCategory()) || config.getOverwrite()) {
-                    if (!StringUtils.isNullOrEmpty(drive.getIPTCCategory())) {
-                        iptcs.add(new IPTCDataSet(IPTCApplicationTag.CATEGORY, drive.getIPTCCategory()));
-                    }
-                }
+
                 ArrayList<String> newKeys = new ArrayList<String>();
                 if(drive.getIPTCKeywords()!=null) {
                     newKeys = new ArrayList<String>(Arrays.asList(drive.getIPTCKeywords().split(";", -1)));
@@ -2232,12 +2250,14 @@ public class ImageCatalogue {
                 for(String n : newKeys) {
                     iptcs.add(new IPTCDataSet(IPTCApplicationTag.KEY_WORDS, n));
                 }
+                // we may update the title and description /caption /subject
                 if (!StringUtils.isNullOrEmpty(fNew.getWindowsTitle()) || config.getOverwrite()) {
-                    iptcs.add(new IPTCDataSet(IPTCApplicationTag.BY_LINE_TITLE,fNew.getWindowsTitle() ));
+                    iptcs.add(new IPTCDataSet(IPTCApplicationTag.OBJECT_NAME,fNew.getWindowsTitle() ));
                 }
                 if (!StringUtils.isNullOrEmpty(fNew.getWindowsSubject()) || config.getOverwrite()) {
                      iptcs.add(new IPTCDataSet(IPTCApplicationTag.CAPTION_ABSTRACT, fNew.getWindowsSubject()));
                 }
+                // we update the Special Instructions if they have been provided....
                 if (!StringUtils.isNullOrEmpty(fNew.getIPTCInstructions()) || config.getOverwrite()) {
                     iptcs.add(new IPTCDataSet(IPTCApplicationTag.SPECIAL_INSTRUCTIONS, fNew.getIPTCInstructions()));
                 }
@@ -2268,9 +2288,11 @@ public class ImageCatalogue {
                 {
                     fNew.setWindowsComments(fNew.getWindowsComments()+"Event:"+ fNew.getDirectory());
                 }
-                exif.addImageField(TiffTag.WINDOWS_XP_TITLE,FieldType.WINDOWSXP,fNew.getWindowsTitle()+"this is the title");
-                exif.addImageField(TiffTag.WINDOWS_XP_SUBJECT,FieldType.WINDOWSXP,fNew.getWindowsSubject()+"this is te subject");
-                exif.addImageField(TiffTag.WINDOWS_XP_COMMENT,FieldType.WINDOWSXP,fNew.getWindowsComments() +"this is the comments");
+             //   exif.addImageField(TiffTag.WINDOWS_XP_TITLE,FieldType.WINDOWSXP,fNew.getWindowsTitle()+"this is the title");
+              //  exif.addImageField(TiffTag.WINDOWS_XP_SUBJECT,FieldType.WINDOWSXP,fNew.getWindowsSubject()+"this is te subject");
+                iptcs.add(new IPTCDataSet(IPTCApplicationTag.OBJECT_NAME, fNew.getWindowsTitle()));
+
+                exif.addImageField(TiffTag.WINDOWS_XP_COMMENT,FieldType.WINDOWSXP,fNew.getWindowsComments());
                 exif.addExifField(ExifTag.DATE_TIME_ORIGINAL, FieldType.ASCII,formatter.format( convertToDateViaInstant(fNew.getBestDate())));
 
                 metaList.add(exif);
@@ -2392,8 +2414,6 @@ public class ImageCatalogue {
         try {
             Map<MetadataType, Metadata> metadataMap = Metadata.readMetadata(file.getPath());
             for (Map.Entry<MetadataType, Metadata> entry : metadataMap.entrySet()) {
-                Metadata meta = entry.getValue();
-
                     for (MetadataEntry item : entry.getValue()) {
                        String s= findMetadata(item,keyValue);
                        if(s.length()>0)
@@ -2617,7 +2637,7 @@ public class ImageCatalogue {
         }
     }
     private static String findMetadata(MetadataEntry entry, String keyValue) {
-       String foundValue="";
+       String foundValue;
         if (entry.isMetadataEntryGroup()) {
 
             Collection<MetadataEntry> entries = entry.getMetadataEntries();
