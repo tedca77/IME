@@ -741,9 +741,13 @@ public class ImageCatalogue {
                         if (f.getPlaceKey().equals(r.getInternalKey())) {
                             if (!(f.getOrientation() == 8 || f.getOrientation() == 6)) {
                                 s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(width).append("\" class=\"padding\" >");
+                                s.append("<br><small>").append(f.getDirectory()).append("</small><br>");
+                                s.append("<small>").append(f.getFileName()).append("</small><br>");
                             } else {
                                 Integer newWidth = width * f.getHeight() / f.getWidth();
                                 s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(newWidth).append("\" class=\"padding\" >");
+                                s.append("<br><small>").append(f.getDirectory()).append("</small><br>");
+                                s.append("<small>").append(f.getFileName()).append("</small><br>");
                             }
                         }
                     }
@@ -1227,14 +1231,21 @@ public class ImageCatalogue {
             else
             {
                 String oldThumbName = makeThumbName(oldFile);
-                oldFile.renameTo(newFile);
+                boolean renameResult=oldFile.renameTo(newFile);
+                if(!renameResult)
+                {
+                    message("Could not move file from "+oldFile.getPath() + " to "+newFile.getPath());
+                }
                 String newThumbName = makeThumbName(newFile);
 
                 File oldThumb = new File(config.getTempdir() + "/" + oldThumbName);
                 File newThumb = new File(config.getTempdir() + "/" + newThumbName);
                 //rename file
-                oldThumb.renameTo(newThumb);
-
+                boolean renameResultthumb=oldThumb.renameTo(newThumb);
+                if(!renameResult)
+                {
+                    message("Could not move file from "+oldThumb.getName() + " to "+newThumb.getName());
+                }
                 //if rename files - change the name and directory....
                 f.setDirectory(newDirectory);
                 f.setThumbnail(newThumbName);
@@ -1519,8 +1530,7 @@ public class ImageCatalogue {
     }
     public static Enums.processMode processForwardCodeFromLocation(ConfigObject config,FileObject fNew,ArrayList<String> existingCommentsString,String location)
     {
-        Enums.processMode processMode=null;
-        processMode= forwardCode(location,config,fNew,existingCommentsString);
+        Enums.processMode processMode= forwardCode(location,config,fNew,existingCommentsString);
         if(processMode!=null)
         {
             addComment(existingCommentsString,processMode.toString());
@@ -1529,8 +1539,7 @@ public class ImageCatalogue {
     }
     public static Enums.processMode processForwardCode(ConfigObject config,FileObject fNew,ArrayList<String> existingCommentsString)
     {
-        Enums.processMode processMode=null;
-        processMode= forwardCode(fNew.getWindowsComments(),config,fNew,existingCommentsString);
+        Enums.processMode processMode= forwardCode(fNew.getWindowsComments(),config,fNew,existingCommentsString);
         if(processMode!=null)
         {
             fNew.setWindowsComments(updateInstructions(fNew.getWindowsComments(),processMode));
@@ -1579,7 +1588,7 @@ public class ImageCatalogue {
     }
     public static Integer processEvents(ConfigObject config,FileObject fNew,ArrayList<String> existingCommentsString)
     {
-        Integer eventFound=0;
+        int eventFound=0;
 
         for(EventObject e : events)
         {
@@ -1660,15 +1669,14 @@ public class ImageCatalogue {
         //create thumbnail and update FileObject
         fNew.setThumbnail(createThumbFromPicture(file, config.getTempdir(), thumbName, config.getWidth(),config.getHeight(),fNew.getOrientation()));
         // Geocodes if lat and long present
-        Enums.processMode forwardUpdated;
-        Integer eventsUpdated=0;
+
         Boolean dateUpdated=processDates(fNew,existingCommentsString);
         Enums.processMode processMode=null;
         if (fNew.getLatitude()!=null && fNew.getLongitude()!=null) {
             geocodeLatLong(alreadyGeocoded,config,fNew,existingCommentsString);
         }
-        forwardUpdated=processForwardCode(config,fNew,existingCommentsString);
-        eventsUpdated=processEvents(config,fNew,existingCommentsString);
+        Enums.processMode forwardUpdated=processForwardCode(config,fNew,existingCommentsString);
+        Integer eventsUpdated=eventsUpdated=processEvents(config,fNew,existingCommentsString);
 
         updateFile(config,drive,file,existingCommentsString,iptc,exif,alreadyGeocoded,fNew);
         fileObjects.add(fNew);
@@ -1761,14 +1769,14 @@ public class ImageCatalogue {
     {
         int year=0;
         try {
-            year = Integer.valueOf(s);
+            year = Integer.parseInt(s);
             if (year < 100) {
                 year = 2000 + year;
             }
         }
         catch(Exception e)
         {
-
+           message("Cannot convert year:"+s);
         }
         return year;
     }
@@ -1783,7 +1791,7 @@ public class ImageCatalogue {
         }
         catch(Exception e)
         {
-
+            message("Cannot convert month:"+s);
         }
         return month;
     }
@@ -1798,7 +1806,7 @@ public class ImageCatalogue {
         }
         catch(Exception e)
         {
-
+            message("Cannot convert day:"+s);
         }
         return day;
     }
@@ -1852,7 +1860,7 @@ public class ImageCatalogue {
     updates the date in ExifOriginal - and also the BestDate...
      */
     public static Boolean updateDate(String instructions, FileObject fNew) {
-        String param = getParam(instructions, "#"+Enums.processMode.date.toString()+":");
+        String param = getParam(instructions, "#"+Enums.processMode.date+":");
         if(param.length()<1)
         {
              return false;
@@ -1888,14 +1896,14 @@ public class ImageCatalogue {
     }
     public static Enums.processMode forwardCode(String instructions, ConfigObject config, FileObject fNew,ArrayList<String> existingCommentsString) {
 
-            String param = "";
+            String param ;
             Enums.processMode p = testOptions(instructions);
             if(p==null)
             {
                 return null;
             }
             if (p.equals(Enums.processMode.latlon)) {
-                param = getParam(instructions, "#"+Enums.processMode.latlon.toString()+":");
+                param = getParam(instructions, "#"+Enums.processMode.latlon+":");
                 String[] values = param.split(",", -1);
                 if (values.length == 2) {
                     try {
@@ -1922,7 +1930,7 @@ public class ImageCatalogue {
                 }
                 return null;
             } else if (p.equals(Enums.processMode.event)) {
-                param = getParam(instructions, "#"+Enums.processMode.event.toString()+":");
+                param = getParam(instructions, "#"+Enums.processMode.event+":");
                 try {
                     EventObject e;
                     e= getEvent(Integer.valueOf(param));
@@ -1944,7 +1952,7 @@ public class ImageCatalogue {
                 }
                 return null;
             } else if (p.equals(Enums.processMode.place)) {
-                param = getParam(instructions, "#"+Enums.processMode.place.toString()+":");
+                param = getParam(instructions, "#"+Enums.processMode.place+":");
                 try {
                     Place g;
                     g = getPlace(Integer.valueOf(param));
@@ -1969,7 +1977,7 @@ public class ImageCatalogue {
                 return null;
             } else if (p.equals(Enums.processMode.postcode)) {
 
-                param = getParam(instructions, "#"+Enums.processMode.postcode.toString()+":");
+                param = getParam(instructions, "#"+Enums.processMode.postcode+":");
                 String[] values3 = param.split(",", -1);
                 try {
                     if( config.getOpenAPIKey()!=null) {
@@ -2239,9 +2247,9 @@ public class ImageCatalogue {
                     }
                 }
 
-                ArrayList<String> newKeys = new ArrayList<String>();
+                ArrayList<String> newKeys = new ArrayList<>();
                 if(drive.getIPTCKeywords()!=null) {
-                    newKeys = new ArrayList<String>(Arrays.asList(drive.getIPTCKeywords().split(";", -1)));
+                    newKeys = new ArrayList<>(Arrays.asList(drive.getIPTCKeywords().split(";", -1)));
                 }
                 if(config.getNewdir()!=null)
                 {
@@ -2340,11 +2348,11 @@ public class ImageCatalogue {
             return s;
         }
         if(pMode.equals(Enums.processMode.geocode)) {
-            s=s + "#"+pMode.toString()+ "DONE:";
+            s=s + "#"+pMode+ "DONE:";
         }
         else
         {
-            int startPoint=s.toLowerCase().indexOf("#"+pMode.toString()+":");
+            int startPoint=s.toLowerCase().indexOf("#"+pMode+":");
             s=s.substring(0,startPoint+1+pMode.toString().length())+"DONE"+
                     s.substring(startPoint+1+pMode.toString().length());
             System.out.println("Updated instruction is:"+s);
@@ -2430,7 +2438,7 @@ public class ImageCatalogue {
     }
     public static void checkEvents()
     {
-        Iterator i = events.iterator();
+        Iterator<EventObject> i = events.iterator();
         EventObject e;
         while (i.hasNext()) {
 
