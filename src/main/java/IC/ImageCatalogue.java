@@ -1528,33 +1528,15 @@ public class ImageCatalogue {
             }
         }
     }
-    public static Enums.processMode processForwardCodeFromLocation(ConfigObject config,FileObject fNew,ArrayList<String> existingCommentsString,String location)
+    public static Boolean processForwardCodeFromLocation(ConfigObject config,FileObject fNew,ArrayList<String> existingCommentsString,String location)
     {
-        Enums.processMode processMode= forwardCode(location,config,fNew,existingCommentsString);
-        if(processMode!=null)
-        {
-            addComment(existingCommentsString,processMode.toString());
-        }
-        return processMode;
+        Boolean processDone= forwardCode(location,config,fNew,existingCommentsString);
+        return processDone;
     }
-    public static Enums.processMode processForwardCode(ConfigObject config,FileObject fNew,ArrayList<String> existingCommentsString)
+    public static Boolean processForwardCode(ConfigObject config,FileObject fNew,ArrayList<String> existingCommentsString)
     {
-        Enums.processMode processMode= forwardCode(fNew.getWindowsComments(),config,fNew,existingCommentsString);
-        if(processMode!=null)
-        {
-            fNew.setWindowsComments(updateInstructions(fNew.getWindowsComments(),processMode));
-            fNew.setIPTCInstructions(updateInstructions(fNew.getIPTCInstructions(),processMode));
-        }
-        else
-        {
-            processMode=forwardCode(fNew.getIPTCInstructions(),config,fNew,existingCommentsString);
-            if(processMode!=null)
-            {
-                fNew.setIPTCInstructions(updateInstructions(fNew.getIPTCInstructions(),processMode));
-                fNew.setWindowsComments(updateInstructions(fNew.getWindowsComments(),Enums.processMode.date));
-            }
-        }
-        return processMode;
+       Boolean processDone= forwardCode(fNew.getWindowsComments(),config,fNew,existingCommentsString);
+        return processDone;
     }
     public static Integer checkEvent(ConfigObject config,FileObject fNew,EventObject e,ArrayList<String> existingCommentsString)
     {
@@ -1597,25 +1579,17 @@ public class ImageCatalogue {
          return eventFound;
 
     }
+
     public static Boolean processDates(FileObject fNew,ArrayList<String> existingCommentsString)
     {
         Boolean dateUpdated=false;
-        dateUpdated=updateDate(fNew.getWindowsComments(),fNew);
+        String param=getInstructionFromEitherField(fNew,Enums.processMode.date);
+        if(param.length()>0) {
+            dateUpdated = updateDate(fNew.getWindowsComments(), fNew);
+        }
         if(dateUpdated)
         {
-            fNew.setWindowsComments(updateInstructions(fNew.getWindowsComments(),Enums.processMode.date));
-            fNew.setIPTCInstructions(updateInstructions(fNew.getIPTCInstructions(),Enums.processMode.date));
-            addComment(existingCommentsString,Enums.processMode.date.toString());
-        }
-        else
-        {
-            dateUpdated=updateDate(fNew.getIPTCInstructions(),fNew);
-            if(dateUpdated)
-            {
-                fNew.setWindowsComments(updateInstructions(fNew.getWindowsComments(),Enums.processMode.date));
-                fNew.setIPTCInstructions(updateInstructions(fNew.getIPTCInstructions(),Enums.processMode.date));
-                addComment(existingCommentsString,Enums.processMode.date.toString());
-            }
+            updateBothFields(fNew,param,Enums.processMode.date,existingCommentsString);
         }
         return dateUpdated;
     }
@@ -1675,8 +1649,8 @@ public class ImageCatalogue {
         if (fNew.getLatitude()!=null && fNew.getLongitude()!=null) {
             geocodeLatLong(alreadyGeocoded,config,fNew,existingCommentsString);
         }
-        Enums.processMode forwardUpdated=processForwardCode(config,fNew,existingCommentsString);
-        Integer eventsUpdated=eventsUpdated=processEvents(config,fNew,existingCommentsString);
+        Boolean forwardUpdated=processForwardCode(config,fNew,existingCommentsString);
+        Integer eventsUpdated=processEvents(config,fNew,existingCommentsString);
 
         updateFile(config,drive,file,existingCommentsString,iptc,exif,alreadyGeocoded,fNew);
         fileObjects.add(fNew);
@@ -1737,14 +1711,7 @@ public class ImageCatalogue {
         {
             return null;
         }
-        for(Enums.processMode p :Enums.processMode.values())
-        {
-            if(s.toLowerCase().contains("#"+p.toString() +":"))
-            {
-                return p;
-            }
 
-        }
         return null;
     }
     public static ArrayList<String> convertPathToKeywords(String dir,String root)
@@ -1830,12 +1797,8 @@ public class ImageCatalogue {
         }
         if(location!=null)
         {
-            Enums.processMode processMode=null;
-            processMode=processForwardCodeFromLocation(config,fNew,existingCommentsString,location);
-            if(processMode!=null)
-            {
-               addComment(existingCommentsString,processMode.toString());
-            }
+            Boolean processDone=processForwardCodeFromLocation(config,fNew,existingCommentsString,location);
+
         }
         fNew.setEventKeys(fNew.getEventKeys()+e.getEventid()+";");
         addComment(existingCommentsString,Enums.processMode.event+":"+e.getEventid());
@@ -1856,15 +1819,24 @@ public class ImageCatalogue {
             return false;
         }
     }
+    public static String getInstructionFromEitherField(FileObject fNew, Enums.processMode processMode)
+    {
+        String param = getParam(fNew.getWindowsComments(), "#"+processMode+":");
+        if(param.length()>0)
+        {
+            return param;
+        }
+        param = getParam(fNew.getIPTCInstructions(), "#"+processMode+":");
+        if(param.length()>0)
+        {
+            return param;
+        }
+        return "";
+    }
     /*
     updates the date in ExifOriginal - and also the BestDate...
      */
-    public static Boolean updateDate(String instructions, FileObject fNew) {
-        String param = getParam(instructions, "#"+Enums.processMode.date+":");
-        if(param.length()<1)
-        {
-             return false;
-        }
+    public static Boolean updateDate(String param, FileObject fNew) {
         LocalDateTime c =createLocalDate(param);
         if(c!=null) {
             fNew.setExifOriginal(c);
@@ -1894,131 +1866,127 @@ public class ImageCatalogue {
                 .from(dateToConvert.atZone(ZoneId.systemDefault())
                         .toInstant());
     }
-    public static Enums.processMode forwardCode(String instructions, ConfigObject config, FileObject fNew,ArrayList<String> existingCommentsString) {
+    public static Boolean forwardCode(String instructions, ConfigObject config, FileObject fNew,ArrayList<String> existingCommentsString) {
 
-            String param ;
-            Enums.processMode p = testOptions(instructions);
-            if(p==null)
-            {
-                return null;
-            }
-            if (p.equals(Enums.processMode.latlon)) {
-                param = getParam(instructions, "#"+Enums.processMode.latlon+":");
-                String[] values = param.split(",", -1);
-                if (values.length == 2) {
-                    try {
-                        Double lat = Double.valueOf(values[0]);
-                        Double lon = Double.valueOf(values[1]);
-                        geocode(fNew, lat, lon, config,false);
-                        // we should also set lat and lon if it is correct
-                        if (fNew.getPlaceKey() != null) {
-                            if(updateLatLon(lat,lon,fNew,config)) {
-                                countAddedLATLONG++;
-                                countDriveAddedLATLONG++;
-                                addComment(existingCommentsString, p.toString());
+         String param ;
+         Boolean paramFound=false;
+         for(Enums.processMode p :Enums.processMode.values()) {
+            param = getInstructionFromEitherField(fNew,p);
+            System.out.println("param"+param);
+            if(param.length()>0) {
+                paramFound=true;
+                if (p.equals(Enums.processMode.latlon)) {
+
+                    String[] values = param.split(",", -1);
+                    if (values.length == 2) {
+                        try {
+                            Double lat = Double.valueOf(values[0]);
+                            Double lon = Double.valueOf(values[1]);
+                            geocode(fNew, lat, lon, config, false);
+                            // we should also set lat and lon if it is correct
+                            if (fNew.getPlaceKey() != null) {
+                                if (updateLatLon(lat, lon, fNew, config)) {
+                                    countAddedLATLONG++;
+                                    countDriveAddedLATLONG++;
+                                    updateBothFields(fNew,param,p,existingCommentsString);
+
+                                }
+
+
                             }
+                        } catch (Exception e) {
+                            message("could not convert provided values to lat long:" + param);
+                            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "could not convert provided values to lat, lon:" + param);
+                        }
+                    } else {
+                        message("Incorrect number of parameters for lat long:" + param);
+                        addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Incorrect number of parameters for lat lon:" + param);
+                    }
 
-                            return p;
+                } else if (p.equals(Enums.processMode.event)) {
+                    try {
+                        EventObject e;
+                        e = getEvent(Integer.valueOf(param));
+                        if (e == null) {
+                            message("This Event has not been found in the JSON - event:" + param);
+                            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Event not found for:" + param);
+                        } else {
+                            message("Event has been found - event:" + param);
+                            if (checkEvent(config, fNew, e, existingCommentsString) > 0) {
+                                countAddedEvent++;
+                                countDriveAddedEvent++;
+                                updateBothFields(fNew,param,p,existingCommentsString);
+                            }
                         }
                     } catch (Exception e) {
-                        message("could not convert provided values to lat long:" + param);
-                        addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"could not convert provided values to lat, lon:"+param);
+                        message("could not convert provided values to a place:" + param);
+                        addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Could not convert provided values to a place:" + param);
                     }
-                } else {
-                    message("Incorrect number of parameters for lat long:" + param);
-                    addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Incorrect number of parameters for lat lon:"+param);
-                }
-                return null;
-            } else if (p.equals(Enums.processMode.event)) {
-                param = getParam(instructions, "#"+Enums.processMode.event+":");
-                try {
-                    EventObject e;
-                    e= getEvent(Integer.valueOf(param));
-                    if (e == null) {
-                        message("This Event has not been found in the JSON - event:" + param);
-                        addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Event not found for:"+param);
-                    } else {
-                        message("Event has been found - event:" + param);
-                        if(checkEvent(config,fNew,e,existingCommentsString)>0)
-                        {
-                            countAddedEvent++;
-                            countDriveAddedEvent++;
-                        }
-                        return p;
-                    }
-                } catch (Exception e) {
-                    message("could not convert provided values to a place:" + param);
-                    addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not convert provided values to a place:"+param);
-                }
-                return null;
-            } else if (p.equals(Enums.processMode.place)) {
-                param = getParam(instructions, "#"+Enums.processMode.place+":");
-                try {
-                    Place g;
-                    g = getPlace(Integer.valueOf(param));
-                    if (g == null) {
-                        message("This place has not been added in the JSON - place:" + param);
-                        addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"This place does not exist in the JSON:"+param);
-                    } else {
-                        message("Place has been found - place:" + param);
-                        if(updateLatLon(g.getLatAsDouble(),g.getLonAsDouble(),fNew,config)) {
-                            fNew.setPlaceKey(g.getInternalKey());
-                            setFileObjectGEOValues(fNew, g,false,config);
-                            countAddedPlace++;
-                            countDriveAddedPlace++;
-                            addComment(existingCommentsString, p.toString());
-                        }
-                        return p;
-                    }
-                } catch (Exception e) {
-                    message("could not convert provided values to a place:" + param);
-                    addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not convert provided values to a place:"+param);
-                }
-                return null;
-            } else if (p.equals(Enums.processMode.postcode)) {
 
-                param = getParam(instructions, "#"+Enums.processMode.postcode+":");
-                String[] values3 = param.split(",", -1);
-                try {
-                    if( config.getOpenAPIKey()!=null) {
-                        String newLat = "";
-                        if (values3.length > 1) {
-                            newLat = checkPostCode(values3[0], config.getOpenAPIKey(), values3[1]);
-                        } else if (values3.length == 1) {
-                            newLat = checkPostCode(values3[0], config.getOpenAPIKey(), "GBR");
-                        }
-                        String[] values2 = newLat.split(",", -1);
-                        Double lat = Double.valueOf(values2[0]);
-                        Double lon = Double.valueOf(values2[1]);
-                        Boolean result=geocode(fNew, lat, lon, config,false);
-                        // we should also set lat and lon if it is correct
-                        if (fNew.getPlaceKey() != null) {
-                            if(updateLatLon(lat,lon,fNew,config)) {
-                                countAddedPostcode++;
-                                countDriveAddedPostcode++;
-                                addComment(existingCommentsString, p.toString());
+                } else if (p.equals(Enums.processMode.place)) {
+
+                    try {
+                        Place g;
+                        g = getPlace(Integer.valueOf(param));
+                        if (g == null) {
+                            message("This place has not been added in the JSON - place:" + param);
+                            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "This place does not exist in the JSON:" + param);
+                        } else {
+                            message("Place has been found - place:" + param);
+                            if (updateLatLon(g.getLatAsDouble(), g.getLonAsDouble(), fNew, config)) {
+                                fNew.setPlaceKey(g.getInternalKey());
+                                setFileObjectGEOValues(fNew, g, false, config);
+                                countAddedPlace++;
+                                countDriveAddedPlace++;
+                                updateBothFields(fNew,param,p,existingCommentsString);
                             }
-                            return p;
-                        }
-                        else
-                        {
-                            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not find postcode:"+param);
-                        }
-                    }
-                    else
-                    {
-                        addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"API not available:"+param);
-                    }
-                } catch (Exception e) {
-                    message("could not convert provided values to a postcode:" + param);
-                }
-                return null;
-            }
-            else
-            {
-                return null;
-            }
 
+                        }
+                    } catch (Exception e) {
+                        message("could not convert provided values to a place:" + param);
+                        addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Could not convert provided values to a place:" + param);
+                    }
+
+                } else if (p.equals(Enums.processMode.postcode)) {
+
+
+                    String[] values3 = param.split(",", -1);
+                    try {
+                        if (config.getOpenAPIKey() != null) {
+                            String newLat = "";
+                            if (values3.length > 1) {
+                                newLat = checkPostCode(values3[0], config.getOpenAPIKey(), values3[1]);
+                            } else if (values3.length == 1) {
+                                newLat = checkPostCode(values3[0], config.getOpenAPIKey(), "GBR");
+                            }
+                            String[] values2 = newLat.split(",", -1);
+                            Double lat = Double.valueOf(values2[0]);
+                            Double lon = Double.valueOf(values2[1]);
+                            Boolean result = geocode(fNew, lat, lon, config, false);
+                            // we should also set lat and lon if it is correct
+                            if (fNew.getPlaceKey() != null) {
+                                if (updateLatLon(lat, lon, fNew, config)) {
+                                    countAddedPostcode++;
+                                    countDriveAddedPostcode++;
+                                    updateBothFields(fNew,param,p,existingCommentsString);
+                                }
+
+                            } else {
+                                addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Could not find postcode:" + param);
+                            }
+                        } else {
+                            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "API not available:" + param);
+                        }
+                    } catch (Exception e) {
+                        message("could not convert provided values to a postcode:" + param);
+                    }
+
+                } else {
+                    //return null;
+                }
+            }
+        }
+         return paramFound;
 
     }
     public static void setFileObjectGEOValues(FileObject fNew,Place g,Boolean alreadyGeocoded, ConfigObject config)
@@ -2229,6 +2197,14 @@ public class ImageCatalogue {
             return currentValue;
         }
     }
+    public static Boolean updateBothFields(FileObject fNew,String param, Enums.processMode p,ArrayList<String> existingCommentsString)
+    {
+        fNew.setWindowsComments(updateInstructions(fNew.getWindowsComments(),Enums.processMode.date,param));
+        fNew.setIPTCInstructions(updateInstructions(fNew.getIPTCInstructions(),Enums.processMode.date,param));
+        addComment(existingCommentsString,"#"+Enums.processMode.date.toString()+"DONE:"+param);
+
+        return false;
+    }
     public static void updateFile(ConfigObject config,DriveObject drive, File file,ArrayList<String> existingCommentsString,IPTC iptc,JpegExif exif,Boolean alreadyGeocoded,FileObject fNew)
     {
 
@@ -2341,8 +2317,12 @@ public class ImageCatalogue {
             }
         }
     }
-    private static String updateInstructions(String s,Enums.processMode pMode)
+    private static String updateInstructions(String s,Enums.processMode pMode,String param)
     {
+        if(s==null)
+        {
+            s="";
+        }
         if(pMode==null)
         {
             return s;
@@ -2353,8 +2333,14 @@ public class ImageCatalogue {
         else
         {
             int startPoint=s.toLowerCase().indexOf("#"+pMode+":");
-            s=s.substring(0,startPoint+1+pMode.toString().length())+"DONE"+
-                    s.substring(startPoint+1+pMode.toString().length());
+            if(startPoint<0)
+            {
+                s=s+"#"+pMode+"DONE:"+param;
+            }
+            else {
+                s = s.substring(0, startPoint + 1 + pMode.toString().length()) + "DONE" +
+                        s.substring(startPoint + 1 + pMode.toString().length());
+            }
             System.out.println("Updated instruction is:"+s);
         }
         return s;
