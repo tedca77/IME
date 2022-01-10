@@ -21,12 +21,8 @@ import java.util.List;
 public class ImageConversion {
 
     // private String fileName;
-    private String area = "";
-    private String site = "";
-    private String petitionNumber = "";
-    private String petitionName = "";
-    private String imageDescription = "";
-    private String dateOfPublish;
+
+
     private String requester = "";
     private int imageStartHeight=700;
     private int maxHeight;
@@ -40,21 +36,13 @@ public class ImageConversion {
 
     private double leftMargin = 30; //note that zero is on the left of the page...
     // constructor
-    public ImageConversion(String asite,String aarea,String petitionNum,String petitionName, String imageDesc, String dateofPublish,
-                           String req, String logoFileLocation) {
+    public ImageConversion() {
         // this.fileName = fileName;
-        this.site=asite;
-        this.area=aarea;
-        this.petitionNumber = petitionNum;
-        this.petitionName = petitionName;
-        this.imageDescription = imageDesc;
-        this.dateOfPublish = dateofPublish;
-        this.requester = req;
+
 
         maxHeight = 550;
         maxWidth = 530;
         maxScale = 0.1f;
-        this.logoFileLocation = logoFileLocation;
         maxLogoHeight = 100;
         maxLogoWidth = 100;
     }

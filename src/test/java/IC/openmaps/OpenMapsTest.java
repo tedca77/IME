@@ -19,16 +19,60 @@
 
 package IC.openmaps;
 
+import IC.ConfigObject;
+import static IC.ImageCatalogue.setDefaults;
+
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.ZoneId;
+import java.util.Objects;
+
+import static IC.openmaps.OpenMaps.checkPostCode;
+import static IC.openmaps.OpenMaps.reverseGeocode;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpenMapsTest {
+    String apiKey="5b3ce3597851110001cf6248a15496c57f254acbbcb04aaf8e115b50";
+    String countryCode="GBR";
     @Test
-    void postcodeLookUp()
+    @DisplayName("Postcode check - correct")
+    void checkPostCodeTest()
     {
-
+        String result=checkPostCode("SW1A 1AA",apiKey,countryCode);
+        String[] values2 = result.split(",", -1);
+        Double lat = Double.valueOf(values2[0]);
+        Double lon = Double.valueOf(values2[1]);
+        assertEquals( lat, 51.501009d, 0.001 );
+        assertEquals( lon,-0.141588d, 0.001 );
     }
-
-
+    @Test
+    @DisplayName("Postcode check - invalid data")
+    void checkPostCodeTestError()
+    {
+        String result=checkPostCode("ABCD 1AA",apiKey,countryCode);
+        assertEquals( result,"");
+    }
+    @Test
+    @DisplayName("Reverse Geocode - correct")
+    void reverseGeocodeTest() {
+        ZoneId z= ZoneId.systemDefault();
+        ConfigObject config= new ConfigObject();
+        setDefaults(Objects.requireNonNull(config),z);
+        Place p =reverseGeocode("51.501009","-0.141588", config);
+        assertEquals(p.getIPTCCity(),"City of Westminster");
+        assertEquals(p.getIPTCCountry(),"United Kingdom");
+        assertEquals(p.getIPTCStateProvince(),"Greater London");
+        assertEquals(p.getIPTCSublocation(),"Ambassador's Court, Victoria");
+        assertEquals(p.getIPTCCountryCode(),"GB");
+    }
+    @Test
+    @DisplayName("Reverse Geocode - incorrect data")
+    void reverseGeocodeTestError() {
+        ZoneId z= ZoneId.systemDefault();
+        ConfigObject config= new ConfigObject();
+        setDefaults(Objects.requireNonNull(config),z);
+        Place p =reverseGeocode("ww.501009","-200.141588", config);
+        assertNull(p);
+    }
 }

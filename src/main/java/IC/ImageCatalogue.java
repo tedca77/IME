@@ -34,6 +34,7 @@ import org.apache.commons.imaging.formats.tiff.constants.MicrosoftTagConstants;
 import org.apache.commons.imaging.formats.tiff.taginfos.TagInfo;
 import org.apache.commons.imaging.formats.tiff.write.TiffOutputDirectory;
 import org.apache.commons.imaging.formats.tiff.write.TiffOutputSet;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.GpsTagConstants;
@@ -129,17 +130,19 @@ public class ImageCatalogue {
      * @param args - either single json file or two/three args, first one is root directory, second is output file, third is followed by parameters
      */
     public static void main(String[] args) {
+
         z= ZoneId.systemDefault();
         startTime= new Date();
         ConfigObject config=null;
-        Path fileName=null;
+        Path configFileName=null;
 
 
         try {
             if(FilenameUtils.getExtension(args[0]).equalsIgnoreCase("json"))
             {
-                fileName = Path.of(args[0]);
-                config = readConfig(args[0]);
+                configFileName = Path.of(args[0]);
+                message("json file present:"+configFileName);
+                config = readConfig(configFileName.toString());
                 if(config==null)
                 {
                     System.exit(0);
@@ -152,8 +155,8 @@ public class ImageCatalogue {
                     config = new ConfigObject();
                     setDrives(config, args[0]);
                     config.setTempdir(args[1]);
-                    fileName=Path.of(args[1]+"\\"+jsonDefault);
-                    message("Directory to search:"+fileName);
+                    configFileName=Path.of(args[0]+"\\"+jsonDefault);
+                    message("Default Config File:"+configFileName);
                     message("Temporary Directory:"+args[1]);
 
                 }
@@ -164,7 +167,7 @@ public class ImageCatalogue {
             }
             //
             readRestOfArgs(config, args);
-            setDefaults(Objects.requireNonNull(config));
+            setDefaults(Objects.requireNonNull(config),z);
             messageLine("*");
             //this prints out the main options
             displayDefaults(config);
@@ -198,7 +201,7 @@ public class ImageCatalogue {
             config.setTracks(tracks);
             config.setEvents(events);
             // exports JSON
-            if(!exportConfig(config,fileName))
+            if(!exportConfig(config,configFileName))
             {
                 message("Failed to export HTML");
             }
@@ -331,7 +334,7 @@ public class ImageCatalogue {
      * Sets the defaults if the values are not in the JSON (note this is pass by value - and we can change values)
      * @param config - passes ConfigObject
      */
-    public static void setDefaults(ConfigObject config)
+    public static void setDefaults(ConfigObject config,ZoneId z)
     {
         if(config.getTimeZone()==null){config.setTimeZone(z.toString());}
 
@@ -897,6 +900,149 @@ public class ImageCatalogue {
         error.setMessage(message);
         error.setDirectory(directory);
         errorObjects.add(error);
+    }
+    public static boolean renameFiles(File startDir)
+    {
+        File[] files = startDir.listFiles();
+        if(files!=null) {
+            for (File file : files) {
+                try {
+
+                    if (file.isDirectory()) {
+                        //message("directory:" + file.getCanonicalPath());
+
+                        if (!file.getCanonicalPath().equals(startDir.getCanonicalPath())) {
+                            renameFiles(file);
+
+                        }
+
+                    } else {
+                        System.out.println(file.getCanonicalPath());
+                        System.out.println(file.getPath());
+                        System.out.println(file.getParent());
+                        //dont rename json file !!
+                        if(!FilenameUtils.getExtension(file.getPath()).toLowerCase().equals("json") &&
+                                !FilenameUtils.getExtension(file.getPath()).toLowerCase().equals("db")
+                        )
+                        {
+                            boolean result = file.renameTo(new File(file.getParent() + "/" + "T_" + file.getName()));
+                            if (!result) {
+                                message("Could not rename file:" + file.getAbsolutePath());
+                                return false;
+                            }
+                        }
+                    }
+                }
+                catch(Exception e)
+                {
+                    message("Renaming files error"+e);
+                    return false;
+                }
+
+
+            }
+        }
+        return true;
+    }
+    /**
+     *  start at Start dir - and move to copyDir
+     * @param startDir
+     * @param copyDir
+     */
+    public static boolean copyToTestArea(String startDir, String copyDir)
+    {
+        try {
+               FileUtils.copyDirectory(new File(startDir), new File(copyDir));
+            }
+            catch(Exception e)
+            {
+                message("Could not copy test directory"+e);
+                return false;
+            }
+        if(!renameFiles(new File(copyDir)))
+        {
+            return false;
+        }
+        return true;
+        /*
+        File dir = new File(startDir+"/"+currentDir);
+        File[] files = dir.listFiles();
+        if(files!=null) {
+            for (File file : files) {
+                try {
+                    String subDir=file.getCanonicalPath().replace(startDir,"");
+                    if (file.isDirectory()) {
+                        //message("directory:" + file.getCanonicalPath());
+
+                            if (!file.getCanonicalPath().equals(startDir)) {
+                                copyToTestArea(file.getCanonicalPath()+"/"+ subDir,copyDir+"/"+subDir);
+                            }
+
+                    } else {
+
+                        File newFile=new File(copyDir+"/"+currentDir+Dir);
+                        Files.copy(file.toPath(), newFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
+                    }
+                }
+                catch(Exception e)
+                {
+
+                }
+
+
+            }
+        }
+
+         */
+
+    }
+    /**
+     * This is only used for testing.. clears the test area
+     * @param rootDir
+     */
+    public static boolean clearTestArea(String rootDir)
+    {
+        File rootFile = new File(rootDir);
+        if(rootFile.exists())
+        {
+               try {
+                    FileUtils.forceDelete(new File(rootDir + "/Test"));
+                }
+                catch(Exception e) {
+                    message("Test folder is missing");
+                }
+                try {
+                    FileUtils.forceDelete(new File(rootDir + "/TestRESULTS"));
+                }
+                catch(Exception e) {
+                    message("TestResults folder is missing");
+                }
+                try {
+
+                    FileUtils.forceDelete(new File(rootDir + "/TestNewDir"));
+                }
+                catch(Exception e) {
+                    message("TestNewDir folder is missing");
+                }
+                try
+                {
+                    // these three directories are required for testing
+                    new File(rootDir + "/TestRESULTS").mkdirs();
+                    new File(rootDir + "/TestNewDir").mkdirs();
+                    new File(rootDir + "/Test").mkdirs();
+                }
+                catch(Exception e)
+                {
+                    message("Could not create new Folders in :"+ rootDir +"/Test"+e);
+                    return false;
+                }
+                return true;
+        }
+        else
+        {
+            message("Clear Test Area - Root Directory does not exist:"+ rootDir );
+            return false;
+        }
     }
     public static void addComment(List<String> existingCommentsString,String newComment)
     {
@@ -2412,12 +2558,13 @@ catch(Exception e)
                 for(String n : newKeys) {
                     iptcs.add(new IPTCDataSet(IPTCApplicationTag.KEY_WORDS, n));
                 }
-                // we may update the title and description /caption /subject
-                if (!StringUtils.isNullOrEmpty(fNew.getWindowsTitle()) || config.getOverwrite()) {
-                    iptcs.add(new IPTCDataSet(IPTCApplicationTag.OBJECT_NAME,fNew.getWindowsTitle() ));
-                }
+
                 if (!StringUtils.isNullOrEmpty(fNew.getWindowsSubject()) || config.getOverwrite()) {
                      iptcs.add(new IPTCDataSet(IPTCApplicationTag.CAPTION_ABSTRACT, fNew.getWindowsSubject()));
+                }
+                // we may update the title and description /caption /subject
+                if (!StringUtils.isNullOrEmpty(fNew.getWindowsTitle()) || config.getOverwrite()) {
+                 //   iptcs.add(new IPTCDataSet(IPTCApplicationTag.OBJECT_NAME,fNew.getWindowsTitle() ));
                 }
                 DateFormat formatter = new SimpleDateFormat("yyyyMMdd");
                 iptcs.add(new IPTCDataSet(IPTCApplicationTag.DATE_CREATED, formatter.format( convertToDateViaInstant(fNew.getBestDate()))));
@@ -2527,7 +2674,7 @@ catch(Exception e)
         }
     }
     /**
-     *  this uses Apache Imaging to write out the latitude and Longitude - can't figure out how to do in ICAFE !
+     *
      * @param jpegImageFile - source image file
      * @param dst - destination image file
      * @throws IOException - IO exception
