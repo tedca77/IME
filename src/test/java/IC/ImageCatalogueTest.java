@@ -19,10 +19,9 @@
 
 package IC;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+
+import java.io.File;
 
 import static IC.ImageCatalogue.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,15 +30,15 @@ class ImageCatalogueTest {
     String startDir = "R:/ICTEST";
     @BeforeAll
     static void initAll() {
-    }
 
+    }
     @BeforeEach
     void init() {
 
     }
-
     @Test
     @DisplayName("Testing Longitude / latitude distance calculation")
+    @Disabled
     void distance_Between_LatLongTest() {
         //choose two points separated by 58742 metres
         // George V Way,WD3 6 Rickmansworth,United Kingdom 51.68250194,-0.49026778
@@ -49,13 +48,25 @@ class ImageCatalogueTest {
     }
     @Test
     @DisplayName("Read1 - 1 image | no descriptive metadata      | has lat and lon      | update      | No Move       | no JSON                ")
+    //nodescriptivemetadata_haslonlat.jpg
     void read1Test() {
         if (!clearTestArea(startDir)) {
             fail("Setup Clear Test Area could not complete");
         }
         if (copyToTestArea(startDir + "/TestSource" + 1, startDir + "/Test")) {
-            ImageCatalogue.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir"});
-        } else {
+            ImageCatalogue.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir","update"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("json file found"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
+            String fileName="T_"+"nodescriptivemetadata_haslonlat.jpg";
+            String thumbName=makeThumbName(new File(fileName));
+            FileObject fNew=processFile(new File(startDir+"/TestNewDir/2021/8/"+fileName), null,null, null,true);
+            assertEquals(fNew.getCity(),"Corfe Castle");
+            assertEquals(fNew.getCountry_code(),"GB");
+            assertEquals(fNew.getCountry_name(),"United Kingdom");
+            assertEquals(fNew.getStateProvince(),"Dorset, South West England");
+            assertEquals(fNew.getSubLocation(),"");
+         } else {
             fail("Setup Copy files to Test Area could not complete");
         }
     }

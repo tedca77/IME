@@ -602,11 +602,21 @@ public class ImageCatalogue {
                                             messageLine("~");
                                         }
                                         String thumbName = makeThumbName(file);
-                                        if(!processFile(file, thumbName,config, drive))
+                                        FileObject fNew=processFile(file, thumbName,config, drive,false);
+                                        if(fNew==null)
                                         {
                                             countErrors++;
                                             countDriveErrors++;
                                             message("Could not process file:"+file.getCanonicalPath());
+                                        }
+                                        else {
+                                            fileObjects.add(fNew);
+                                        }
+                                        if(config.getShowmetadata() && config.getUpdate()) {
+                                            messageLine("~");
+                                            if (!readMetadata(new File(fNew.getDirectory()+"/"+fNew.getFileName()))) {
+                                                message("Could not read metadata after update");
+                                            }
                                         }
 
                                     } else {
@@ -901,6 +911,65 @@ public class ImageCatalogue {
         error.setDirectory(directory);
         errorObjects.add(error);
     }
+    public static String findJSONFile(File startDir)
+    {
+        LocalDateTime d=LocalDateTime.now();
+        String newestFile="";
+        File[] files = startDir.listFiles();
+        if(files!=null) {
+            for (File file : files) {
+                try {
+                    if (file.isDirectory()) {
+                    } else {
+                        if(FilenameUtils.getExtension(file.getPath()).toLowerCase().equals("json"))
+                        {
+                             try {
+                                String fileName = FilenameUtils.getBaseName(file.getName());
+                                if(fileName.length()>14)
+                                {
+                                   DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+                                   if(newestFile.length()<1)
+                                   {
+                                       System.out.println("date to convert:"+fileName.substring(fileName.length()-14));
+
+                                       //some dates have slashes instead of colons
+                                       d= LocalDateTime.parse(fileName.substring(fileName.length()-14),formatter);
+                                       newestFile=file.getName();
+                                   }
+                                   else
+                                   {
+                                       LocalDateTime dd= LocalDateTime.parse(fileName.substring(fileName.length()-14));
+                                       if(dd.isAfter(d))
+                                       {
+                                           d=dd;
+                                           newestFile=file.getName();
+                                       }
+                                   }
+                                }
+                            }
+                            catch(Exception e)
+                            {
+                                message("Could not parse JSON file for Date"+file.getPath());
+                            }
+                        }
+                    }
+                }
+                catch(Exception e)
+                {
+                    message("Could not find JSON file");
+                    return "";
+                }
+            }
+        }
+        return newestFile;
+    }
+    /**
+     * This is only used for testing - renames image files by adding a prefix "T_"
+     * This is because Lightroom will not see a file as a new file if it has the same name but in a different
+     * directory.
+     * @param startDir - directory to start the renaming
+     * @return - true if successful
+     */
     public static boolean renameFiles(File startDir)
     {
         File[] files = startDir.listFiles();
@@ -945,9 +1014,10 @@ public class ImageCatalogue {
         return true;
     }
     /**
+     *  Only used for testing - copies files from a TestSource subdirectory to a Test directory , and then renames
      *  start at Start dir - and move to copyDir
-     * @param startDir
-     * @param copyDir
+     * @param startDir - TestSource directory
+     * @param copyDir - Test (destination) directory
      */
     public static boolean copyToTestArea(String startDir, String copyDir)
     {
@@ -997,8 +1067,9 @@ public class ImageCatalogue {
 
     }
     /**
-     * This is only used for testing.. clears the test area
-     * @param rootDir
+     * This is only used for testing. Clears the test area of three subdirectories:
+     * /Test , /TestRESULTS and /TestNewDir
+     * @param rootDir - root directory for clearing the folders
      */
     public static boolean clearTestArea(String rootDir)
     {
@@ -1846,10 +1917,11 @@ public class ImageCatalogue {
      * @param drive - Drive name
      * @return - returns true if successful, false if failure
      */
-    public static Boolean processFile(File file, String thumbName,ConfigObject config, DriveObject drive) {
-        File blankFile = new File(FilenameUtils.getFullPathNoEndSeparator(file.getAbsolutePath())+"/"+"blank"+file.getName());
-
+    public static FileObject processFile(File file, String thumbName,ConfigObject config, DriveObject drive,boolean readOnly) {
         FileObject fNew = new FileObject();
+   /*     File blankFile = new File(FilenameUtils.getFullPathNoEndSeparator(file.getAbsolutePath())+"/"+"blank"+file.getName());
+
+
         try {
          //   updateWindowsFields(file, blankFile);
 
@@ -1858,6 +1930,8 @@ catch(Exception e)
 {
     System.out.println("e"+e);
 }
+
+    */
         boolean alreadyGeocoded = false;
         readSystemDates(fNew,file);
         IPTC iptc = new IPTC();
@@ -1893,32 +1967,25 @@ catch(Exception e)
             }
         } catch (Exception e) {
             message("error reading metadata" + e);
+            return null;
         }
         readJPEGMetadata(file,fNew);
         //create thumbnail and update FileObject
-        fNew.setThumbnail(createThumbFromPicture(file, config.getTempdir(), thumbName, config.getWidth(),config.getHeight(),fNew.getOrientation()));
-        // Geocodes if lat and long present
-
-        Boolean dateUpdated=processDates(fNew,existingCommentsString);
-        if(dateUpdated !=null)
-        {
-            message("File updated with a new date:"+dateUpdated);
-        }
-        if (fNew.getLatitude()!=null && fNew.getLongitude()!=null) {
-            geocodeLatLong(alreadyGeocoded,config,fNew,existingCommentsString);
-        }
-        Boolean forwardUpdated=forwardCode(config,fNew,existingCommentsString,null);
-        Integer eventsUpdated=processEvents(config,fNew,existingCommentsString);
-
-        updateFile(config,drive,file,existingCommentsString,iptc,exif,alreadyGeocoded,fNew);
-        fileObjects.add(fNew);
-        if(config.getShowmetadata() && config.getUpdate()) {
-            messageLine("~");
-            if (!readMetadata(new File(fNew.getDirectory()+"/"+fNew.getFileName()))) {
-                message("Could not read metadata after update");
+        if(!readOnly) {
+            fNew.setThumbnail(createThumbFromPicture(file, config.getTempdir(), thumbName, config.getWidth(), config.getHeight(), fNew.getOrientation()));
+            // Geocodes if lat and long present
+            Boolean dateUpdated = processDates(fNew, existingCommentsString);
+            if (dateUpdated != null) {
+                message("File updated with a new date:" + dateUpdated);
             }
+            if (fNew.getLatitude() != null && fNew.getLongitude() != null) {
+                geocodeLatLong(alreadyGeocoded, config, fNew, existingCommentsString);
+            }
+            Boolean forwardUpdated = forwardCode(config, fNew, existingCommentsString, null);
+            Integer eventsUpdated = processEvents(config, fNew, existingCommentsString);
+            updateFile(config, drive, file, existingCommentsString, iptc, exif, alreadyGeocoded, fNew);
         }
-        return true;
+        return fNew;
     }
 
     /**
