@@ -34,7 +34,9 @@ class ImageCatalogueTest {
     }
     @BeforeEach
     void init() {
-
+        if (!clearTestArea(startDir)) {
+            fail("Setup Clear Test Area could not complete");
+        }
     }
     @Test
     @DisplayName("Testing Longitude / latitude distance calculation")
@@ -47,12 +49,11 @@ class ImageCatalogueTest {
         assertEquals(distance_Between_LatLong(51.68250194, -0.49026778, 51.6825018, -0.49026776), 0.0, 0.1);
     }
     @Test
-    @DisplayName("Read1 - 1 image | no descriptive metadata      | has lat and lon      | update      | No Move       | no JSON                ")
+    @DisplayName("Read1 - 1 image | no descriptive metadata      | has lat and lon      | update      | Move       | no JSON                ")
     //nodescriptivemetadata_haslonlat.jpg
-    void read1Test() {
-        if (!clearTestArea(startDir)) {
-            fail("Setup Clear Test Area could not complete");
-        }
+    void update1Test() {
+        //Test: 1 image with no descriptive metadata but with lat and lon, so should geocode
+        //No Json input file, but update parameter added and New Directory provided, so will copy to TestNewDir
         if (copyToTestArea(startDir + "/TestSource" + 1, startDir + "/Test")) {
             ImageCatalogue.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir","update"});
             String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
@@ -67,6 +68,28 @@ class ImageCatalogueTest {
             assertEquals(fNew.getStateProvince(),"Dorset, South West England");
             assertEquals(fNew.getSubLocation(),"");
          } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @DisplayName("Read1 - 1 image | no descriptive metadata      | has lat and lon      | update      | Move       | no JSON                ")
+        //nodescriptivemetadata_haslonlat.jpg
+    void update2Test() {
+        //Test: 2 image with current ITPC data so it will not be overwritten
+        //No Json input file, but update parameter added and New Directory provided, so will copy to TestNewDir
+        if (copyToTestArea(startDir + "/TestSource" + 2, startDir + "/Test")) {
+            ImageCatalogue.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir","update"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("json file found"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
+            String fileName="T_"+"no metadata IPTC location filled in.jpg";
+            String thumbName=makeThumbName(new File(fileName));
+            FileObject fNew=processFile(new File(startDir+"/TestNewDir/2021/8/"+fileName), null,null, null,true);
+            assertEquals(fNew.getCity(),"Filled in city");
+            assertEquals(fNew.getCountry_name(),"Filled in country");
+            assertEquals(fNew.getStateProvince(),"Filled in province state");
+            assertEquals(fNew.getSubLocation(),"Filled in sublocation");
+        } else {
             fail("Setup Copy files to Test Area could not complete");
         }
     }
