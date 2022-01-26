@@ -3,7 +3,33 @@
   <title>Places identified by Grid Reference</title>
     <style type="text/css">
         .padding{
-         padding:2px 10px 2px 2px;
+         padding:2px 2px 2px 2px;
+        }
+        .image-container {
+          flex-direction: row
+          float: left;
+          display: flex;
+          flex-wrap: wrap;
+          max-width: 1500px;
+          justify-content: flex-start
+          align-content:flex-start
+          flex-basis: auto
+        }
+
+        .cat-container {
+          flex: 0 0 10%;
+          padding: 0px 1rem;
+          box-sizing: border-box;
+        }
+
+        img.cat {
+          width: 100%;
+          height: auto;
+        }
+
+        .caption {
+          font-size: 14px;
+          text-align: center;
         }
         </style>
 </head>
@@ -39,7 +65,12 @@
     <td>${(place.endDate.format('yyyy-MM-dd  HH:mm:ss'))!}</td>
 </tr>
 <tr>
-<td COLSPAN=11 WIDTH=1000>${(place.imagelinks)!}</td>
+<td COLSPAN=11 WIDTH=1000>
+
+<div class="image-container">
+${(place.imagelinks)!}</td>
+
+</div>
 </tr>
 </#list>
 </TABLE>

@@ -14,16 +14,12 @@ import com.icafe4j.image.meta.iptc.IPTCApplicationTag;
 import com.icafe4j.image.meta.iptc.IPTCDataSet;
 import com.icafe4j.image.meta.jpeg.JpegExif;
 import com.icafe4j.image.tiff.FieldType;
-
-import com.icafe4j.image.tiff.TiffTag;
 import com.icafe4j.string.StringUtils;
 import com.icafe4j.image.meta.xmp.XMP;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateExceptionHandler;
 import no.api.freemarker.java8.Java8ObjectWrapper;
-import org.apache.commons.imaging.ImageReadException;
-import org.apache.commons.imaging.ImageWriteException;
 import org.apache.commons.imaging.Imaging;
 import org.apache.commons.imaging.common.ImageMetadata;
 import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
@@ -114,7 +110,6 @@ public class ImageCatalogue {
     static Long minFileSizeDefault=4000L;
     static String thumbSizeDefault="240x180";
     static String timeZoneDefault="Europe/London";
-    static ArrayList<String> newfileNamesDefault=new ArrayList<>(Arrays.asList("camera","day"));
     static ArrayList<String> isocountryDefault=new ArrayList<>(Collections.singletonList("country_code"));
     static ArrayList<String> countryDefault=new ArrayList<>(Collections.singletonList("country"));
     static ArrayList<String> stateprovinceDefault=new ArrayList<>(Arrays.asList("county","state_district"));
@@ -330,6 +325,20 @@ public class ImageCatalogue {
 
 
     }
+    public static void setFileAttributesForTest(String fileName,String dateParam)
+    {
+        File file = new File(fileName);
+        LocalDateTime d=  createLocalDate(dateParam);
+        try {
+            Files.setAttribute(file.toPath(), "creationTime", FileTime.fromMillis(convertToDateViaInstant(d).getTime()));
+            Files.setAttribute(file.toPath(), "lastAccessTime", FileTime.fromMillis(convertToDateViaInstant(d).getTime()));
+            Files.setAttribute(file.toPath(), "lastModifiedTime", FileTime.fromMillis(convertToDateViaInstant(d).getTime()));
+        }
+        catch(Exception e)
+        {
+
+        }
+    }
     /**
      * Sets the defaults if the values are not in the JSON (note this is pass by value - and we can change values)
      * @param config - passes ConfigObject
@@ -530,6 +539,8 @@ public class ImageCatalogue {
         message("Number of Files found:"+fileObjects.size());
         message("Number of Cameras found:"+cameras.size());
         message("Number of Places found:"+places.size());
+        message("Number of Events found:"+events.size());
+        message("Number of Tracks found:"+tracks.size());
         message("Number of Errors:"+errorObjects.size());
         message("Number of Duplicates found:"+duplicateObjects.size());
         messageLine("*");
@@ -755,9 +766,13 @@ public class ImageCatalogue {
                             if (k.equals(r.getEventid().toString())) {
                                 if (!(f.getOrientation() == 8 || f.getOrientation() == 6)) {
                                     s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(width).append("\" class=\"padding\" >");
+                                    s.append("<br><small>").append(f.getDirectory()).append("</small><br>");
+                                    s.append("<small>").append(f.getFileName()).append("</small><br>");
                                 } else {
                                     Integer newWidth = width * f.getHeight() / f.getWidth();
                                     s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(newWidth).append("\" class=\"padding\" >");
+                                    s.append("<br><small>").append(f.getDirectory()).append("</small><br>");
+                                    s.append("<small>").append(f.getFileName()).append("</small><br>");
                                 }
                             }
                         }
@@ -789,16 +804,20 @@ public class ImageCatalogue {
             {
                 try {
                     if(f.getPlaceKey()!=null) {
-                        if (f.getPlaceKey().equals(r.getInternalKey())) {
+                        if (f.getPlaceKey().equals(r.getPlaceid())) {
                             if (!(f.getOrientation() == 8 || f.getOrientation() == 6)) {
-                                s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(width).append("\" class=\"padding\" >");
-                                s.append("<br><small>").append(f.getDirectory()).append("</small><br>");
-                                s.append("<small>").append(f.getFileName()).append("</small><br>");
+                                s.append(" <div class=\"cat-container\">");
+                                s.append("<img class=\"cat\" src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(width).append("\" class=\"padding\" >");
+                                s.append("<p class=\"caption\"><small>").append(f.getDirectory()).append("</small><br>");
+                                s.append("<small>").append(f.getFileName()).append("</small><p>");
+                                s.append("</div>");
                             } else {
                                 Integer newWidth = width * f.getHeight() / f.getWidth();
-                                s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(newWidth).append("\" class=\"padding\" >");
-                                s.append("<br><small>").append(f.getDirectory()).append("</small><br>");
-                                s.append("<small>").append(f.getFileName()).append("</small><br>");
+                                s.append(" <div class=\"cat-container\">");
+                                s.append("<img class=\"cat\" src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(newWidth).append("\" class=\"padding\" >");
+                                s.append("<p class=\"caption\"><small>").append(f.getDirectory()).append("</small></br>");
+                                s.append("<small>").append(f.getFileName()).append("</small></p>");
+                                s.append("</div>");
                             }
                         }
                     }
@@ -830,11 +849,15 @@ public class ImageCatalogue {
                             if (f.getBestDate().toLocalDate().equals(t.getTrackDate())) {
                                 if(!(f.getOrientation()==8 || f.getOrientation()==6)) {
                                     s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(width).append("\" class=\"padding\" >");
+                                    s.append("<br><small>").append(f.getDirectory()).append("</small><br>");
+                                    s.append("<small>").append(f.getFileName()).append("</small><br>");
                                 }
                                 else
                                 {
                                     Integer newWidth=width*f.getHeight()/f.getWidth();
                                     s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(newWidth).append("\" class=\"padding\" >");
+                                    s.append("<br><small>").append(f.getDirectory()).append("</small><br>");
+                                    s.append("<small>").append(f.getFileName()).append("</small><br>");
                                 }
                             }
                         } catch (Exception e) {
@@ -887,9 +910,9 @@ public class ImageCatalogue {
         }
         else
         {
-            newKey= places.get(places.size()-1).getInternalKey()+1;
+            newKey= places.get(places.size()-1).getPlaceid()+1;
         }
-        g.setInternalKey(newKey);
+        g.setPlaceid(newKey);
         g.setEndDate(bestDate);
         g.setStartDate(bestDate);
         places.add(g);
@@ -898,7 +921,7 @@ public class ImageCatalogue {
     private static String formatIPTCdate(LocalDateTime d)
     {
         DateTimeFormatter formatter = DateTimeFormatter.BASIC_ISO_DATE;
-        String formattedDate = formatter.format(LocalDate.now());
+        String formattedDate = formatter.format(d);
         System.out.println(formattedDate);
         return formattedDate;
     }
@@ -919,9 +942,9 @@ public class ImageCatalogue {
         if(files!=null) {
             for (File file : files) {
                 try {
-                    if (file.isDirectory()) {
-                    } else {
-                        if(FilenameUtils.getExtension(file.getPath()).toLowerCase().equals("json"))
+                    if (!file.isDirectory()) {
+
+                        if(FilenameUtils.getExtension(file.getPath()).equalsIgnoreCase("json"))
                         {
                              try {
                                 String fileName = FilenameUtils.getBaseName(file.getName());
@@ -990,8 +1013,8 @@ public class ImageCatalogue {
                         System.out.println(file.getPath());
                         System.out.println(file.getParent());
                         //dont rename json file !!
-                        if(!FilenameUtils.getExtension(file.getPath()).toLowerCase().equals("json") &&
-                                !FilenameUtils.getExtension(file.getPath()).toLowerCase().equals("db")
+                        if(!FilenameUtils.getExtension(file.getPath()).equalsIgnoreCase("json") &&
+                                !FilenameUtils.getExtension(file.getPath()).equalsIgnoreCase("db")
                         )
                         {
                             boolean result = file.renameTo(new File(file.getParent() + "/" + "T_" + file.getName()));
@@ -1029,42 +1052,7 @@ public class ImageCatalogue {
                 message("Could not copy test directory"+e);
                 return false;
             }
-        if(!renameFiles(new File(copyDir)))
-        {
-            return false;
-        }
-        return true;
-        /*
-        File dir = new File(startDir+"/"+currentDir);
-        File[] files = dir.listFiles();
-        if(files!=null) {
-            for (File file : files) {
-                try {
-                    String subDir=file.getCanonicalPath().replace(startDir,"");
-                    if (file.isDirectory()) {
-                        //message("directory:" + file.getCanonicalPath());
-
-                            if (!file.getCanonicalPath().equals(startDir)) {
-                                copyToTestArea(file.getCanonicalPath()+"/"+ subDir,copyDir+"/"+subDir);
-                            }
-
-                    } else {
-
-                        File newFile=new File(copyDir+"/"+currentDir+Dir);
-                        Files.copy(file.toPath(), newFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
-                    }
-                }
-                catch(Exception e)
-                {
-
-                }
-
-
-            }
-        }
-
-         */
-
+        return renameFiles(new File(copyDir));
     }
     /**
      * This is only used for testing. Clears the test area of three subdirectories:
@@ -1077,35 +1065,23 @@ public class ImageCatalogue {
         if(rootFile.exists())
         {
                try {
-                    FileUtils.forceDelete(new File(rootDir + "/Test"));
+                    FileUtils.cleanDirectory(new File(rootDir + "/Test"));
                 }
                 catch(Exception e) {
                     message("Test folder is missing");
                 }
                 try {
-                    FileUtils.forceDelete(new File(rootDir + "/TestRESULTS"));
+                    FileUtils.cleanDirectory(new File(rootDir + "/TestRESULTS"));
                 }
                 catch(Exception e) {
                     message("TestResults folder is missing");
                 }
                 try {
 
-                    FileUtils.forceDelete(new File(rootDir + "/TestNewDir"));
+                    FileUtils.cleanDirectory(new File(rootDir + "/TestNewDir"));
                 }
                 catch(Exception e) {
                     message("TestNewDir folder is missing");
-                }
-                try
-                {
-                    // these three directories are required for testing
-                    new File(rootDir + "/TestRESULTS").mkdirs();
-                    new File(rootDir + "/TestNewDir").mkdirs();
-                    new File(rootDir + "/Test").mkdirs();
-                }
-                catch(Exception e)
-                {
-                    message("Could not create new Folders in :"+ rootDir +"/Test"+e);
-                    return false;
                 }
                 return true;
         }
@@ -1141,7 +1117,7 @@ public class ImageCatalogue {
                             c.setEnddate(d);
                         }
                         c.setCameracount(c.getCameracount() + 1);
-                        return c.getCamerakey();
+                        return c.getCameraid();
                     }
                 } else {
                     if (c.getCameramodel() == null) {
@@ -1152,7 +1128,7 @@ public class ImageCatalogue {
                             c.setEnddate(d);
                         }
                         c.setCameracount(c.getCameracount() + 1);
-                        return c.getCamerakey();
+                        return c.getCameraid();
                     }
                 }
             }
@@ -1166,10 +1142,10 @@ public class ImageCatalogue {
         }
         else
         {
-            newKey=cameras.get(cameras.size()-1).getCamerakey()+1;
+            newKey=cameras.get(cameras.size()-1).getCameraid()+1;
         }
         CameraObject cNew = new CameraObject();
-        cNew.setCamerakey(newKey);
+        cNew.setCameraid(newKey);
         cNew.setCameramaker(make);
         cNew.setCameramodel(model);
         cNew.setStartdate(d);
@@ -1449,7 +1425,7 @@ public class ImageCatalogue {
             message("NUMBER OF CAMERAS READ FROM CONFIG FILE:"+c.getCameras().size());
             cameras=c.getCameras();
             //sort in case there are gaps in numbering
-            cameras.sort(Comparator.comparing(CameraObject::getCamerakey));
+            cameras.sort(Comparator.comparing(CameraObject::getCameraid));
             for(CameraObject cc : cameras)
             {
                 cc.setCameracount(0);
@@ -1460,7 +1436,7 @@ public class ImageCatalogue {
             message("NUMBER OF PLACES READ FROM CONFIG FILE:"+c.getPlaces().size());
             places =c.getPlaces();
             //sort in case there are gaps in numbering
-            places.sort(Comparator.comparing(Place::getInternalKey));
+            places.sort(Comparator.comparing(Place::getPlaceid));
             for(Place g : places)
             {
                 g.setCountPlace(0);
@@ -1736,7 +1712,7 @@ public class ImageCatalogue {
     {
         for(Place r : places)
         {
-            if(r.getInternalKey().equals(i))
+            if(r.getPlaceid().equals(i))
             {
                 return r;
             }
@@ -1848,9 +1824,13 @@ public class ImageCatalogue {
             //event date
             if (e.eventcalendar != null) {
                 if (d.getMonth() == e.getExactStartTime().getMonth() && d.getDayOfMonth() == e.getExactStartTime().getDayOfMonth()) {
+
                     updateEvent(config, fNew, e, existingCommentsString);
                     message("Event calendar match for event:" + e.getEventid() + " " + e.getTitle());
-                        return 1;
+
+                    countEventsFound++;
+                    countDriveEventsFound++;
+                    return 1;
 
                 }
             } else {
@@ -1861,6 +1841,8 @@ public class ImageCatalogue {
                     // we have a match... so process..
                     message("Event date match for event:" + e.getEventid() + " " + e.getTitle());
                     updateEvent(config, fNew, e, existingCommentsString);
+                    countEventsFound++;
+                    countDriveEventsFound++;
                     return 1;
                   }
             }
@@ -1969,7 +1951,7 @@ catch(Exception e)
             message("error reading metadata" + e);
             return null;
         }
-        readJPEGMetadata(file,fNew);
+        readJPEGMetadata(file, fNew);
         //create thumbnail and update FileObject
         if(!readOnly) {
             fNew.setThumbnail(createThumbFromPicture(file, config.getTempdir(), thumbName, config.getWidth(), config.getHeight(), fNew.getOrientation()));
@@ -1987,7 +1969,6 @@ catch(Exception e)
         }
         return fNew;
     }
-
     /**
      * Decides whether to Reverse Geocodes a file object
      * @param alreadyGeocoded - flag wshows whether it has already been geocoded
@@ -2037,8 +2018,8 @@ catch(Exception e)
                 addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"could not geocode:"+fNew.getLongitude()+","+fNew.getLatitude());
             }
         } else {
-            message("Found Lat / Long in cache : [" + g.getInternalKey() + "]" + g.getDisplay_name());
-            fNew.setPlaceKey(g.getInternalKey());
+            message("Found Lat / Long in cache : [" + g.getPlaceid() + "]" + g.getDisplay_name());
+            fNew.setPlaceKey(g.getPlaceid());
         }
         if (g != null) {
             setFileObjectGEOValues(fNew, g,alreadyGeocoded,config);
@@ -2251,6 +2232,7 @@ catch(Exception e)
                             addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Event not found for:" + param);
                         } else {
                             updateEvent(config, fNew, e, existingCommentsString);
+                            fNew.setBestDate(e.getExactStartTime());
                             message("Event ID match for event:" + e.getEventid() + " " + e.getTitle());
                             countAddedEvent++;
                             countDriveAddedEvent++;
@@ -2271,7 +2253,7 @@ catch(Exception e)
                         } else {
                             message("Place has been found - place:" + param);
                             if (updateLatLon(g.getLatAsDouble(), g.getLonAsDouble(), fNew, config)) {
-                                fNew.setPlaceKey(g.getInternalKey());
+                                fNew.setPlaceKey(g.getPlaceid());
                                 setFileObjectGEOValues(fNew, g, false, config);
                                 countAddedPlace++;
                                 countDriveAddedPlace++;
@@ -2317,9 +2299,6 @@ catch(Exception e)
                     } catch (Exception e) {
                         message("could not convert provided values to a postcode:" + param);
                     }
-
-                } else {
-                    //return null;
                 }
             }
         }
@@ -2488,6 +2467,11 @@ catch(Exception e)
                         f.setStateProvince(item.getValue());
                         message("Province / State current value is:" + item.getValue());
                     }
+                } else if (item.getKey().equals(IPTCApplicationTag.DATE_CREATED.getName())) {
+                    if (item.getValue().length() > 0) {
+                        f.setIPTCDateCreated(item.getValue());
+                        message("Date Created current value is:" + item.getValue());
+                    }
                 } else if (item.getKey().equals(IPTCApplicationTag.COPYRIGHT_NOTICE.getName())) {
                     if (item.getValue().length() > 0) {
                         f.setIPTCCopyright(item.getValue());
@@ -2573,9 +2557,53 @@ catch(Exception e)
         fNew.setIPTCInstructions(updateInstructions(fNew.getIPTCInstructions(),p,param));
         addComment(existingCommentsString,"#"+p.toString()+"DONE:"+param);
     }
-
+    public static void updateIPTCFields(List<IPTCDataSet> iptcs,FileObject fNew,ConfigObject config,DriveObject drive)
+    {
+        ArrayList<String> newKeys = new ArrayList<>();
+        if(drive.getIPTCKeywords()!=null) {
+            newKeys = new ArrayList<>(Arrays.asList(drive.getIPTCKeywords().split(";", -1)));
+        }
+        if(config.getNewdir()!=null)
+        {
+            joinKeys(newKeys,convertPathToKeywords(fNew.getDirectory(),drive.getStartdir()));
+        }
+        for(String n : newKeys) {
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.KEY_WORDS, n));
+        }
+        if (!StringUtils.isNullOrEmpty(fNew.getCountry_code()))
+        {
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_CODE, fNew.getCountry_code()));
+        }
+        if (!StringUtils.isNullOrEmpty(fNew.getCountry_name())) {
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_NAME, fNew.getCountry_name()));
+        }
+        if (!StringUtils.isNullOrEmpty(fNew.getStateProvince())) {
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.PROVINCE_STATE, fNew.getStateProvince()));
+        }
+        if (!StringUtils.isNullOrEmpty(fNew.getSubLocation())) {
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.SUB_LOCATION, fNew.getSubLocation()));
+        }
+        if (!StringUtils.isNullOrEmpty(fNew.getCity())) {
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.CITY, fNew.getCity()));
+        }
+        if (!StringUtils.isNullOrEmpty(fNew.getIPTCCopyright()) || config.getOverwrite()) {
+            if (!StringUtils.isNullOrEmpty(drive.getIPTCCopyright())) {
+                iptcs.add(new IPTCDataSet(IPTCApplicationTag.COPYRIGHT_NOTICE, drive.getIPTCCopyright()));
+            }
+        }
+        if (!StringUtils.isNullOrEmpty(fNew.getWindowsSubject()) || config.getOverwrite()) {
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.CAPTION_ABSTRACT, fNew.getWindowsSubject()));
+        }
+        DateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+        if (!StringUtils.isNullOrEmpty(fNew.getIPTCDateCreated()) || config.getOverwrite()) {
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.DATE_CREATED, formatter.format(convertToDateViaInstant(fNew.getBestDate()))));
+        }
+    }
     /**
-     * Updates metadata
+     * Updates file and moves it.
+     * First updates IPTC metadata and then substitutes the IPTC, EXIF and COMMENTS in three passes with
+     * It then updates the EXIF data and moves the file if required
+     * Lastly, the file modified, created dates are reset to what they were before.
      * @param config - config object
      * @param drive - drive
      * @param file - filepath
@@ -2591,57 +2619,12 @@ catch(Exception e)
         if(config.getUpdate()) {
             try {
                List<IPTCDataSet> iptcs = new ArrayList<>();
-                if (!StringUtils.isNullOrEmpty(fNew.getCountry_code()))
-                {
-                    iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_CODE, fNew.getCountry_code()));
-                }
-                if (!StringUtils.isNullOrEmpty(fNew.getCountry_name())) {
-                    iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_NAME, fNew.getCountry_name()));
-                }
-                if (!StringUtils.isNullOrEmpty(fNew.getStateProvince())) {
-                    iptcs.add(new IPTCDataSet(IPTCApplicationTag.PROVINCE_STATE, fNew.getStateProvince()));
-                }
-                if (!StringUtils.isNullOrEmpty(fNew.getSubLocation())) {
-                    iptcs.add(new IPTCDataSet(IPTCApplicationTag.SUB_LOCATION, fNew.getSubLocation()));
-                }
-                if (!StringUtils.isNullOrEmpty(fNew.getCity())) {
-                    iptcs.add(new IPTCDataSet(IPTCApplicationTag.CITY, fNew.getCity()));
-                }
-
-                if (!StringUtils.isNullOrEmpty(fNew.getIPTCCopyright()) || config.getOverwrite()) {
-                    if (!StringUtils.isNullOrEmpty(drive.getIPTCCopyright())) {
-                        iptcs.add(new IPTCDataSet(IPTCApplicationTag.COPYRIGHT_NOTICE, drive.getIPTCCopyright()));
-                    }
-                }
-
-                ArrayList<String> newKeys = new ArrayList<>();
-                if(drive.getIPTCKeywords()!=null) {
-                    newKeys = new ArrayList<>(Arrays.asList(drive.getIPTCKeywords().split(";", -1)));
-                }
-                if(config.getNewdir()!=null)
-                {
-                  joinKeys(newKeys,convertPathToKeywords(fNew.getDirectory(),drive.getStartdir()));
-                }
-                for(String n : newKeys) {
-                    iptcs.add(new IPTCDataSet(IPTCApplicationTag.KEY_WORDS, n));
-                }
-
-                if (!StringUtils.isNullOrEmpty(fNew.getWindowsSubject()) || config.getOverwrite()) {
-                     iptcs.add(new IPTCDataSet(IPTCApplicationTag.CAPTION_ABSTRACT, fNew.getWindowsSubject()));
-                }
-                // we may update the title and description /caption /subject
-                if (!StringUtils.isNullOrEmpty(fNew.getWindowsTitle()) || config.getOverwrite()) {
-                 //   iptcs.add(new IPTCDataSet(IPTCApplicationTag.OBJECT_NAME,fNew.getWindowsTitle() ));
-                }
-                DateFormat formatter = new SimpleDateFormat("yyyyMMdd");
-                iptcs.add(new IPTCDataSet(IPTCApplicationTag.DATE_CREATED, formatter.format( convertToDateViaInstant(fNew.getBestDate()))));
-
+               updateIPTCFields(iptcs,fNew,config,drive);
                 FileInputStream fin = new FileInputStream(file.getPath());
                 String fout_name = FilenameUtils.getFullPath(file.getPath()) + "out" + FilenameUtils.getName(file.getPath());
                 File outFile = new File(fout_name);
                 FileOutputStream fout = new FileOutputStream(outFile, false);
                 List<Metadata> metaList = new ArrayList<>();
-
                 String newDirectory=null;
                 if(config.getNewdir()!=null) {
                     newDirectory = getNewDirectory(config,fNew);
@@ -2656,24 +2639,14 @@ catch(Exception e)
                         newDirectory=null;
                     }
                 }
-
-              //  exif.addImageField(TiffTag.WINDOWS_XP_TITLE,FieldType.WINDOWSXP,""); WEDNESDAY
-               // exif.addImageField(TiffTag.WINDOWS_XP_SUBJECT,FieldType.WINDOWSXP,fNew.getWindowsSubject()+"this is te subject");
-              //  exif.addImageField(TiffTag.IMAGE_DESCRIPTION,FieldType.ASCII,fNew.getWindowsTitle()+"this is image description title");
-
-            //    exif.addImageField(TiffTag.WINDOWS_XP_COMMENT,FieldType.WINDOWSXP,fNew.getWindowsComments());
-            //    exif.addExifField(ExifTag.DATE_TIME_ORIGINAL, FieldType.ASCII,formatter.format( convertToDateViaInstant(fNew.getBestDate())));
                 // we update the Special Instructions if they have been provided....
                 if (!StringUtils.isNullOrEmpty(fNew.getIPTCInstructions())) {
                     iptcs.add(new IPTCDataSet(IPTCApplicationTag.SPECIAL_INSTRUCTIONS, fNew.getIPTCInstructions()));
                 }
-
-
                 metaList.add(exif);
                 iptc.addDataSets(iptcs);
                 metaList.add(iptc);
                 metaList.add(new Comments(existingCommentsString));
-
 
                 Metadata.insertIPTC(fin, fout,iptcs,true);
                // Metadata.insertMetadata(metaList, fin, fout);
@@ -2695,30 +2668,16 @@ catch(Exception e)
                 Metadata.insertExif(fin3, fout3,exif);
                 fin3.close();
                 fout3.close();
-
-
-
-
-
-
                 if (!file.delete()) {
                     message("Cannot delete file:" + file.getPath());
                 }
-                try {
-                    changeExifMetadata(outFile3, file, fNew);
+                if (!changeExifMetadata(outFile3, file, fNew)) {
+                    addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Error in updating Exif metadata");
+                    message("Error in updating Exif metadata");
+                    Files.copy(outFile3.toPath(), file.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
                 }
-                catch(Exception e)
-                {
-                    addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not update Exif metadata"+e);
-                    Files.copy(outFile2.toPath(), file.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
-                }
-                //
-                if (!outFile.delete()) {
-                    addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not delete temporary file "+ outFile.getName());
-                    message("Cannot delete file:" + outFile.getPath());
-                }
-                File finalFile=file;
-                if(newDirectory!=null)
+                File finalFile = file;
+                if (newDirectory != null)
                 {
                     String ok=moveFile(config,fNew);
                     if(ok!=null) {
@@ -2732,7 +2691,18 @@ catch(Exception e)
                 Files.setAttribute(finalFile.toPath(), "creationTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileCreated()).getTime()));
                 Files.setAttribute(finalFile.toPath(), "lastAccessTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileAccessed()).getTime()));
                 Files.setAttribute(finalFile.toPath(), "lastModifiedTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileModified()).getTime()));
-
+                if (!outFile.delete()) {
+                    addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not delete temporary file out"+ outFile.getName());
+                    message("Cannot delete file:" + outFile.getPath());
+                }
+                if (!outFile2.delete()) {
+                    addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not delete temporary file out3"+ outFile2.getName());
+                    message("Cannot delete temp out2 file:" + outFile2.getPath());
+                }
+                if (!outFile3.delete()) {
+                    addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not delete temporary file out2"+ outFile3.getName());
+                    message("Cannot delete temp out2 file:" + outFile3.getPath());
+                }
                 countUPDATED++;
                 countDriveUPDATED++;
             } catch (Exception e) {
@@ -2744,12 +2714,9 @@ catch(Exception e)
      *
      * @param jpegImageFile - source image file
      * @param dst - destination image file
-     * @throws IOException - IO exception
-     * @throws ImageReadException - Read exception
-     * @throws ImageWriteException - write exception
      */
     public static boolean updateWindowsFields(final File jpegImageFile, final File dst)
-            throws IOException, ImageReadException, ImageWriteException {
+             {
 
         try (FileOutputStream fos = new FileOutputStream(dst);
              OutputStream os = new BufferedOutputStream(fos)) {
@@ -2805,12 +2772,9 @@ catch(Exception e)
      *  this uses Apache Imaging to write out the latitude and Longitude - can't figure out how to do in ICAFE !
      * @param jpegImageFile - source image file
      * @param dst - destination image file
-     * @throws IOException - IO exception
-     * @throws ImageReadException - Read exception
-     * @throws ImageWriteException - write exception
      */
     public static boolean changeExifMetadata(final File jpegImageFile, final File dst, FileObject fNew)
-            throws IOException, ImageReadException, ImageWriteException {
+             {
 
         try (FileOutputStream fos = new FileOutputStream(dst);
              OutputStream os = new BufferedOutputStream(fos)) {
@@ -2825,7 +2789,6 @@ catch(Exception e)
                     outputSet = exif.getOutputSet();
                 }
             }
-
             // if file does not contain any exif metadata, we create an empty
             // set of exif metadata. Otherwise, we keep all of the other
             // existing tags.
@@ -2840,41 +2803,18 @@ catch(Exception e)
             exifDir.removeField(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
             exifDir.add(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL, formatter.format( convertToDateViaInstant(fNew.getBestDate())));
 
-
-
             final TiffOutputDirectory rootDir = outputSet.getOrCreateRootDirectory();
             rootDir.removeField(MicrosoftTagConstants.EXIF_TAG_XPCOMMENT);
             rootDir.add(MicrosoftTagConstants.EXIF_TAG_XPCOMMENT, fNew.getWindowsComments());
 
-
             rootDir.removeField(TiffTagConstants.TIFF_TAG_IMAGE_DESCRIPTION);
             rootDir.add(TiffTagConstants.TIFF_TAG_IMAGE_DESCRIPTION, fNew.getWindowsTitle());
 
+            rootDir.removeField(MicrosoftTagConstants.EXIF_TAG_XPTITLE);
+            rootDir.add(MicrosoftTagConstants.EXIF_TAG_XPTITLE, fNew.getWindowsTitle());
 
-               rootDir.removeField(MicrosoftTagConstants.EXIF_TAG_XPTITLE);
-               rootDir.add(MicrosoftTagConstants.EXIF_TAG_XPTITLE, fNew.getWindowsTitle());
-
-
-
-
-//ok
             rootDir.removeField(MicrosoftTagConstants.EXIF_TAG_XPSUBJECT);
             rootDir.add(MicrosoftTagConstants.EXIF_TAG_XPSUBJECT, fNew.getWindowsSubject());
-
-
-
-            // the Image Description is a different field to the IPTC Caption field
-     /*
-            rootDir.removeField(TiffTagConstants.TIFF_TAG_IMAGE_DESCRIPTION);
-            rootDir.add(TiffTagConstants.TIFF_TAG_IMAGE_DESCRIPTION, fNew.getWindowsSubject());
-      rootDir.removeField(TiffTagConstants.TIFF_TAG_IMAGE_DESCRIPTION);
-            rootDir.add(TiffTagConstants.TIFF_TAG_IMAGE_DESCRIPTION, fNew.getWindowsSubject());
-            // We need to update the Windows title also..
-            rootDir.removeField(TiffTagConstants.TIFF_TAG_DOCUMENT_NAME);
-            rootDir.add(TiffTagConstants.TIFF_TAG_DOCUMENT_NAME, fNew.getWindowsTitle());
-
-      */
-
             new ExifRewriter().updateExifMetadataLossless(jpegImageFile, os,
                     outputSet);
             return true;

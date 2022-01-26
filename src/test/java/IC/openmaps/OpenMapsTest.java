@@ -22,6 +22,7 @@ package IC.openmaps;
 import IC.ConfigObject;
 import static IC.ImageCatalogue.setDefaults;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -55,6 +56,7 @@ class OpenMapsTest {
     }
     @Test
     @DisplayName("Reverse Geocode - correct")
+    @Disabled
     void reverseGeocodeTest() {
         ZoneId z= ZoneId.systemDefault();
         ConfigObject config= new ConfigObject();

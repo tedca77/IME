@@ -8,7 +8,7 @@
         </style>
 </head>
 <body>
-  <h1>Places identified in Photos</h1>
+  <h1>Events for Photos</h1>
 
 <TABLE BORDER>
 <tr>

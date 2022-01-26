@@ -8,7 +8,8 @@ import java.time.LocalDateTime;
 
 
 @Data
-@JsonIgnoreProperties(ignoreUnknown=true)
+@JsonIgnoreProperties(ignoreUnknown=true,value={"imagelinks", "osm_type","cdata","lonAsDouble","latAsDouble","trackKey","startDate","endDate","countPlace","osm_id","licence","place_id"})
+
 public class Place {
     private String display_name;
     private Long place_id;
@@ -24,7 +25,7 @@ public class Place {
     private String IPTCCity;
     private String IPTCSublocation;
     private String friendlyname;
-    private Integer internalKey;
+    private Integer placeid;
     private Integer countPlace;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime endDate;
