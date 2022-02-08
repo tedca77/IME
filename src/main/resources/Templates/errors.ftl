@@ -17,8 +17,8 @@
 <tr>
     <td>${(comment.fileName)!}</td>
     <td>${(comment.directory)!}</td>
-    <td>${(comment.message)!}</td>
     <td>${(comment.fileDate.format('yyyy-MM-dd  HH:mm:ss'))!}</td>
+    <td>${(comment.message)!}</td>
 </tr>
 </#list>
 </TABLE>

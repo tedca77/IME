@@ -2,9 +2,40 @@
 <head>
   <title>Events identified by date</title>
     <style type="text/css">
-        .padding{
-         padding:2px 10px 2px 2px;
-        }
+       .myGallery {
+             display: grid;
+             grid-gap: 10px;
+             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+           }
+            .myGallery .item {
+              position: relative;
+              overflow: hidden;
+            }
+
+            .myGallery .item img {
+              vertical-align: middle;
+            }
+
+            .myGallery .caption {
+              margin: 0;
+              padding: 1em;
+              position: absolute;
+              z-index: 1;
+              bottom: 0;
+              left: 0;
+              width: 100%;
+              max-height: 100%;
+              overflow: auto;
+              box-sizing: border-box;
+              transition: transform .5s;
+              transform: translateY(100%);
+              background: rgba(0, 0, 0, .7);
+              color: rgb(255, 255, 255);
+            }
+
+            .myGallery .item:hover .caption {
+              transform: translateY(0%);
+            }
         </style>
 </head>
 <body>
@@ -31,7 +62,10 @@
  <td>${(event.location)!}</td>
 </tr>
 <tr>
-<td COLSPAN=11 WIDTH=1000>${(event.imagelinks)!}</td>
+<td COLSPAN=11 WIDTH=1000>
+<div class="myGallery">
+${(event.imagelinks)!}</td>
+</div>
 </tr>
 </#list>
 </TABLE>

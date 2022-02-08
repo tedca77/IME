@@ -4,7 +4,7 @@ public class Enums {
 
 
         public enum argOptions {
-            overwriteValues,update,showmetadata,redoGeocoding
+            overwrite,update,showmetadata,redoGeocoding
         }
         /*
            update - if false, no updates will take place to records ...default false

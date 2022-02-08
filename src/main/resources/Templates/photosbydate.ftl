@@ -9,7 +9,7 @@
 <tr>
   <th>File Key</th>
   <th WIDTH=100>Picture</th>
-  <th WIDTH=200>Filename</th>
+  <th WIDTH=100>Filename</th>
   <th WIDTH=200>Directory</th>
   <th WIDTH=200>Sub Location</th>
   <th WIDTH=200>City</th>

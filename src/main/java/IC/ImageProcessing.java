@@ -131,7 +131,7 @@ public class ImageProcessing {
                 }
             }
             javaxt.io.Image javaxtImage=new javaxt.io.Image(imgThumb);
-            /*
+
             if(orientation.equals( ORIENTATION_VALUE_ROTATE_90_CW))
             {
                 javaxtImage.rotateClockwise();
@@ -145,7 +145,6 @@ public class ImageProcessing {
               javaxtImage.rotate(180.0d);
             }
 
-             */
             File outputfile = new File(tempDir+"/"+thumbName);
           //  ImageIO.write(imgThumb, "jpg", outputfile);
             javaxtImage.saveAs(outputfile);

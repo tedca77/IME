@@ -199,17 +199,148 @@ class ImageCatalogueTest {
     }
     @Test
     @DisplayName("Test 7")
-@Disabled
     void update7Test() {
         //Test: 7
-        // Five images with no descriptive metadata but with lat and lon, so should geocode
+        // Six images with no descriptive metadata but with lat and lon, so should update copyright
+        //Json input file, update parameter included, but no directory provided so will not move  (HTML output wil includeGeocode details)
+        if (copyToTestArea(startDir + "/TestSource" + 4, startDir + "/Test")) {
+
+            DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+            ImageCatalogue.main(new String[]{startDir + "/Test/config.json","overwrite"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("json file found"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
+           //
+            FileObject fNew=processFile(new File(startDir+"/Test/"+"T_"+"IPTC-win date year.jpg"), null,null, null,true);
+            assertEquals("Modified, Copyright;Copyright (Notice) 2021.1 IPTC - www.iptc.org  (ref2021.1)",fNew.getIPTCCopyright());
+            assertEquals("IME1;IME2;Keyword1ref2021.1;Keyword2ref2021.1;Keyword3ref2021.1",fNew.getIPTCKeywords());
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @DisplayName("Test 8")
+    @Disabled
+    void update8Test() {
+        //Test: 8
+        // Six images with no descriptive metadata but with lat and lon, so should geocode
         //Json input file, update parameter included, but no directory provided so will not move  (HTML output wil includeGeocode details)
         if (copyToTestArea(startDir + "/TestSource" + 4, startDir + "/Test")) {
             setFileAttributesForTest(startDir+"/Test/"+"T_"+"IPTC-win date year.jpg","1999-11-23");
+
+
+            DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+            ImageCatalogue.main(new String[]{startDir + "/Test/config.json"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("json file found"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
+            //
+            FileObject fNew=processFile(new File(startDir+"/Test/"+"T_"+"IPTC-win date year.jpg"), null,null, null,true);
+            assertEquals("1985:01:01 00:00:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
+            assertEquals("1999:11:23 00:00:00",formatter.format( convertToDateViaInstant(fNew.getFileModified())));
+            assertEquals("1999:11:23 00:00:00",formatter.format( convertToDateViaInstant(fNew.getFileCreated())));
+            assertEquals("1999:11:23 00:00:00",formatter.format( convertToDateViaInstant(fNew.getFileAccessed())));
+
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @DisplayName("Test 9")
+    @Disabled
+    void update9Test() {
+        //Test: 9
+        // Six images with no descriptive metadata but with lat and lon, so should geocode
+        //Json input file, update parameter included, but no directory provided so will not move  (HTML output wil includeGeocode details)
+        if (copyToTestArea(startDir + "/TestSource" + 4, startDir + "/Test")) {
             setFileAttributesForTest(startDir+"/Test/"+"T_"+"IPTC-win date year month.jpg","1999-11-23");
+            DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+            ImageCatalogue.main(new String[]{startDir + "/Test/config.json"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("json file found"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
+            //
+            FileObject fNew=processFile(new File(startDir+"/Test/"+"T_"+"IPTC-win date year month.jpg"), null,null, null,true);
+            assertEquals("1985:07:01 00:00:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
+         } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @DisplayName("Test 10")
+    @Disabled
+    void update10Test() {
+        //Test: 10
+        // Six images with no descriptive metadata but with lat and lon, so should geocode
+        //Json input file, update parameter included, but no directory provided so will not move  (HTML output wil includeGeocode details)
+        if (copyToTestArea(startDir + "/TestSource" + 4, startDir + "/Test")) {
+
             setFileAttributesForTest(startDir+"/Test/"+"T_"+"IPTC-win date year month day.jpg","1999-11-23");
+
+            DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+            ImageCatalogue.main(new String[]{startDir + "/Test/config.json"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("json file found"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
+            //
+            FileObject fNew=processFile(new File(startDir+"/Test/"+"T_"+"IPTC-win date year month day.jpg"), null,null, null,true);
+            assertEquals("1985:07:14 00:00:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
+
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @DisplayName("Test 11")
+    @Disabled
+    void update11Test() {
+        //Test: 11
+        // Six images with no descriptive metadata but with lat and lon, so should geocode
+        //Json input file, update parameter included, but no directory provided so will not move  (HTML output wil includeGeocode details)
+        if (copyToTestArea(startDir + "/TestSource" + 4, startDir + "/Test")) {
             setFileAttributesForTest(startDir+"/Test/"+"T_"+"lightroom date year.jpg","1999-11-23");
+
+            DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+            ImageCatalogue.main(new String[]{startDir + "/Test/config.json"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("json file found"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
+            //
+            FileObject fNew=processFile(new File(startDir+"/Test/"+"T_"+"lightroom date year.jpg"), null,null, null,true);
+            assertEquals("2001:01:01 00:00:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @DisplayName("Test 12")
+    @Disabled
+    void update12Test() {
+        //Test: 7
+        // Six images with no descriptive metadata but with lat and lon, so should geocode
+        //Json input file, update parameter included, but no directory provided so will not move  (HTML output wil includeGeocode details)
+        if (copyToTestArea(startDir + "/TestSource" + 4, startDir + "/Test")) {
             setFileAttributesForTest(startDir+"/Test/"+"T_"+"lightroom date year month.jpg","1999-11-23");
+            DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+            ImageCatalogue.main(new String[]{startDir + "/Test/config.json"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("json file found"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
+            //
+            FileObject fNew=processFile(new File(startDir+"/Test/"+"T_"+"lightroom date year month.jpg"), null,null, null,true);
+            assertEquals("2001:07:01 00:00:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @DisplayName("Test 13")
+    @Disabled
+    void update13Test() {
+        //Test: 13
+        // Six images with no descriptive metadata but with lat and lon, so should geocode
+        //Json input file, update parameter included, but no directory provided so will not move  (HTML output wil includeGeocode details)
+        if (copyToTestArea(startDir + "/TestSource" + 4, startDir + "/Test")) {
             setFileAttributesForTest(startDir+"/Test/"+"T_"+"lightroom date year month day.jpg","1999-11-23");
 
             DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
@@ -217,26 +348,8 @@ class ImageCatalogueTest {
             String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("json file found"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
-           //
-            FileObject fNew=processFile(new File(startDir+"/Test/"+"T_"+"IPTC-win date year.jpg"), null,null, null,true);
-            assertEquals("1985:01:01 00:00:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
-            assertEquals("1999:11:23 00:00:00",formatter.format( convertToDateViaInstant(fNew.getFileModified())));
-            assertEquals("1999:11:23 00:00:00",formatter.format( convertToDateViaInstant(fNew.getFileCreated())));
-            assertEquals("1999:11:23 00:00:00",formatter.format( convertToDateViaInstant(fNew.getFileAccessed())));
-           //
-            fNew=processFile(new File(startDir+"/Test/"+"T_"+"IPTC-win date year month.jpg"), null,null, null,true);
-            assertEquals("1985:07:01 00:00:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
             //
-            fNew=processFile(new File(startDir+"/Test/"+"T_"+"IPTC-win date year month day.jpg"), null,null, null,true);
-            assertEquals("1985:07:14 00:00:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
-            //
-            fNew=processFile(new File(startDir+"/Test/"+"T_"+"lightroom date year.jpg"), null,null, null,true);
-            assertEquals("2001:01:01 00:00:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
-            //
-            fNew=processFile(new File(startDir+"/Test/"+"T_"+"lightroom date year month.jpg"), null,null, null,true);
-            assertEquals("2001:07:01 00:00:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
-            //
-            fNew=processFile(new File(startDir+"/Test/"+"T_"+"lightroom date year month day.jpg"), null,null, null,true);
+            FileObject fNew=processFile(new File(startDir+"/Test/"+"T_"+"lightroom date year month day.jpg"), null,null, null,true);
             assertEquals("2001:07:14 00:00:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
 
         } else {
@@ -244,13 +357,12 @@ class ImageCatalogueTest {
         }
     }
     @Test
-    @DisplayName("Test 8")
-    void update8Test() {
-        //Test: 8
+    @Disabled
+    @DisplayName("Test 14")
+    void update14Test() {
         // 11 images where events are added or found via the date of the photo
         //Json input file, update and overwrite parameters included, directory provided so will move  (HTML output wil includeGeocode details)
         if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
-
             DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
             ImageCatalogue.main(new String[]{startDir + "/Test/config.json"});
             String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
@@ -261,45 +373,220 @@ class ImageCatalogueTest {
             fNew=processFile(new File(startDir+"/TestNewDir/2019/4/"+"T_"+"Added event with postcode.jpg"), null,null, null,true);
             assertEquals("2019:04:14 12:30:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
             assertEquals(	"City of Westminster",fNew.getCity());
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @Disabled
+    @DisplayName("Test 15")
+    void update15Test() {
+        // 11 images where events are added or found via the date of the photo
+        //Json input file, update and overwrite parameters included, directory provided so will move  (HTML output wil includeGeocode details)
+        if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
+            DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+            ImageCatalogue.main(new String[]{startDir + "/Test/config.json"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("json file found"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
             //
+            FileObject fNew;
             fNew=processFile(new File(startDir+"/TestNewDir/2019/7/"+"T_"+"Added event with place.jpg"), null,null, null,true);
             assertEquals("2019:07:21 00:00:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
             assertEquals(	"Larkhill",fNew.getCity());
+          } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @Disabled
+    @DisplayName("Test 16")
+    void update16Test() {
+        // 11 images where events are added or found via the date of the photo
+        //Json input file, update and overwrite parameters included, directory provided so will move  (HTML output wil includeGeocode details)
+        if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
+            DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+            ImageCatalogue.main(new String[]{startDir + "/Test/config.json"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("json file found"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
             //
+            FileObject fNew;
             fNew=processFile(new File(startDir+"/TestNewDir/2019/7/"+"T_"+"Find event date place.jpg"), null,null, null,true);
             assertEquals("2019:07:21 21:01:01",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
             assertEquals(	"Larkhill",fNew.getCity());
+
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @Disabled
+    @DisplayName("Test 17")
+    void update17Test() {
+        // 11 images where events are added or found via the date of the photo
+        //Json input file, update and overwrite parameters included, directory provided so will move  (HTML output wil includeGeocode details)
+        if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
+            DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+            ImageCatalogue.main(new String[]{startDir + "/Test/config.json"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("json file found"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
             //
+            FileObject fNew;
             fNew=processFile(new File(startDir+"/TestNewDir/2020/6/"+"T_"+"Find event date time no place.jpg"), null,null, null,true);
             assertEquals("2020:06:23 21:01:01",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @Disabled
+    @DisplayName("Test 18")
+    void update18Test() {
+        // 11 images where events are added or found via the date of the photo
+        //Json input file, update and overwrite parameters included, directory provided so will move  (HTML output wil includeGeocode details)
+        if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
+            DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+            ImageCatalogue.main(new String[]{startDir + "/Test/config.json"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("json file found"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
             //
+            FileObject fNew;
             fNew=processFile(new File(startDir+"/TestNewDir/2021/7/"+"T_"+"Find event date postcode.jpg"), null,null, null,true);
             assertEquals("2021:07:21 21:01:01",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
             assertEquals(	"City of Westminster",fNew.getCity());
+         } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @Disabled
+    @DisplayName("Test 19")
+    void update19Test() {
+        // 11 images where events are added or found via the date of the photo
+        //Json input file, update and overwrite parameters included, directory provided so will move  (HTML output wil includeGeocode details)
+        if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
+            DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+            ImageCatalogue.main(new String[]{startDir + "/Test/config.json"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("json file found"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
             //
+            FileObject fNew;
             fNew=processFile(new File(startDir+"/TestNewDir/2021/8/"+"T_"+"Added event withlatlon.jpg"), null,null, null,true);
             assertEquals("2021:08:01 00:00:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
-            assertEquals(	null,fNew.getCity());
+            assertEquals(	"",fNew.getCity());
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @Disabled
+    @DisplayName("Test 20")
+    void update20Test() {
+        // 11 images where events are added or found via the date of the photo
+        //Json input file, update and overwrite parameters included, directory provided so will move  (HTML output wil includeGeocode details)
+        if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
+            DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+            ImageCatalogue.main(new String[]{startDir + "/Test/config.json"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("json file found"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
             //
+            FileObject fNew;
+              //
             fNew=processFile(new File(startDir+"/TestNewDir/2021/8/"+"T_"+"Find event date latlon.jpg"), null,null, null,true);
-            assertEquals("2001:08:02 21:01:01",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
-            assertEquals(	null,fNew.getCity());
+            assertEquals("2021:08:02 21:01:01",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
+            assertEquals(	"",fNew.getCity());
+
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @Disabled
+    @DisplayName("Test 21")
+    void update21Test() {
+        // 11 images where events are added or found via the date of the photo
+        //Json input file, update and overwrite parameters included, directory provided so will move  (HTML output wil includeGeocode details)
+        if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
+            DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+            ImageCatalogue.main(new String[]{startDir + "/Test/config.json"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("json file found"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
             //
+            FileObject fNew;
             fNew=processFile(new File(startDir+"/TestNewDir/2021/9/"+"T_"+"find eventcalendar no place.jpg"), null,null, null,true);
             assertEquals("2021:09:12 21:01:01",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
+
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @Disabled
+    @DisplayName("Test 22")
+    void update22Test() {
+        // 11 images where events are added or found via the date of the photo
+        //Json input file, update and overwrite parameters included, directory provided so will move  (HTML output wil includeGeocode details)
+        if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
+            DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+            ImageCatalogue.main(new String[]{startDir + "/Test/config.json"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("json file found"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
             //
+            FileObject fNew;
             fNew=processFile(new File(startDir+"/TestNewDir/2021/10/"+"T_"+"Added latlon.jpg"), null,null, null,true);
             assertEquals("2021:10:20 21:01:01",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
             assertEquals(	"City of Westminster",fNew.getCity());
+
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @Disabled
+    @DisplayName("Test 23")
+    void update23Test() {
+        // 11 images where events are added or found via the date of the photo
+        //Json input file, update and overwrite parameters included, directory provided so will move  (HTML output wil includeGeocode details)
+        if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
+            DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+            ImageCatalogue.main(new String[]{startDir + "/Test/config.json"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("json file found"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
             //
+            FileObject fNew;
             fNew=processFile(new File(startDir+"/TestNewDir/2021/10/"+"T_"+"Added place.jpg"), null,null, null,true);
             assertEquals("2021:10:20 21:01:01",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
             assertEquals(	"Larkhill",fNew.getCity());
+
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @Disabled
+    @DisplayName("Test 24")
+    void update24Test() {
+        // 11 images where events are added or found via the date of the photo
+        //Json input file, update and overwrite parameters included, directory provided so will move  (HTML output wil includeGeocode details)
+        if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
+            DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+            ImageCatalogue.main(new String[]{startDir + "/Test/config.json"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("json file found"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
             //
+            FileObject fNew;
             fNew=processFile(new File(startDir+"/TestNewDir/2021/10/"+"T_"+"Addedpostcode.jpg"), null,null, null,true);
             assertEquals("2021:10:20 21:01:01",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
             assertEquals(	"City of Westminster",fNew.getCity());
-
         } else {
             fail("Setup Copy files to Test Area could not complete");
         }

@@ -300,7 +300,7 @@ public class ImageCatalogue {
             {
                 config.setUpdate(true);
             }
-            else if(s.trim().equalsIgnoreCase(Enums.argOptions.overwriteValues.toString()))
+            else if(s.trim().equalsIgnoreCase(Enums.argOptions.overwrite.toString()))
             {
                 config.setOverwrite(true);
             }
@@ -764,20 +764,10 @@ public class ImageCatalogue {
                         for(String k : keys)
                         {
                             if (k.equals(r.getEventid().toString())) {
-                                if (!(f.getOrientation() == 8 || f.getOrientation() == 6)) {
-                                    s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(width).append("\" class=\"padding\" >");
-                                    s.append("<br><small>").append(f.getDirectory()).append("</small><br>");
-                                    s.append("<small>").append(f.getFileName()).append("</small><br>");
-                                } else {
-                                    Integer newWidth = width * f.getHeight() / f.getWidth();
-                                    s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(newWidth).append("\" class=\"padding\" >");
-                                    s.append("<br><small>").append(f.getDirectory()).append("</small><br>");
-                                    s.append("<small>").append(f.getFileName()).append("</small><br>");
-                                }
+                                s.append(getLink(root,f));
+
                             }
                         }
-
-
                     }
                 }
                 catch(Exception e)
@@ -805,20 +795,7 @@ public class ImageCatalogue {
                 try {
                     if(f.getPlaceKey()!=null) {
                         if (f.getPlaceKey().equals(r.getPlaceid())) {
-                            if (!(f.getOrientation() == 8 || f.getOrientation() == 6)) {
-                                s.append(" <div class=\"cat-container\">");
-                                s.append("<img class=\"cat\" src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(width).append("\" class=\"padding\" >");
-                                s.append("<p class=\"caption\"><small>").append(f.getDirectory()).append("</small><br>");
-                                s.append("<small>").append(f.getFileName()).append("</small><p>");
-                                s.append("</div>");
-                            } else {
-                                Integer newWidth = width * f.getHeight() / f.getWidth();
-                                s.append(" <div class=\"cat-container\">");
-                                s.append("<img class=\"cat\" src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(newWidth).append("\" class=\"padding\" >");
-                                s.append("<p class=\"caption\"><small>").append(f.getDirectory()).append("</small></br>");
-                                s.append("<small>").append(f.getFileName()).append("</small></p>");
-                                s.append("</div>");
-                            }
+                          s.append(getLink(root,f));
                         }
                     }
                 }
@@ -829,6 +806,32 @@ public class ImageCatalogue {
             }
             r.setImagelinks(s.toString());
         }
+    }
+    public static String getLink(String root,FileObject f)
+    {
+        StringBuilder s= new StringBuilder();
+        if (!(f.getOrientation() == 8 || f.getOrientation() == 6)) {
+            s.append(" <div class=\"item\">");
+            //      s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(width).append("\"  >");
+            s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" >");
+            s.append("<span class=\"caption\"><small>").append(f.getDirectory()).append("</small><br>");
+            s.append("<small>").append(f.getFileName()).append("</small>");
+            s.append("<small>").append("["+f.getOrientation()+"]").append("</small></span>");
+            s.append("</div>");
+        } else {
+            // Integer newWidth = width * f.getHeight() / f.getWidth();
+
+            s.append(" <div class=\"item\">");
+            //  s.append("<img  src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(newWidth).append("\"  >");
+            s.append("<img  src=\"").append(root).append("\\").append(f.getThumbnail()).append("\"  >");
+            s.append("<span class=\"caption\"><small>").append(f.getDirectory()).append("</small></br>");
+            s.append("<small>").append(f.getFileName()).append("</small>");
+            s.append("<small>").append("["+f.getOrientation()+"]").append("</small></span>");
+            s.append("</div>");
+        }
+        return s.toString();
+
+
     }
     /**
      * this adds some HTML for images to the Track object so we can incorporate into Freemarker report easily
@@ -847,18 +850,8 @@ public class ImageCatalogue {
                            // System.out.println("best date:"+f.getBestDate().toLocalDate());
                            // System.out.println("trackdate date:"+t.getTrackDate());
                             if (f.getBestDate().toLocalDate().equals(t.getTrackDate())) {
-                                if(!(f.getOrientation()==8 || f.getOrientation()==6)) {
-                                    s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(width).append("\" class=\"padding\" >");
-                                    s.append("<br><small>").append(f.getDirectory()).append("</small><br>");
-                                    s.append("<small>").append(f.getFileName()).append("</small><br>");
-                                }
-                                else
-                                {
-                                    Integer newWidth=width*f.getHeight()/f.getWidth();
-                                    s.append("<img src=\"").append(root).append("\\").append(f.getThumbnail()).append("\" width=\"").append(newWidth).append("\" class=\"padding\" >");
-                                    s.append("<br><small>").append(f.getDirectory()).append("</small><br>");
-                                    s.append("<small>").append(f.getFileName()).append("</small><br>");
-                                }
+                                s.append(getLink(root,f));
+
                             }
                         } catch (Exception e) {
                             message("error adding links to tracks:" + f.getDisplayName() + e);
@@ -1412,6 +1405,25 @@ public class ImageCatalogue {
     }
 
     /**
+     *
+     * finds highest placeid if it has not been filled in - it may be zero
+     * @return
+     */
+    public static Integer getHighestPlace()
+    {
+        Integer highest=0;
+        for(Place g : places)
+        {
+            if(g.getPlaceid()!=null) {
+                if (g.getPlaceid() > highest) {
+                    highest = g.getPlaceid();
+                }
+            }
+        }
+
+        return highest;
+    }
+    /**
      * Reads any existing cameras, places or events if in the json file
      * Sorts cameras and places and sets any counters to zero e.g. places and cameras
      * Checks if the events have correct dates specified and removes ifg they do not
@@ -1437,9 +1449,15 @@ public class ImageCatalogue {
             places =c.getPlaces();
             //sort in case there are gaps in numbering
             places.sort(Comparator.comparing(Place::getPlaceid));
+            int highestPlace=getHighestPlace();
             for(Place g : places)
             {
                 g.setCountPlace(0);
+                if(g.getPlaceid()==null)
+                {
+                    highestPlace++;
+                    g.setPlaceid(highestPlace);
+                }
             }
         }
         if(c.getEvents()!=null)
@@ -1877,14 +1895,14 @@ public class ImageCatalogue {
      * @param existingCommentsString - Existing comments
      * @return - either true (if processed) or false
      */
-    public static Boolean processDates(FileObject fNew,ArrayList<String> existingCommentsString)
+    public static LocalDateTime processDates(FileObject fNew,ArrayList<String> existingCommentsString)
     {
-        Boolean dateUpdated=false;
+        LocalDateTime dateUpdated=null;
         String param=getInstructionFromEitherField(fNew,Enums.processMode.date);
         if(param.length()>0) {
             dateUpdated = updateDate(param, fNew);
         }
-        if(dateUpdated)
+        if(dateUpdated!=null)
         {
             updateBothFields(fNew,param,Enums.processMode.date,existingCommentsString);
         }
@@ -1956,7 +1974,7 @@ catch(Exception e)
         if(!readOnly) {
             fNew.setThumbnail(createThumbFromPicture(file, config.getTempdir(), thumbName, config.getWidth(), config.getHeight(), fNew.getOrientation()));
             // Geocodes if lat and long present
-            Boolean dateUpdated = processDates(fNew, existingCommentsString);
+            LocalDateTime dateUpdated = processDates(fNew, existingCommentsString);
             if (dateUpdated != null) {
                 message("File updated with a new date:" + dateUpdated);
             }
@@ -2149,16 +2167,16 @@ catch(Exception e)
     /*
     updates the date in ExifOriginal - and also the BestDate...
      */
-    public static Boolean updateDate(String param, FileObject fNew) {
+    public static LocalDateTime updateDate(String param, FileObject fNew) {
         LocalDateTime c =createLocalDate(param);
         if(c!=null) {
             fNew.setExifOriginal(c);
             fNew.setBestDate(fNew.getExifOriginal());
             countDriveDateUpdate++;
             countDateUpdate++;
-            return true;
+
         }
-        return false;
+        return c;
     }
     public static LocalDate convertToLocalDateViaInstant(Date dateToConvert) {
         return dateToConvert.toInstant()
@@ -2488,6 +2506,7 @@ catch(Exception e)
                         message("IPTC Instructions is:" + item.getValue());
                     }
                 } else if (item.getKey().equals(IPTCApplicationTag.CAPTION_ABSTRACT.getName())) {
+                    // this concatenates the subject field
                     if (item.getValue().length() > 0) {
                         if (f.getWindowsSubject()==null) {
                             f.setWindowsSubject(item.getValue());
@@ -2499,6 +2518,7 @@ catch(Exception e)
                     }
 
                 } else if (item.getKey().equals(IPTCApplicationTag.OBJECT_NAME.getName())) {
+                    // this concatenates the title field
                     if (item.getValue().length() > 0) {
                         if (f.getWindowsTitle() ==null) {
                             f.setWindowsTitle(item.getValue());
@@ -2543,7 +2563,30 @@ catch(Exception e)
             return currentValue;
         }
     }
-
+    public static String conditionallyUpdateField(String currentValue, String newValue,String fieldName,ConfigObject config)
+    {
+        // we update field if:
+        // 1. the existing field is empty OR
+        // 2. overwrite is set (i.e. it will overwrite existing values)
+        // note the new value might be blank
+        if (StringUtils.isNullOrEmpty(currentValue)  || config.getOverwrite() ) {
+            if(!StringUtils.isNullOrEmpty(currentValue)) {
+                message("New Value found and overwritten for:" + fieldName + " - " + newValue + "  , current value:" + currentValue);
+            }
+            else
+            {
+                message("New Value found and written for:" + fieldName + " - " + newValue + "  , current value:" + currentValue);
+            }
+            return newValue;
+        }
+        else
+        {
+            if(!StringUtils.isNullOrEmpty(currentValue)) {
+                message("New Value not overwritten:" + fieldName + " - " + newValue + "  , current value:" + currentValue);
+            }
+            return currentValue;
+        }
+    }
     /**
      *  Updates both instruction fields and adds a comment to the JPEG comments section
      * @param fNew - fileObject
@@ -2570,30 +2613,17 @@ catch(Exception e)
         for(String n : newKeys) {
             iptcs.add(new IPTCDataSet(IPTCApplicationTag.KEY_WORDS, n));
         }
-        if (!StringUtils.isNullOrEmpty(fNew.getCountry_code()))
-        {
             iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_CODE, fNew.getCountry_code()));
-        }
-        if (!StringUtils.isNullOrEmpty(fNew.getCountry_name())) {
             iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_NAME, fNew.getCountry_name()));
-        }
-        if (!StringUtils.isNullOrEmpty(fNew.getStateProvince())) {
             iptcs.add(new IPTCDataSet(IPTCApplicationTag.PROVINCE_STATE, fNew.getStateProvince()));
-        }
-        if (!StringUtils.isNullOrEmpty(fNew.getSubLocation())) {
             iptcs.add(new IPTCDataSet(IPTCApplicationTag.SUB_LOCATION, fNew.getSubLocation()));
-        }
-        if (!StringUtils.isNullOrEmpty(fNew.getCity())) {
             iptcs.add(new IPTCDataSet(IPTCApplicationTag.CITY, fNew.getCity()));
-        }
-        if (!StringUtils.isNullOrEmpty(fNew.getIPTCCopyright()) || config.getOverwrite()) {
-            if (!StringUtils.isNullOrEmpty(drive.getIPTCCopyright())) {
-                iptcs.add(new IPTCDataSet(IPTCApplicationTag.COPYRIGHT_NOTICE, drive.getIPTCCopyright()));
-            }
-        }
-        if (!StringUtils.isNullOrEmpty(fNew.getWindowsSubject()) || config.getOverwrite()) {
+           //Copyright is a multi value field so this always adds a new one...
+           if(drive.getIPTCCopyright()!=null) {
+               iptcs.add(new IPTCDataSet(IPTCApplicationTag.COPYRIGHT_NOTICE, drive.getIPTCCopyright()));
+           }
             iptcs.add(new IPTCDataSet(IPTCApplicationTag.CAPTION_ABSTRACT, fNew.getWindowsSubject()));
-        }
+
         DateFormat formatter = new SimpleDateFormat("yyyyMMdd");
         if (!StringUtils.isNullOrEmpty(fNew.getIPTCDateCreated()) || config.getOverwrite()) {
             iptcs.add(new IPTCDataSet(IPTCApplicationTag.DATE_CREATED, formatter.format(convertToDateViaInstant(fNew.getBestDate()))));
