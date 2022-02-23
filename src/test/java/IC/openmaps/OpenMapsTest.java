@@ -38,6 +38,7 @@ class OpenMapsTest {
     String countryCode="GBR";
     @Test
     @DisplayName("Postcode check - correct")
+    @Disabled
     void checkPostCodeTest()
     {
         String result=checkPostCode("SW1A 1AA",apiKey,countryCode);
@@ -49,6 +50,7 @@ class OpenMapsTest {
     }
     @Test
     @DisplayName("Postcode check - invalid data")
+    @Disabled
     void checkPostCodeTestError()
     {
         String result=checkPostCode("ABCD 1AA",apiKey,countryCode);
@@ -70,6 +72,7 @@ class OpenMapsTest {
     }
     @Test
     @DisplayName("Reverse Geocode - incorrect data")
+    @Disabled
     void reverseGeocodeTestError() {
         ZoneId z= ZoneId.systemDefault();
         ConfigObject config= new ConfigObject();

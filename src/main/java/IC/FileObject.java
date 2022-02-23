@@ -3,6 +3,7 @@ package IC;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -57,9 +58,12 @@ public class FileObject {
     String IPTCCopyright;
     String IPTCKeywords;
     String IPTCInstructions;
+    String IPTCObjectName;
+    String IPTCCaptionAbstract;
     String IPTCDateCreated;
     String windowsComments;
     String windowsTitle;
     String windowsSubject;
+    List<String> comments;
 
 }

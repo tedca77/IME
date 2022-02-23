@@ -5,7 +5,8 @@
     .myGallery {
       display: grid;
       grid-gap: 10px;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(240px, 240px));
+       background-color: #E0E0E0;
     }
      .myGallery .item {
        position: relative;
@@ -13,7 +14,8 @@
      }
 
      .myGallery .item img {
-       vertical-align: middle;
+       vertical-align: left;
+         width: 240px;
      }
 
      .myGallery .caption {
