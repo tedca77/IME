@@ -51,7 +51,7 @@ class ImageCatalogueTest {
 
     void update1Test() {
         // Test: 1
-        // One image with no descriptive metadata but with lat and lon, so should geocode
+        // One image with no IPTC metadata but with lat and lon, so should geocode
         // No Json input file, but update parameter added and New Directory provided, so will copy to TestNewDir
         // File is in a sub-directory so the old directory name is added as keywords (one for each word in directory name)
         System.out.println("==========================TEST 1 =================================");
@@ -61,7 +61,6 @@ class ImageCatalogueTest {
             System.out.println("json file found"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
             String fileName="T_"+"nodescriptivemetadata_haslonlat.jpg";
-            String thumbName=makeThumbName(new File(fileName));
             FileObject fNew=processFile(new File(startDir+"/TestNewDir/2021/8/"+fileName), null,null, null,true);
             if(fNew!=null) {
                 assertEquals("Corfe Castle", fNew.getCity());
@@ -70,10 +69,11 @@ class ImageCatalogueTest {
                 assertEquals("Dorset, South West England", fNew.getStateProvince());
                 assertEquals("", fNew.getSubLocation());
                 assertEquals("DirKeyword1;DirKeyword2", fNew.getIPTCKeywords());
+                //
                 assertEquals(0,fNew.getWindowsComments().indexOf("#geocodeDONE:"));
                 assertEquals(0,fNew.getIPTCInstructions().indexOf("#geocodeDONE:"));
-     //           assertTrue(checkIPTCComments(fNew.getComments(),"#geocodeDONE:"));
-            //    checkIPTCComments(existingComments,"#"+Enums.processMode.geocode+"DONE:")
+                assertTrue(checkIPTCComments(fNew.getComments(),"#geocodeDONE:"));
+
             }
             else
             {
@@ -97,7 +97,6 @@ class ImageCatalogueTest {
             System.out.println("json file found"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
             String fileName="T_"+"no metadata IPTC location filled in.jpg";
-            String thumbName=makeThumbName(new File(fileName));
             FileObject fNew=processFile(new File(startDir+"/TestNewDir/2021/8/"+fileName), null,null, null,true);
             if(fNew!=null) {
                 assertEquals("Filled in city", fNew.getCity());
@@ -127,7 +126,6 @@ class ImageCatalogueTest {
             System.out.println("json file found"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
             String fileName="T_"+"no metadata IPTC location filled in.jpg";
-            String thumbName=makeThumbName(new File(fileName));
             FileObject fNew=processFile(new File(startDir+"/TestNewDir/2021/8/"+fileName), null,null, null,true);
             if(fNew!=null) {
                 assertEquals("Corfe Castle", fNew.getCity());
@@ -185,7 +183,6 @@ class ImageCatalogueTest {
             System.out.println("json file found"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
             String fileName="T_"+"nodescriptivemetadata_haslonlat.jpg";
-            String thumbName=makeThumbName(new File(fileName));
             FileObject fNew=processFile(new File(startDir+"/Test/"+fileName), null,null, null,true);
             if(fNew!=null)
             {

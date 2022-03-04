@@ -1,6 +1,22 @@
+/*
+ *    Copyright 2021 E.M.Carroll
+ *    ==========================
+ *    This file is part of Image Metadata Enhancer (IME).
+ *
+ *     Image Metadata Enhancer is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     Image Metadata Enhancer is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with Image Metadata Enhancer.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package IC;
-
-
 import org.apache.commons.imaging.formats.jpeg.JpegImageParser;
 import org.apache.commons.imaging.formats.jpeg.JpegPhotoshopMetadata;
 import org.apache.commons.imaging.formats.jpeg.iptc.JpegIptcRewriter;
@@ -19,10 +35,7 @@ import java.util.Iterator;
 import java.util.List;
 
 public class ImageConversion {
-
     // private String fileName;
-
-
     private String requester = "";
     private int imageStartHeight=700;
     private int maxHeight;
@@ -46,10 +59,6 @@ public class ImageConversion {
         maxLogoHeight = 100;
         maxLogoWidth = 100;
     }
-
-
-
-
     public File createImage(File file,String thumbName, String image,String tempDir,String operatingSystem)
             throws IOException {
 

@@ -1,3 +1,21 @@
+/*
+ *    Copyright 2021 E.M.Carroll
+ *    ==========================
+ *    This file is part of Image Metadata Enhancer (IME).
+ *
+ *     Image Metadata Enhancer is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     Image Metadata Enhancer is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with Image Metadata Enhancer.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package IC;
 import IC.openmaps.OpenMaps;
 import IC.openmaps.Place;
@@ -519,8 +537,6 @@ public class ImageCatalogue {
     {
         ObjectMapper objectMapper = new ObjectMapper();
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss");
-     //   SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm ss");
-      //  objectMapper.setDateFormat(df);
         objectMapper.findAndRegisterModules();
         String fileName=inputPath.getFileName().toString();
         String newName = c.getTempdir() + "\\"+  FilenameUtils.getBaseName(fileName)+format.format(new Date()) + "."+FilenameUtils.getExtension(fileName);
@@ -651,9 +667,12 @@ public class ImageCatalogue {
                                         }
                                         if(config.getShowmetadata() && config.getUpdate()) {
                                             messageLine("~");
-                                            if (!readMetadata(new File(fNew.getDirectory()+"/"+fNew.getFileName()))) {
-                                                message("Could not read metadata after update");
-                                            }
+                                                if(fNew!=null) {
+                                                    if (!readMetadata(new File(fNew.getDirectory() + "/" + fNew.getFileName()))) {
+                                                        message("Could not read metadata after update");
+                                                    }
+                                                }
+
                                         }
 
                                     } else {
@@ -871,18 +890,14 @@ public class ImageCatalogue {
             StringBuilder s = new StringBuilder();
                     for (FileObject f : fileObjects) {
                         try {
-                           // System.out.println("best date:"+f.getBestDate().toLocalDate());
-                           // System.out.println("trackdate date:"+t.getTrackDate());
                             if (f.getBestDate().toLocalDate().equals(t.getTrackDate())) {
                                 s.append(getLink(root,f));
-
                             }
                         } catch (Exception e) {
                             message("error adding links to tracks:" + f.getDisplayName() + e);
                         }
             }
             t.setImageLinks(s.toString());
-
         }
     }
     /**
@@ -935,16 +950,6 @@ public class ImageCatalogue {
         places.add(g);
         return newKey;
     }
-    /*
-    private static String formatIPTCdate(LocalDateTime d)
-    {
-        DateTimeFormatter formatter = DateTimeFormatter.BASIC_ISO_DATE;
-        String formattedDate = formatter.format(d);
-        System.out.println(formattedDate);
-        return formattedDate;
-    }
-
-     */
     public static void addError(String fileName,String directory,LocalDateTime d,String message)
     {
         ErrorObject error = new ErrorObject();
@@ -1704,18 +1709,6 @@ public class ImageCatalogue {
         }
         return d;
     }
-    /*
-    public static Date getDateWithoutTimeUsingCalendar(Date d) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(d);
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return calendar.getTime();
-    }
-
-     */
     /**
      * Creates a string from the display names for start and end point
      * @param t - Track Object to create the string
@@ -1942,23 +1935,10 @@ public class ImageCatalogue {
      */
     public static FileObject processFile(File file, String thumbName,ConfigObject config, DriveObject drive,boolean readOnly) {
         FileObject fNew = new FileObject();
-   /*     File blankFile = new File(FilenameUtils.getFullPathNoEndSeparator(file.getAbsolutePath())+"/"+"blank"+file.getName());
-
-
-        try {
-         //   updateWindowsFields(file, blankFile);
-
-        }
-catch(Exception e)
-{
-    System.out.println("e"+e);
-}
-
-    */
         boolean alreadyGeocoded = false;
         readSystemDates(fNew,file);
         IPTC iptc = new IPTC();
-        List<String> existingComments;
+
         JpegExif exif = new JpegExif();
         ArrayList<String> newCommentsString=new ArrayList<>();
         // reads existing values from metadata
@@ -2318,23 +2298,31 @@ catch(Exception e)
                             } else if (values3.length == 1) {
                                 newLat = checkPostCode(values3[0], config.getOpenAPIKey(), "GBR");
                             }
-                            String[] values2 = newLat.split(",", -1);
-                            if(values2.length==2) {
-                                Double lat = Double.valueOf(values2[0]);
-                                Double lon = Double.valueOf(values2[1]);
-                                geocode(fNew, lat, lon, config, false);
-                                // we should also set lat and lon if it is correct
-                                if (fNew.getPlaceKey() != null) {
-                                    if (updateLatLon(lat, lon, fNew, config)) {
-                                        countAddedPostcode++;
-                                        countDriveAddedPostcode++;
-                                        updateBothFields(fNew, param, p, newCommentsString);
-                                    }
+                            if(newLat!=null) {
+                                String[] values2 = newLat.split(",", -1);
 
-                                } else {
-                                    addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Could not find postcode:" + param);
+                                if (values2.length == 2) {
+                                    Double lat = Double.valueOf(values2[0]);
+                                    Double lon = Double.valueOf(values2[1]);
+                                    geocode(fNew, lat, lon, config, false);
+                                    // we should also set lat and lon if it is correct
+                                    if (fNew.getPlaceKey() != null) {
+                                        if (updateLatLon(lat, lon, fNew, config)) {
+                                            countAddedPostcode++;
+                                            countDriveAddedPostcode++;
+                                            updateBothFields(fNew, param, p, newCommentsString);
+                                        }
+
+                                    } else {
+                                        addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Could not find postcode:" + param);
+                                    }
                                 }
                             }
+                            else
+                            {
+                                addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Lat Lon is null:" + param);
+                            }
+
                         } else {
                             addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "API not available:" + param);
                         }
@@ -2575,33 +2563,6 @@ catch(Exception e)
             return currentValue;
         }
     }
-    /*
-    public static String conditionallyUpdateField(String currentValue, String newValue,String fieldName,ConfigObject config)
-    {
-        // we update field if:
-        // 1. the existing field is empty OR
-        // 2. overwrite is set (i.e. it will overwrite existing values)
-        // note the new value might be blank
-        if (StringUtils.isNullOrEmpty(currentValue)  || config.getOverwrite() ) {
-            if(!StringUtils.isNullOrEmpty(currentValue)) {
-                message("New Value found and overwritten for:" + fieldName + " - " + newValue + "  , current value:" + currentValue);
-            }
-            else
-            {
-                message("New Value found and written for:" + fieldName + " - " + newValue + "  , current value:" + currentValue);
-            }
-            return newValue;
-        }
-        else
-        {
-            if(!StringUtils.isNullOrEmpty(currentValue)) {
-                message("New Value not overwritten:" + fieldName + " - " + newValue + "  , current value:" + currentValue);
-            }
-            return currentValue;
-        }
-    }
-
-     */
     /**
      *  Updates both instruction fields and adds a comment to the JPEG comments section
      * @param fNew - fileObject
@@ -2755,63 +2716,7 @@ catch(Exception e)
         }
     }
 
-    /*
-    public static boolean updateWindowsFields(final File jpegImageFile, final File dst)
-             {
-
-        try (FileOutputStream fos = new FileOutputStream(dst);
-             OutputStream os = new BufferedOutputStream(fos)) {
-            TiffOutputSet outputSet = null;
-            // note that metadata might be null if no metadata is found.
-            final ImageMetadata metadata = Imaging.getMetadata(jpegImageFile);
-            final JpegImageMetadata jpegMetadata = (JpegImageMetadata) metadata;
-            if (null != jpegMetadata) {
-                // note that exif might be null if no Exif metadata is found.
-                final TiffImageMetadata exif = jpegMetadata.getExif();
-                if (null != exif) {
-                    outputSet = exif.getOutputSet();
-                }
-            }
-
-            // if file does not contain any exif metadata, we create an empty
-            // set of exif metadata. Otherwise, we keep all the other
-            // existing tags.
-            if (null == outputSet) {
-                outputSet = new TiffOutputSet();
-            }
-
-            final TiffOutputDirectory rootDir = outputSet.getOrCreateRootDirectory();
-            rootDir.removeField(MicrosoftTagConstants.EXIF_TAG_XPTITLE);
-            rootDir.add(MicrosoftTagConstants.EXIF_TAG_XPTITLE, "new title");
-
-            rootDir.removeField(MicrosoftTagConstants.EXIF_TAG_XPSUBJECT);
-            rootDir.add(MicrosoftTagConstants.EXIF_TAG_XPSUBJECT, "new subject");
-            //
-            rootDir.removeField(MicrosoftTagConstants.EXIF_TAG_XPCOMMENT);
-            rootDir.add(MicrosoftTagConstants.EXIF_TAG_XPCOMMENT, "new comment");
-            //
-            rootDir.removeField(MicrosoftTagConstants.EXIF_TAG_XPKEYWORDS);
-            rootDir.add(MicrosoftTagConstants.EXIF_TAG_XPKEYWORDS, "key1;key2");
-            //
-            rootDir.removeField(MicrosoftTagConstants.EXIF_TAG_RATING);
-            rootDir.add(MicrosoftTagConstants.EXIF_TAG_RATING, (short) 4);
-            //
-            rootDir.removeField(MicrosoftTagConstants.EXIF_TAG_XPAUTHOR);
-            rootDir.add(MicrosoftTagConstants.EXIF_TAG_XPAUTHOR, "new author");
-
-            new ExifRewriter().updateExifMetadataLossless(jpegImageFile, os,
-                    outputSet);
-            return true;
-        }
-        catch(Exception e)
-        {
-            return false;
-        }
-
-    }
-
-     */
-
+    
     /**
      *  this uses Apache Imaging to write out the latitude and Longitude - can't figure out how to do in ICAFE !
      * @param jpegImageFile - source image file
@@ -3184,31 +3089,5 @@ catch(Exception e)
             }
         }
     }
-    /*
-    private static String findMetadata(MetadataEntry entry, String keyValue) {
-       String foundValue;
-        if (entry.isMetadataEntryGroup()) {
 
-            Collection<MetadataEntry> entries = entry.getMetadataEntries();
-            for (MetadataEntry e : entries) {
-                foundValue=findMetadata(e, keyValue);
-                if(foundValue.length()>0)
-                {
-                    return foundValue;
-                }
-            }
-            return "";
-        }
-        else
-        {
-            System.out.println("FIND:"+entry.getKey()+"Value:"+entry.getValue()+", Key value"+keyValue);
-            if(entry.getKey().contains(keyValue))
-            {
-                return entry.getValue();
-            }
-            return "";
-        }
-    }
-
-     */
 }
