@@ -22,13 +22,14 @@ public class Enums {
 
 
         public enum argOptions {
-            overwrite,update,showmetadata,redoGeocoding
+            overwrite,update,showmetadata,redoGeocoding,append
         }
         /*
            update - if false, no updates will take place to records ...default false
            showmetadata - metadata will be shown before and after, if update is true .. default false
            redoGeocoding - will do geocoding even if the metadata says that geocoding has been done before ... default false
            overwriteValues - if the subLocation, country etc. are filled in, then they will not be replaced...default false
+           append - will update photos provided on the input JSON - otherwise will clear out photos array
           */
        public enum processMode {
            postcode,geocode,place,latlon,event,date

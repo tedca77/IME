@@ -276,6 +276,21 @@ public class ImageCatalogue {
               message("Error pausing"+e);
         }
     }
+    public static ConfigObject readConfigFromString(String s)
+    {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.findAndRegisterModules();
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm ss");
+        mapper.setDateFormat(df);
+        try {
+            return mapper.readValue(s, ConfigObject.class);
+        }
+        catch(Exception e)
+        {
+            System.out.println("Error in JSON file:"+e);
+            return null;
+        }
+    }
     /**
      * Reads a JSON Config File - this holds all run parameters
      * @param configFile - filenamee
@@ -283,10 +298,6 @@ public class ImageCatalogue {
      */
     public static ConfigObject readConfig(String configFile)
     {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.findAndRegisterModules();
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm ss");
-        mapper.setDateFormat(df);
         String result;
         try {
             Path fileName = Path.of(configFile);
@@ -298,7 +309,7 @@ public class ImageCatalogue {
             return null;
         }
         try {
-            return mapper.readValue(result, ConfigObject.class);
+            return readConfigFromString(result);
         }
         catch(Exception e)
         {
@@ -374,8 +385,18 @@ public class ImageCatalogue {
         // sets the defaults
         if(config.getUpdate()==null){config.setUpdate(false);}
         if(config.getShowmetadata()==null) {config.setShowmetadata(false);}
-        if(config.getOverwrite()==null) {config.setOverwrite(false);}
-        if(config.getRedoGeocode()==null) {config.setRedoGeocode(false);}
+        if(!config.getUpdate())
+        {
+            // the overwrite and redo options are not possible if Update has not been set
+            config.setOverwrite(false);
+            config.setRedoGeocode(false);
+        }
+        else
+        {
+            if(config.getOverwrite()==null) {config.setOverwrite(false);}
+            if(config.getRedoGeocode()==null) {config.setRedoGeocode(false);}
+        }
+        if(config.getAppendPhotos()==null) {config.setAppendPhotos(false);}
         if(config.getImageextensions()==null) {config.setImageextensions(imageDefaults);}
         if(config.getVideoextensions()==null) {config.setVideoextensions(videoDefaults);}
         if(config.getSublocation()==null) {config.setSublocation(sublocationDefault);}
@@ -507,6 +528,9 @@ public class ImageCatalogue {
         }
         if(c.getRedoGeocode()) {
             message("EXISTING GEOCODING WILL BE REPLACED");
+        }
+        if(c.getAppendPhotos()) {
+            message("PHOTOS WILL BE APPENDED TO PHOTOS LISTED IN JSON");
         }
         if(c.getOverwrite()) {
             message("EXISTING METADATA WILL BE OVERWRITTEN");
@@ -1085,35 +1109,33 @@ public class ImageCatalogue {
      * /Test , /TestRESULTS and /TestNewDir
      * @param rootDir - root directory for clearing the folders
      */
-    public static boolean clearTestArea(String rootDir)
-    {
+    public static boolean clearTestArea(String rootDir) {
         File rootFile = new File(rootDir);
-        if(rootFile.exists())
-        {
-               try {
-                    FileUtils.cleanDirectory(new File(rootDir + "/Test"));
-                }
-                catch(Exception e) {
-                    message("Test folder is missing");
-                }
-                try {
-                    FileUtils.cleanDirectory(new File(rootDir + "/TestRESULTS"));
-                }
-                catch(Exception e) {
-                    message("TestResults folder is missing");
-                }
-                try {
+        if (rootFile.exists()) {
+            try {
+                FileUtils.cleanDirectory(new File(rootDir + "/Test/DirKeyword1 DirKeyword2"));
+            } catch (Exception e) {
+                message("Test/DirKeyword1 DirKeyword2 folder is missing");
+            }
+            try {
+                FileUtils.cleanDirectory(new File(rootDir + "/Test"));
+            } catch (Exception e) {
+                message("Test folder is missing");
+            }
+            try {
+                FileUtils.cleanDirectory(new File(rootDir + "/TestRESULTS"));
+            } catch (Exception e) {
+                message("TestResults folder is missing");
+            }
+            try {
 
-                    FileUtils.cleanDirectory(new File(rootDir + "/TestNewDir"));
-                }
-                catch(Exception e) {
-                    message("TestNewDir folder is missing");
-                }
-                return true;
-        }
-        else
-        {
-            message("Clear Test Area - Root Directory does not exist:"+ rootDir );
+                FileUtils.cleanDirectory(new File(rootDir + "/TestNewDir"));
+            } catch (Exception e) {
+                message("TestNewDir folder is missing");
+            }
+            return true;
+        } else {
+            message("Clear Test Area - Root Directory does not exist:" + rootDir);
             return false;
         }
     }
@@ -1464,16 +1486,21 @@ public class ImageCatalogue {
      */
     public static void readConfigLists(ConfigObject c)
     {
-
+        if(c.getAppendPhotos()) {
+            // we need to read in the photos
+            message("NUMBER OF PHOTOS READ FROM CONFIG FILE:"+c.getPhotos().size());
+            fileObjects=c.getPhotos();
+        }
         if(c.getCameras()!=null)
         {
             message("NUMBER OF CAMERAS READ FROM CONFIG FILE:"+c.getCameras().size());
             cameras=c.getCameras();
             //sort in case there are gaps in numbering
             cameras.sort(Comparator.comparing(CameraObject::getCameraid));
-            for(CameraObject cc : cameras)
-            {
-                cc.setCameracount(0);
+            if(!c.getAppendPhotos()) {
+                for (CameraObject cc : cameras) {
+                    cc.setCameracount(0);
+                }
             }
         }
         if(c.getPlaces()!=null)
@@ -1485,7 +1512,9 @@ public class ImageCatalogue {
             int highestPlace=getHighestPlace();
             for(Place g : places)
             {
-                g.setCountPlace(0);
+                if(!c.getAppendPhotos()) {
+                    g.setCountPlace(0);
+                }
                 if(g.getPlaceid()==null)
                 {
                     highestPlace++;
@@ -1658,13 +1687,19 @@ public class ImageCatalogue {
     }
 
     /**
-     * Adds to a list of keys to an existing list
+     * Adds to a list of keys to an existing list (checks that the key is not already there)
      * @param current String array list of Keys
      * @param newKeys - new keys to add
      */
     public static void joinKeys(ArrayList<String> current,ArrayList<String> newKeys)
     {
-        current.addAll(newKeys);
+        for(String s: newKeys)
+        {
+            if(!current.contains(s))
+            {
+                current.add(s);
+            }
+        }
     }
     /**
      * Checks if a file is an image
@@ -1858,14 +1893,11 @@ public class ImageCatalogue {
             //event date
             if (e.eventcalendar != null) {
                 if (d.getMonth() == e.getExactStartTime().getMonth() && d.getDayOfMonth() == e.getExactStartTime().getDayOfMonth()) {
-
                     updateEvent(config, fNew, e, existingCommentsString);
                     message("Event calendar match for event:" + e.getEventid() + " " + e.getTitle());
-
                     countEventsFound++;
                     countDriveEventsFound++;
                     return 1;
-
                 }
             } else {
                 if ((d.isAfter(e.getExactStartTime()) || d.isEqual(e.getExactStartTime()))
@@ -1911,12 +1943,12 @@ public class ImageCatalogue {
      * @param existingCommentsString - Existing comments - these are updated also
      * @return - either true (if processed) or false
      */
-    public static LocalDateTime processDates(FileObject fNew,ArrayList<String> existingCommentsString)
+    public static String processDates(FileObject fNew,ArrayList<String> existingCommentsString,ConfigObject c)
     {
-        LocalDateTime dateUpdated=null;
+        String dateUpdated=null;
         String param=getInstructionFromEitherField(fNew,Enums.processMode.date);
         if(param.length()>0) {
-            dateUpdated = updateDate(param, fNew);
+            dateUpdated = updateDate(param, fNew,c);
         }
         if(dateUpdated!=null)
         {
@@ -1977,7 +2009,7 @@ public class ImageCatalogue {
         if(!readOnly) {
             fNew.setThumbnail(createThumbFromPicture(file, config.getTempdir(), thumbName, config.getWidth(), config.getHeight(), fNew.getOrientation()));
             // Geocodes if lat and long present
-            LocalDateTime dateUpdated = processDates(fNew, newCommentsString);
+            String dateUpdated = processDates(fNew, newCommentsString,config);
             if (dateUpdated != null) {
                 message("File updated with a new date:" + dateUpdated);
             }
@@ -2130,7 +2162,8 @@ public class ImageCatalogue {
        fNew.setWindowsTitle(addNotNull(fNew.getWindowsTitle(),e.getTitle()));
        fNew.setIPTCKeywords(addNotNull(fNew.getIPTCKeywords(),e.getKeywords()));
        fNew.setWindowsSubject(addNotNull(fNew.getWindowsSubject(),e.getDescription()));
-       if(e.getLocation()!=null)
+       // we cannot process locations for Event Calendars - just event dates
+       if(e.getLocation()!=null && e.getEventcalendar()!=null)
        {
             // sets the Windows Comment to the value in order to do forward processing...
              fNew.setWindowsComments(fNew.getWindowsComments()+e.getLocation());
@@ -2171,19 +2204,29 @@ public class ImageCatalogue {
         }
         return "";
     }
-    /*
-    updates the date in ExifOriginal - and also the BestDate...
+
+    /**
+     * When a Date is provided, will update the EXIFOriginal and Best Date
+     * Will update the IPTC date with a partial date either YYYY, YYYYMM or YYYYMMDD
+     * @param param - parameter provided with the Date tag
+     * @param fNew - fileObject beiong processed
+     * @return - returns a string of the value
      */
-    public static LocalDateTime updateDate(String param, FileObject fNew) {
+    public static String updateDate(String param, FileObject fNew, ConfigObject config) {
+
         LocalDateTime c =createLocalDate(param);
         if(c!=null) {
             fNew.setExifOriginal(c);
             fNew.setBestDate(fNew.getExifOriginal());
             countDriveDateUpdate++;
             countDateUpdate++;
-
+            if (StringUtils.isNullOrEmpty(fNew.getIPTCDateCreated()) || config.getOverwrite()) {
+               fNew.setIPTCDateCreated(param.replace("-",""));
+               return param;
+            }
+            return c.toString();
         }
-        return c;
+        return null;
     }
     public static LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
         if(dateToConvert==null)
@@ -2476,31 +2519,31 @@ public class ImageCatalogue {
                     if (item.getValue().length() > 0) {
                         f.setCity(item.getValue());
                     }
-                    message("City current value is:" + item.getValue());
+                    message("IPTC City current value is:" + item.getValue());
                 } else if (item.getKey().equals(IPTCApplicationTag.COUNTRY_CODE.getName())) {
                     if (item.getValue().length() > 0) {
                         f.setCountry_code(item.getValue());
-                        message("Country code current value is:" + item.getValue());
+                        message("IPTC Country code current value is:" + item.getValue());
                     }
                 } else if (item.getKey().equals(IPTCApplicationTag.COUNTRY_NAME.getName())) {
                     if (item.getValue().length() > 0) {
                         f.setCountry_name(item.getValue());
-                        message("Country name current value is:" + item.getValue());
+                        message("IPTC Country name current value is:" + item.getValue());
                     }
                 } else if (item.getKey().equals(IPTCApplicationTag.SUB_LOCATION.getName())) {
                     if (item.getValue().length() > 0) {
                         f.setSubLocation(item.getValue());
-                        message("Sublocation current value is:" + item.getValue());
+                        message("IPTC Sublocation current value is:" + item.getValue());
                     }
                 } else if (item.getKey().equals(IPTCApplicationTag.PROVINCE_STATE.getName())) {
                     if (item.getValue().length() > 0) {
                         f.setStateProvince(item.getValue());
-                        message("Province / State current value is:" + item.getValue());
+                        message("IPTC Province / State current value is:" + item.getValue());
                     }
                 } else if (item.getKey().equals(IPTCApplicationTag.DATE_CREATED.getName())) {
                     if (item.getValue().length() > 0) {
                         f.setIPTCDateCreated(item.getValue());
-                        message("Date Created current value is:" + item.getValue());
+                        message("IPTC Date Created current value is:" + item.getValue());
                     }
                 } else if (item.getKey().equals(IPTCApplicationTag.COPYRIGHT_NOTICE.getName())) {
                     if (item.getValue().length() > 0) {
@@ -2544,6 +2587,8 @@ public class ImageCatalogue {
         // 2. overwrite is set (i.e. it will overwrite existing values) but not if it has  already been geocoded
         // 3. we have asked to force redo the geocoding
 
+        // we do not update the field if the new value is blank howe
+
         // note the new value might be blank after geocoding....
         if (StringUtils.isNullOrEmpty(currentValue) && !alreadyGeocoded || (config.getOverwrite() && !alreadyGeocoded) || config.getRedoGeocode()) {
             if(!StringUtils.isNullOrEmpty(currentValue)) {
@@ -2576,34 +2621,36 @@ public class ImageCatalogue {
         fNew.setIPTCInstructions(updateInstructions(fNew.getIPTCInstructions(),p,param));
         addComment(newCommentsString,"#"+p.toString()+"DONE:"+param);
     }
-    public static void updateIPTCFields(List<IPTCDataSet> iptcs,FileObject fNew,ConfigObject config,DriveObject drive)
-    {
+
+    public static void updateIPTCFields(List<IPTCDataSet> iptcs, FileObject fNew, ConfigObject config, DriveObject drive) {
         ArrayList<String> newKeys = new ArrayList<>();
-        if(drive.getIPTCKeywords()!=null) {
+        if (drive.getIPTCKeywords() != null) {
             newKeys = new ArrayList<>(Arrays.asList(drive.getIPTCKeywords().split(";", -1)));
         }
-        if(config.getNewdir()!=null)
-        {
-            joinKeys(newKeys,convertPathToKeywords(fNew.getDirectory(),drive.getStartdir()));
+        if (config.getNewdir() != null) {
+            joinKeys(newKeys, convertPathToKeywords(fNew.getDirectory(), drive.getStartdir()));
         }
-        for(String n : newKeys) {
+        for (String n : newKeys) {
             iptcs.add(new IPTCDataSet(IPTCApplicationTag.KEY_WORDS, n));
         }
-            iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_CODE, fNew.getCountry_code()));
-            iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_NAME, fNew.getCountry_name()));
-            iptcs.add(new IPTCDataSet(IPTCApplicationTag.PROVINCE_STATE, fNew.getStateProvince()));
-            iptcs.add(new IPTCDataSet(IPTCApplicationTag.SUB_LOCATION, fNew.getSubLocation()));
-            iptcs.add(new IPTCDataSet(IPTCApplicationTag.CITY, fNew.getCity()));
-           //Copyright is a multi value field so this always adds a new one...
-           if(drive.getIPTCCopyright()!=null) {
-               iptcs.add(new IPTCDataSet(IPTCApplicationTag.COPYRIGHT_NOTICE, drive.getIPTCCopyright()));
-           }
-            iptcs.add(new IPTCDataSet(IPTCApplicationTag.CAPTION_ABSTRACT, fNew.getWindowsSubject()));
-
-        DateFormat formatter = new SimpleDateFormat("yyyyMMdd");
-        if (!StringUtils.isNullOrEmpty(fNew.getIPTCDateCreated()) || config.getOverwrite()) {
-            iptcs.add(new IPTCDataSet(IPTCApplicationTag.DATE_CREATED, formatter.format(convertToDateViaInstant(fNew.getBestDate()))));
+        iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_CODE, fNew.getCountry_code()));
+        iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_NAME, fNew.getCountry_name()));
+        iptcs.add(new IPTCDataSet(IPTCApplicationTag.PROVINCE_STATE, fNew.getStateProvince()));
+        iptcs.add(new IPTCDataSet(IPTCApplicationTag.SUB_LOCATION, fNew.getSubLocation()));
+        iptcs.add(new IPTCDataSet(IPTCApplicationTag.CITY, fNew.getCity()));
+        //Copyright is a multi value field so this always adds a new one...
+        if (drive.getIPTCCopyright() != null) {
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.COPYRIGHT_NOTICE, drive.getIPTCCopyright()));
         }
+        iptcs.add(new IPTCDataSet(IPTCApplicationTag.CAPTION_ABSTRACT, fNew.getWindowsSubject()));
+        if (StringUtils.isNullOrEmpty(fNew.getIPTCDateCreated())) {
+            DateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.DATE_CREATED, formatter.format(convertToDateViaInstant(fNew.getBestDate()))));
+        } else {
+            // this allows partial dates to be entered....if no data is present, the BestDate is used...
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.DATE_CREATED, fNew.getIPTCDateCreated()));
+        }
+
     }
     /**
      * Updates file and moves it.
@@ -2716,9 +2763,9 @@ public class ImageCatalogue {
         }
     }
 
-    
+
     /**
-     *  this uses Apache Imaging to write out the latitude and Longitude - can't figure out how to do in ICAFE !
+     *  this uses Apache Imaging to write out the latitude and Longitude -
      * @param jpegImageFile - source image file
      * @param dst - destination image file
      */
@@ -2874,86 +2921,77 @@ public class ImageCatalogue {
         }
         return false;
     }
+
     /**
-     *  Checks the Events and removes any which do not have correct dates
-     *  There are two types of events - Calendar events where every year is checked and
-     *  Exact date events - where a single date is checked.
-     *  The exactStartTime and EndTime are set, in order to make searching efficient.
-     *
+     * Checks the Events and removes any which do not have correct dates
+     * There are two types of events - Calendar events where every year is checked and
+     * Exact date events - where a single date is checked.
+     * The exactStartTime and EndTime are set, in order to make searching efficient.
      */
-    public static void checkEvents()
-    {
+    public static void checkEvents() {
         Iterator<EventObject> i = events.iterator();
         EventObject e;
         while (i.hasNext()) {
 
             e = i.next();
-            if(e.getEventdate()==null && e.getEventcalendar()==null )
-            {
-                message("Event calendar or event date must be specified - event :"+e.getEventid()+" "+e.getTitle());
-                addError("-","-",null,"Error in Event ID: "+e.getEventid() +"- Calendar or Event date not specified");
+            if (e.getEventdate() == null && e.getEventcalendar() == null) {
+                message("Event calendar or event date must be specified - event :" + e.getEventid() + " " + e.getTitle());
+                addError("-", "-", null, "Error in Event ID: " + e.getEventid() + "- Calendar or Event date not specified");
                 i.remove();
-            }
-            else {
-
-
-                    if (e.getEventcalendar() != null) {
-                        // we have a valid calendar
-                        // alendar so set start and end times
-                        LocalDateTime d = createLocalDateCalendar(e.getEventcalendar());
-
-                        if(d!=null) {
-                            e.setExactStartTime(d);
-                            e.setExactEndTime( d.plusDays(1).minusNanos(1));
-                            if(e.getEventtime()!=null)
-                            {
-                                e.setExactStartTime(e.getExactStartTime().plusHours(e.getEventtime().getHour()));
-                                e.setExactStartTime( e.getExactStartTime().plusMinutes(e.getEventtime().getMinute()));
-                                e.setExactStartTime( e.getExactStartTime().plusSeconds(e.getEventtime().getSecond()));
-                                e.setExactStartTime( e.getExactStartTime().plusNanos(e.getEventtime().getNano()));
-                            }
-                            if(e.getEndtime()!=null)
-                            {
-                                e.setExactEndTime(e.getExactEndTime().plusHours(e.getEventtime().getHour()));
-                                e.setExactEndTime(e.getExactEndTime().plusMinutes(e.getEventtime().getMinute()));
-                                e.setExactEndTime(e.getExactEndTime().plusSeconds(e.getEventtime().getSecond()));
-                                e.setExactEndTime(e.getExactEndTime().plusNanos(e.getEventtime().getNano()));
-                            }
+            } else {
+                if (e.getEventcalendar() != null) {
+                    // we have a valid calendar
+                    // alendar so set start and end times
+                    LocalDateTime d = createLocalDateCalendar(e.getEventcalendar());
+                    if (d != null) {
+                        e.setExactStartTime(d);
+                        e.setExactEndTime(d.plusDays(1).minusNanos(1));
+                        if (e.getEventtime() != null) {
+                            e.setExactStartTime(e.getExactStartTime().plusHours(e.getEventtime().getHour()));
+                            e.setExactStartTime(e.getExactStartTime().plusMinutes(e.getEventtime().getMinute()));
+                            e.setExactStartTime(e.getExactStartTime().plusSeconds(e.getEventtime().getSecond()));
+                            e.setExactStartTime(e.getExactStartTime().plusNanos(e.getEventtime().getNano()));
                         }
-                        else
-                        {
-                            addError("-","-",null,"Error in Event ID: "+e.getEventid() +"-cannot parse event");
-                            message("cannot parse date for event"+e.getEventid());
-                            i.remove();
-                        }
-                    }
-                    else
-                    {
-                        //set the start date and time
-                        e.setExactStartTime(e.getEventdate().atStartOfDay());
-                        //set the end date and time
-                        e.setExactEndTime(e.getEventdate().atStartOfDay().plusDays(1).minusNanos(1));
-                        //if start time is present, then adjust
-                        if(e.getEventtime()!=null)
-                        {
-                           e.setExactStartTime(e.getExactStartTime().plusHours(e.getEventtime().getHour()));
-                           e.setExactStartTime( e.getExactStartTime().plusMinutes(e.getEventtime().getMinute()));
-                           e.setExactStartTime( e.getExactStartTime().plusSeconds(e.getEventtime().getSecond()));
-                           e.setExactStartTime( e.getExactStartTime().plusNanos(e.getEventtime().getNano()));
-                        }
-                        //if end date is provided then modify to the end of the day
-                        if(e.getEnddate()!=null)
-                        {
-                            e.setExactEndTime(e.getEnddate().atStartOfDay().plusDays(1).minusNanos(1));
-                        }
-                        if(e.getEndtime()!=null)
-                        {
+                        if (e.getEndtime() != null) {
                             e.setExactEndTime(e.getExactEndTime().plusHours(e.getEventtime().getHour()));
                             e.setExactEndTime(e.getExactEndTime().plusMinutes(e.getEventtime().getMinute()));
                             e.setExactEndTime(e.getExactEndTime().plusSeconds(e.getEventtime().getSecond()));
                             e.setExactEndTime(e.getExactEndTime().plusNanos(e.getEventtime().getNano()));
                         }
+                        if(e.getLocation()!=null)
+                        {
+                            addError("-", "-", null, "Cannot add location to a Calendar Event : " + e.getEventid() );
+                            message("Cannot add location to a Calendar Event - " + e.getEventid());
+                        }
+                    } else {
+                        addError("-", "-", null, "Error in Event ID: " + e.getEventid() + "-cannot parse event");
+                        message("cannot parse date for event" + e.getEventid());
+                        i.remove();
                     }
+                } else {
+                    // We have a specific date
+                    // set the start date and time
+                    e.setExactStartTime(e.getEventdate().atStartOfDay());
+                    //set the end date and time
+                    e.setExactEndTime(e.getEventdate().atStartOfDay().plusDays(1).minusNanos(1));
+                    //if start time is present, then adjust
+                    if (e.getEventtime() != null) {
+                        e.setExactStartTime(e.getExactStartTime().plusHours(e.getEventtime().getHour()));
+                        e.setExactStartTime(e.getExactStartTime().plusMinutes(e.getEventtime().getMinute()));
+                        e.setExactStartTime(e.getExactStartTime().plusSeconds(e.getEventtime().getSecond()));
+                        e.setExactStartTime(e.getExactStartTime().plusNanos(e.getEventtime().getNano()));
+                    }
+                    //if end date is provided then modify to the end of the day
+                    if (e.getEnddate() != null) {
+                        e.setExactEndTime(e.getEnddate().atStartOfDay().plusDays(1).minusNanos(1));
+                    }
+                    if (e.getEndtime() != null) {
+                        e.setExactEndTime(e.getExactEndTime().plusHours(e.getEventtime().getHour()));
+                        e.setExactEndTime(e.getExactEndTime().plusMinutes(e.getEventtime().getMinute()));
+                        e.setExactEndTime(e.getExactEndTime().plusSeconds(e.getEventtime().getSecond()));
+                        e.setExactEndTime(e.getExactEndTime().plusNanos(e.getEventtime().getNano()));
+                    }
+                }
 
             }
         }

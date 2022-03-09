@@ -31,6 +31,7 @@ public class ConfigObject {
     private Boolean showmetadata;
     private Boolean overwrite;
     private Boolean redoGeocode;
+    private Boolean appendPhotos;
     private String thumbsize;
     private Integer cacheDistance;
     private Integer pauseSeconds;

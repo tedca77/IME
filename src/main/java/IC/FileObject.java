@@ -17,19 +17,12 @@
  *     along with Image Metadata Enhancer.  If not, see <https://www.gnu.org/licenses/>.
  */
 package IC;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
-
 @Data
-@JsonIgnoreProperties(value={"orientation", "thumbnail","dimension"})
-
 public class FileObject {
     String fileName;
     Integer fileKey;
@@ -83,5 +76,4 @@ public class FileObject {
     String windowsTitle;
     String windowsSubject;
     List<String> comments;
-
 }
