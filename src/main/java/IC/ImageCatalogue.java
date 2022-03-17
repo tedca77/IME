@@ -162,14 +162,14 @@ public class ImageCatalogue {
             }
             else
             {
-                message("No json file present - requiring two directories");
+                message("No json file present - requiring two parameters");
                 if(args.length>1) {
                     config = new ConfigObject();
                     setDrives(config, args[0]);
                     config.setTempdir(args[1]);
                     configFileName=Path.of(args[0]+"\\"+jsonDefault);
-                    message("Default Config File:"+configFileName);
-                    message("Temporary Directory:"+args[1]);
+                    message("Config File: "+configFileName);
+                    message("Temporary Directory: "+args[1]);
 
                 }
                 else
@@ -520,31 +520,32 @@ public class ImageCatalogue {
             if (c.getShowmetadata()) {
                 message("METADATA WILL BE SHOWN BEFORE AND AFTER UPDATING");
             }
+            if(c.getOverwrite()) {
+                message("EXISTING METADATA WILL BE OVERWRITTEN");
+            }
+            else
+            {
+                if(c.getRedoGeocode()) {
+                    message("ONLY GEOCODE METADATA WILL BE OVERWRITTEN ");
+                }
+                else
+                {
+                    message("EXISTING METADATA WILL NOT BE OVERWRITTEN");
+                }
+            }
+
         }
         else {
+            message("FILES WILL NOT BE UPDATED");
             if (c.getShowmetadata()) {
                 message("METADATA WILL BE SHOWN");
             }
         }
-        if(c.getRedoGeocode()) {
-            message("EXISTING GEOCODING WILL BE REPLACED");
-        }
+
         if(c.getAppendPhotos()) {
             message("PHOTOS WILL BE APPENDED TO PHOTOS LISTED IN JSON");
         }
-        if(c.getOverwrite()) {
-            message("EXISTING METADATA WILL BE OVERWRITTEN");
-        }
-        else
-        {
-            if(c.getRedoGeocode()) {
-                message("ONLY GEOCODE METADATA WILL BE OVERWRITTEN ");
-            }
-            else
-            {
-                message("EXISTING METADATA WILL NOT BE OVERWRITTEN");
-            }
-        }
+
         message("Fields for Sub Location: "+c.getSublocation().toString());
         message("Fields for State/Province: "+c.getStateprovince().toString());
         message("Fields for City: "+c.getCity().toString());
