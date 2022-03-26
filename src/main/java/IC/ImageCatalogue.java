@@ -52,6 +52,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.GpsTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -142,7 +144,8 @@ public class ImageCatalogue {
      * @param args - either single json file or two/three args, first one is root directory, second is output file, third is followed by parameters
      */
     public static void main(String[] args) {
-
+     //   Logger logger = LoggerFactory.getLogger(ImageCatalogue.class);
+     //   logger.info("Hello World");
         z= ZoneId.systemDefault();
         startTime= new Date();
         ConfigObject config=null;
@@ -153,7 +156,7 @@ public class ImageCatalogue {
             if(FilenameUtils.getExtension(args[0]).equalsIgnoreCase("json"))
             {
                 configFileName = Path.of(args[0]);
-                message("json file present:"+configFileName);
+                message("JSON file name provided:"+configFileName);
                 config = readConfig(configFileName.toString());
                 if(config==null)
                 {
@@ -168,13 +171,14 @@ public class ImageCatalogue {
                     setDrives(config, args[0]);
                     config.setTempdir(args[1]);
                     configFileName=Path.of(args[0]+"\\"+jsonDefault);
-                    message("Config File: "+configFileName);
-                    message("Temporary Directory: "+args[1]);
+                    message("Parameter 1 - Root Directory: "+args[0]);
+                    message("Output Config File: "+configFileName);
+                    message("Parameter 2 - Output Directory: "+args[1]);
 
                 }
                 else
                 {
-                    message("Please provide at least two arguments, for the Root directory for searching and the temporary output directory");
+                    message("Please provide at least two parameters, for the Root directory for searching and the temporary output directory");
                 }
             }
             //

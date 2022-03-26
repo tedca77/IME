@@ -3,7 +3,6 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <groupId>org.example</groupId>
     <artifactId>ImageCatalogue</artifactId>
     <version>1.0-SNAPSHOT</version>
@@ -26,7 +25,6 @@
 
         </plugins>
     </build>
-
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -35,27 +33,28 @@
         <log4j.version>2.13.3</log4j.version>
     </properties>
     <repositories>
-    <repository>
-        <id>oss.sonatype.org</id>
-        <name>Sonatype Snapshot Repository</name>
-        <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        <releases>
-            <enabled>false</enabled>
-        </releases>
-        <snapshots>
-            <enabled>true</enabled>
-        </snapshots>
-    </repository>
-
-
-            <repository>
-                <id>javaxt.com</id>
-                <url>http://www.javaxt.com/maven</url>
-            </repository>
-
-
+        <repository>
+            <id>oss.sonatype.org</id>
+            <name>Sonatype Snapshot Repository</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>javaxt.com</id>
+            <url>http://www.javaxt.com/maven</url>
+        </repository>
     </repositories>
     <dependencies>
+        <dependency>
+            <groupId>com.github.dragon66</groupId>
+            <artifactId>icafe</artifactId>
+            <version>1.1-SNAPSHOT</version>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
@@ -86,26 +85,11 @@
             <version>1.10.6</version>
         </dependency>
         <dependency>
-            <groupId>com.github.dragon66</groupId>
-            <artifactId>icafe</artifactId>
-            <version>1.1-SNAPSHOT</version>
-           <!--
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-
-                </exclusion>
-            </exclusions>
-            -->
-        </dependency>
-        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.20</version>
             <scope>provided</scope>
         </dependency>
-
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
@@ -142,9 +126,7 @@
             <artifactId>commons-httpclient</artifactId>
             <version>3.1</version>
         </dependency>
-
         <!-- Thanks for using https://jar-download.com -->
-
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
@@ -177,57 +159,15 @@
             <artifactId>joda-time</artifactId>
             <version>2.10.13</version>
         </dependency>
-<!--
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.7.25</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
-            <version>1.7.25</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.7.25</version>
-
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-nop</artifactId>
             <version>1.7.25</version>
-            <scope>runtime</scope>
-            <!--
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-
-                </exclusion>
-            </exclusions>
-            -->
         </dependency>
     </dependencies>
-
-
-
 </project>
