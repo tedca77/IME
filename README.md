@@ -35,6 +35,36 @@ Photo metadata in stored within each image file (such as JPEG files which are pr
 * JPEG Comments – this section allows multiple comments to be entered. (Adobe LightRoom Classic does not show these comments).
 * Windows metadata (e.g. Title, Comments, Subject) – Windows shows some of the EXIF and IPTC data and in some cases, it uses the EXIF and IPTC data – the Windows metadata is  available by right clicking on a a file and selecting “Properties” in Windows. 
 One of the difficulties is that different programs given metadata different names, so it is not always that clear which item of metadata is referred to.  At the end of this documentation, there is a table with the key metadata items relevant to this program.  (See further information.) 
+# Getting Started
+**BEFORE RUNNING ENSURE YOU HAVE A VALID BACKUP OF YOUR PHOTO FILES.  IF YOU DON'T HAVE A BACKUP - THEN CREATE ONE BEFORE YOU START !**
+1. Copy the ImageMetadataEnhancer.exe to your drive e.g. D:?IME/ImageMetadataEnhancer.exe 
+2. Creata batch file 
+3. 
+4. Install Java
+Copy this file to a directory
+Run with two (or three) parameters
+			Ime <directory to search> <output directory> <new directory structure>
+ime “d:/Photos” “d:/Results” “d:/newDir”
+•	The directory with existing photos is: d:/Photos
+•	The results will be sent to : d: /Results
+•	Files will be copied to: d:/newDir
+First parameter is the top level directory where the program will start to find image files photos
+Second parameter is the location of the output files.  This should be in a different location than the photos.  If there are spaces in the directory names, you should enclose in double quotes as shown. 
+Third parameter – is the new directory which files are to be copied to.  The new directory structure will be /Year/Month/Photo1 etc.  
+The output directory (d:/Results) should then contain:
+•	A number of HTML files (Places.html, Files.html, Cameras.,html, Duplicates..html). These can be opened with a browser.
+•	A thumbnail for each photo
+•	A number of KML and KML files
+•	Output is written to a file output.txt
+•	A JSON file, config.json, which can be used to modify parameters when running the program.
+If the third parameter is a directory, then files will be copied to the new directory structure using the photo date to put in the correct place.  
+In addition, further parameters can be added to the command. These are:
+•	Update – this will update files with new metadata and move files
+•	Overwritevalues – this will overwrite existing values
+•	Showmetadata – this will show metadata in the console
+•	redoGeocoding – this will force redoing of geocoding using lat, lon information.
+
+
 # Places
 Each longitude and latitude value found is represented as a “Place” in IME.  If two photos are taken at virtually the same place (and have very similar latitude and longitude), then this is identified as the same “Place” in IME and IME does not have to use the Open Street Map Service. (This is a good thing, because Open Street Map is a limited service, and condition of use is that it is not swamped with requests.)  The user can specify the distance that determines if the Place is the same (in metres).  Also, the geocoding may not identify the exact address e.g. house numbers may be slightly out.  IME can also be given a set of known Places in the JSON, before it runs, where the correct house address can be provided. e.g. if 86 Acacia Avenue is found, but the actual address is “85 Acacia Avenue”, then this can be provided and also given a user friendly name e.g. “Our first house”. (Each Place added is given a unique number which can be used to allocate images to this place if they do not have longitude and latitude – see next section.) The IPTC metadawta specification has 5 fields for location - the user can modify how IME fills each field from the Open Stret Map values.  The default is as follows:
 * **Sublocation** - Amenity, leisure, house-number,road,hamlet,suburb,city_district
@@ -50,7 +80,31 @@ For photos which do not have geographical information (e.g., scanned photos and 
 
 If you only use Windows for editing and managing your collection, put the above value somewhere in the Windows Comments Field (with a space after the values) – if you are using Adobe Lightroom or Adobe Bridge, put the value in the Instructions (IPTC) field.
 Note that Windows and tools such as Lightroom allow you to modify metadata on multiple fields at the same time so if you have a group of photos that are all taken at the same place you can add in one go. 
-# Keeping Track of Changes
+# Adding Dates
+For scanned photos, the dates in the metadata are unlikely to be correct. An instruction can be added to the Windows Comment or Instructions (IPTC) fields to provide a correct date within the metadata. This is of the form:
+```#date:YYYY``` or  ```#date:YYYY-MM```  or ```#date:YYYY-MM-DD```
+This updates the **EXIFOriginalDate** field and will then be used with Events (see the next section) to provide location information related to events.  
+# Finding Events
+Events can be used to add information such as a Title, Description or Keywords to a photo, based on the day or date.  For instance,
+*	Every photo taken on Christmas Day could be given a title of ‘Christmas’;
+*	Every photo taken on a birthday could be given a title of the persons birthday
+*	Every photo taken on a holiday between two dates can be marked with a location.
+
+For scanned photos, you should use the #date: instruction to provide a correct date – the date is always processed before events.
+Events are defined in the JSON file – if the date provided in the JSON file matches the photo creation date (**EXIFOriginalDate**), then the event info will be copied across to the photo – this can also include geographical information on the event, if it exists.  
+Normally the date of the photo is sufficient to find the correct event.  However, if you want to hard code the event. i.e. not based on a date, you can enter an instruction for the event  – enter #event:123.
+An event can have:
+*	title
+*	description (Subject)
+*	keywords (separated by semi-colons)
+*	eventcalendar : This is used to indicate that the same date each year will be found e.g. for a birthday (MM-DD or YYYY-MM-DD – the year is ignored)
+*	eventdate; (YYYY-MM-DD) – the date of a single event
+*	enddate: (YYYY-MM-DD) - Optional  - the end date of a single event
+*	eventtime (HH.mm) – Optional – the start time of a single event
+*	endtime: (HH.mm) – Optional – the end time of a single event
+*	location :  either #latlon,~postcode or #place:
+
+# Audit Trail of Changes
 On completion of processing, IME will add a value to the following fields:
 1.	JPEG Comments section – is modified with a new comment for each modification
 2.	Instructions (IPTC) metadata 
