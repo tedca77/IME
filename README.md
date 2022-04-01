@@ -3,11 +3,9 @@ This program enhances the metadata information on images and helps you discover 
 
 It is particularly useful for photo collections with **latitude and longitude** geographic information (e.g. usually taken on mobile phones, but also on many digital cameras) where you want to convert latitude and longitude to recognisable place addresses.  (This is known as “reverse geocoding”.) It is designed to update address information in the IPTC metadata so it is visible in tools such as Adobe Lightroom and Adobe Bridge which support the IPTC metadata standard and which can search enhanced metadata.
 
-IME works through all photos on one or more drives or directories and reads the geographical information (latitude and longitude) and then uses the **Open Street Map** web lookup service to populate the IPTC section with the full location.  (You need to be connected to the Internet for this to work.) 
+IME works through all photos on one or more drives or directories and reads the geographical information (latitude and longitude) and then uses the **Open Street Map** web lookup service to populate the IPTC section with the full location.  (You need to be connected to the Internet for this to work.) Where the dates or location are missing or incorrect, there are a number of options for manually adding dates or providing locations via postcode, latitute and longitude, already identified places and through events. 
 
-IME has been designed so that it can be run repeatedly on a collection of photos – it will not attempt to redo geocoding that has been successful. However, if additional information is provided on Dates, Places or Events, then the program will reprocess photos. IME will also leave the standard Windows fields (Date Modified, Date Accessed and Date Created) unchanged after processing. 
-
-It is a useful tool for discovering photos on your storage drives, particularly where there are duplicates building up over time in different folders.
+IME will discover photos on your storage drives, and identify duplicates building up over time in different folders. IME has been designed so that it can be run repeatedly on a collection of photos – it will not attempt to redo geocoding that has been successful. However, if additional information is provided on Dates, Places or Events, then IME will reprocess photos.  It can also copy files to a new, organised structure based on Year and Month.
 
 Image Metadata Enhancer has extensive reporting and output of metadata information, including  geographical information.
 * A set of HTML pages is generated, which can be viewed, with a browser – this includes thumbnails of each photo;
@@ -21,7 +19,7 @@ IME makes extensive use of open source java libraries,  including
 *	Freemarker – for outputting HTML reports
 *	JavaAPI for KML generation.
 
-An Executable version is available for Windows, and a jar file can be downloaded also. Source code is available on Github. The software is currently only tested on Windows. 
+IME is simple to run, from a Command Prompt on Windows. An "exe" version is available for Windows, and a jar file can be downloaded also.  Once you have got the hang of the program, parameters can be adjusted by providing a JSON input file.  You will need to understand the basics of JSON to make use of the advanced features (examples are provided below).  The program always outputs a correctly formatted JSON file which can be used as input for future runs.  Source code is available on Github. The software is currently only tested on Windows. 
 # Why is this tool needed?
 1.	Most personal photo libraries are disorganised  – this tool helps discover duplicates and organises files by the date the photo was taken.
 2.	Many Cloud based photo libraries provide reverse geocoding when a file is uploaded.  However, you may not want to put all their photos in a single Cloud environment, due to the ongoing cost of storage.  Many Cloud systems do not update the metadata within photos, so any enhanced metadata created is of no use if the photos are transferred to other storage environments.  This tool is designed for people with collections on local disk drives or SANs who require similar geocoding facilities but without additional cost.
@@ -35,6 +33,7 @@ Photo metadata in stored within each image file (such as JPEG files which are pr
 * JPEG Comments – this section allows multiple comments to be entered. (Adobe LightRoom Classic does not show these comments).
 * Windows metadata (e.g. Title, Comments, Subject) – Windows shows some of the EXIF and IPTC data and in some cases, it uses the EXIF and IPTC data – the Windows metadata is  available by right clicking on a a file and selecting “Properties” in Windows. 
 One of the difficulties is that different programs given metadata different names, so it is not always that clear which item of metadata is referred to.  At the end of this documentation, there is a table with the key metadata items relevant to this program.  (See further information.) 
+ IME will leave the standard Windows fields (Date Modified, Date Accessed and Date Created) unchanged after processing.
 # Getting Started
 **BEFORE RUNNING ENSURE YOU HAVE A VALID BACKUP OF YOUR PHOTO FILES.  IF YOU DON'T HAVE A BACKUP - THEN CREATE ONE BEFORE YOU START !**
 1. Copy the ImageMetadataEnhancer.exe to your drive e.g. D:?IME/ImageMetadataEnhancer.exe 
@@ -64,6 +63,8 @@ In addition, further parameters can be added to the command. These are:
 •	Showmetadata – this will show metadata in the console
 •	redoGeocoding – this will force redoing of geocoding using lat, lon information.
 
+	
+The user selects the “Root” location to start looking for photos and it will then search all subdirectories, looking for image files;
 
 # Places
 Each longitude and latitude value found is represented as a “Place” in IME.  If two photos are taken at virtually the same place (and have very similar latitude and longitude), then this is identified as the same “Place” in IME and IME does not have to use the Open Street Map Service. (This is a good thing, because Open Street Map is a limited service, and condition of use is that it is not swamped with requests.)  The user can specify the distance that determines if the Place is the same (in metres).  Also, the geocoding may not identify the exact address e.g. house numbers may be slightly out.  IME can also be given a set of known Places in the JSON, before it runs, where the correct house address can be provided. e.g. if 86 Acacia Avenue is found, but the actual address is “85 Acacia Avenue”, then this can be provided and also given a user friendly name e.g. “Our first house”. (Each Place added is given a unique number which can be used to allocate images to this place if they do not have longitude and latitude – see next section.) The IPTC metadawta specification has 5 fields for location - the user can modify how IME fills each field from the Open Stret Map values.  The default is as follows:
@@ -104,6 +105,14 @@ An event can have:
 *	endtime: (HH.mm) – Optional – the end time of a single event
 *	location :  either #latlon,~postcode or #place:
 
+In order of priority:
+•	Dates are set irrespective of other instructions
+•	If longitude and latitude metadata is present, it will be used to geocode, if it has not already been geocoded
+•	If there is no latitude and longitude present then any place, postcode or latlon instructions are used
+•	If an event is specified, then it will not overwrite any existing latitude and longitude information.  However, if there is no latitude and longitude information, it will be updated.
+	
+	
+	
 # Audit Trail of Changes
 On completion of processing, IME will add a value to the following fields:
 1.	JPEG Comments section – is modified with a new comment for each modification
@@ -158,5 +167,23 @@ File``` WA1234.JPG``` becomes ```WA1234_001.JPG```.
 |sublocation|IPTC|Not visible|IPTC - Sublocation|Visible from IPTC /Credits Origin|This is added by IME, either from lat, lon or from an event.|
 |Comments (JPG)|Comments|Not visible in Windows|Not visible in Lightroom Classic|Visible from Information / Comments|Each time a file is updated, a comment field is added by IME  e.g. when a file is moved or geocoded.|
 
+# Providing a JSON File
+
+A JSON file can be provided as input for:
+* Specifying Events, Places and Cameras
+* Modifying other parameters of the program
+* Merging results with other runs from IME (across different root directories)
+
+If you run IME without a JSON file (as described above) you can see the JSON file as output and modify the parameters.
+
+	•	IME provides various updating modes, allowing processing without updating files – it is suggested that the program is run initially in read only mode first, to identify and correctly identify Places.
+•	It can work across multiple drives and directories if your collection is spread around;
+•	 Some directories, file types and files can be excluded from the processing e.g. jpg files are often found in program files e.g. icons, which should be excluded from the analysis.
+•	Files below a certain size can also be excluded;
+•	Other metadata can also be added :
+•	IPTC Copyright
+•	IPTC Keywords
 
 
+# References
+	
