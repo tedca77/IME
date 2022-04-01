@@ -19,7 +19,9 @@ IME makes extensive use of open source java libraries,  including
 *	Freemarker – for outputting HTML reports
 *	JavaAPI for KML generation.
 
-IME is simple to run, from a Command Prompt on Windows. An "exe" version is available for Windows, and a jar file can be downloaded also.  Once you have got the hang of the program, parameters can be adjusted by providing a JSON input file.  You will need to understand the basics of JSON to make use of the advanced features (examples are provided below).  The program always outputs a correctly formatted JSON file which can be used as input for future runs.  Source code is available on Github. The software is currently only tested on Windows. 
+IME is simple to run, from a Command Prompt on Windows. An "exe" version is available for Windows, and a jar file can be downloaded also.  Once you have got the hang of the program, parameters can be adjusted by providing a JSON input file.  You will need to understand the basics of JSON to make use of the advanced features (examples are provided below).  The program always outputs a correctly formatted JSON file which can be used as input for future runs. 
+
+IME is copyright but open source - source code is available on this Github repository. The software is currently only tested on Windows. 
 # Why is this tool needed?
 1.	Most personal photo libraries are disorganised  – this tool helps discover duplicates and organises files by the date the photo was taken.
 2.	Many Cloud based photo libraries provide reverse geocoding when a file is uploaded.  However, you may not want to put all their photos in a single Cloud environment, due to the ongoing cost of storage.  Many Cloud systems do not update the metadata within photos, so any enhanced metadata created is of no use if the photos are transferred to other storage environments.  This tool is designed for people with collections on local disk drives or SANs who require similar geocoding facilities but without additional cost.
@@ -62,10 +64,20 @@ In addition, further parameters can be added to the command. These are:
 •	Overwritevalues – this will overwrite existing values
 •	Showmetadata – this will show metadata in the console
 •	redoGeocoding – this will force redoing of geocoding using lat, lon information.
+	
+	
+redoGeocoding: - will do geocoding even if the metadata says that geocoding has been done before and will also overwrite the Sublocation
+
 
 	
 The user selects the “Root” location to start looking for photos and it will then search all subdirectories, looking for image files;
 
+# JSON Output
+Information for every file processed is written out to a JSON file.  The filename includes the date and time.  This can be used as input to other runs and provides a way of adding:
+	* Events
+	* Places
+	* Camera names
+	* Providing other parameters that impact the way the program runs.
 # Places
 Each longitude and latitude value found is represented as a “Place” in IME.  If two photos are taken at virtually the same place (and have very similar latitude and longitude), then this is identified as the same “Place” in IME and IME does not have to use the Open Street Map Service. (This is a good thing, because Open Street Map is a limited service, and condition of use is that it is not swamped with requests.)  The user can specify the distance that determines if the Place is the same (in metres).  Also, the geocoding may not identify the exact address e.g. house numbers may be slightly out.  IME can also be given a set of known Places in the JSON, before it runs, where the correct house address can be provided. e.g. if 86 Acacia Avenue is found, but the actual address is “85 Acacia Avenue”, then this can be provided and also given a user friendly name e.g. “Our first house”. (Each Place added is given a unique number which can be used to allocate images to this place if they do not have longitude and latitude – see next section.) The IPTC metadawta specification has 5 fields for location - the user can modify how IME fills each field from the Open Stret Map values.  The default is as follows:
 * **Sublocation** - Amenity, leisure, house-number,road,hamlet,suburb,city_district
@@ -146,7 +158,102 @@ If files have true duplicates, then the second and subsequent files are flagged 
 	
 However, if there are two files with the same name, which were taken in the same month, but they are different files (ie.. different creation date, size, camera), then they are copied across to the new Directory, but they are renamed by adding a sequential number to the end of the file name when they are copied. e.g. 
 File``` WA1234.JPG``` becomes ```WA1234_001.JPG```.
+
+# Use of Open Street Map
+IME uses Open Street Map APIs to carry out reverse geocoding and post code look up.  This requires an internet connection. For post code lookupo, you require an Open Street Map API key. THis is entered in the JSON file - further information available here.  IME minimises calls to Open Street Map by caching Places and checking Places in the cache before making a call to OpenStreet Map. (This also speeds up operation.)   For each new longitude and latidtude pair, IME calculates how close it is to each of the cached places and if within a specified distance, it will use the cached value. SO if you have taken 10 photos in the same location, only one call to Open Street Maop is required.   A sensible distance is 75 metres, although this can be modified in the JSON input file. Cached Places are also written out to the JSON file and can be used as input to other runs, removing the need for an Open Street Map look up. 
 	
+# Viewing information in other tools
+* Adobe Lightroom - you may have to update the metadata in Lightroom.  Select the Images or directories and right clck on one image and select "Read Metadata from Selected Files"
+* Adobe Bridge - 
+* IrfanView - open a file and click on the Image / Information menu option.  You will see buttons for IPTC Info, EXIF Info and Comments.
+* Windows - rigfht click on any image and select properties. This will allow viewing of most metadata. 
+# Limitations
+* Only tested on Windows, although it is believed that it will work unchanged on Linux, Apple and other systems that support Java. 
+* Only supports JPEG / JPG files, although with testing may also support other formats.
+* There is a bug in Apache Imaging library which means that if the Windows Title field already has a value, it cannot be overwritten. This only impacts the use of Events. 
+	
+# JSON File input
+The best way of running IME is to run it once without a JSON input file and then modify the output file to form the input for the next run.  To run with as JSON file, the first paramter should be a JSON file. e.g. ```ImageMetadata.exe "d:/photos/config.json```. Note you can also add overwrite, redo and parameters to override the values in the JSON file.
+	
+## Top Level Parameters
+	 
+* update: - if false, no updates will take place to records ...the default is false
+* showmetadata: - metadata will be shown before (and also after, if update is true) .. default false
+* overwriteValues: - if metadata already exists in a field, it will be replaced, unless it has already been geocoded by IME -  default false. (If the new field value is blank, then it will write a blank value)
+* appendPhotos
+* tempdir - 
+* newdir - 
+* minfilesize - 
+* thumbsize 
+* cachedistance 
+* pauseseconds - 
+* timeZone - 
+* isocountrycode
+* country
+* stateprovince
+* city
+* sublocation
+* newfilenames
+*imageextensions
+*openapikey
+* height
+* width
+
+	
+	
+
+## Drives
+This section specifies one or more drives. (Repeat the section within the curly brackets and add a comma between).
+* startdir
+* iptccategory
+* iptckeywords
+* iptccopyright
+* excludspec provides one or more directories to exclude and one or more fileprefixes to avoid.
+```
+	"drives": [
+		{
+			"startdir": "H:/PhotoDrive/Our Photos 2015-2021",
+			"excludespec": {
+				"directories": [
+					{
+						"name": "/WhatsApp"
+					}
+				],
+				"fileprefixes": [
+					{
+						"name": "$RECYCLE."
+					}
+				]
+			},
+			"iptccategory": "Our photos",
+			"iptckeywords": "Photos",
+			"iptccopyright": "John Smith"
+		}
+	],
+```
+	
+	
+## Events
+This section provides a number of events
+## Cameras
+This section allows you to provide user friendly names for each camera or phone. IME will try and match the camera maker, and camera model to determine the camera name. 
+```
+	"cameras": [
+		{
+			"friendlyname": "John's Xiaomi Phone",
+			"cameramaker": "Xiaomi",
+			"cameramodel": "Mi A1",
+			"programname": null,
+		},
+		{
+			"friendlyname": "Jane's Huawei Phone",
+			"cameramaker": "HUAWEI",
+			"cameramodel": "PRA-LX1",
+			"programname":android,
+		}
+	],
+```
+## Places
 
 # Summary of Metadata Fields 	
 	
@@ -187,3 +294,5 @@ If you run IME without a JSON file (as described above) you can see the JSON fil
 
 # References
 	
+# For Developers
+IME has been developed in Java 17 with Maven build on Intellij. 
