@@ -116,10 +116,47 @@ In each case, the command which had been entered will be updated with “DONE”
 #placeDONE: 34
 #postcodeDONE:SW1A1AA
 ```
+# Finding Duplicates
+When the program runs it will look for duplicate files.
+In IME, a duplicate file is where two files have:
+* the same name
+* the same creation date
+* the same camera maker and model.
+	
+Most new cameras produce a filename that is likely to be unique as it includes the time of capture in the file name down to a thousand of a second. However, earlier cameras and phones (and scanners) had a much shorter file names and the chance of duplicate file names is quite high.
+	
+IME produces a report of any possible duplicates and when in "update mode" puts a comment in the metadata (for any duplicates) to indicate it has been identified as a duplicate. It is recommended to run IME in read-only mode first, to determine any directories that have been duplicated. 
+	
+IME will only look for duplicates in the directory structure being processed. If you only process part of your collection, then it will not pick up duplicates elsewhere.  You can get round this by providing the JSON output file from other runs as an input file for the program - this will then match against all photos in your collection.  For instance, if your collection is split into **Photos before 2000** and **Photos after 2000** then run IME against the "Photos before 2000" directory, rename the JSON output file and provide as an input file when running against "Photos after 2000".  You will then get a report of photos for your complete collection and any duplicates will be identified across the complete collection.  
+	
 # Moving Files to a New Directory
 One of the things that IME can do is move all photos to a new directory structure.  This is of the structure 
 ```YEAR / MONTH / FILENAME``` ie.  ```2016/05/WA123245.JPG```
-During this process, it looks for duplicate files and will produce a report of all duplicates.  It initially looks at the file name to determine if there are other files with the same name.  There is a relatively high chance that file names are duplicated (particularly for older photo files) and so IME does a check to see if the camera make, camera model and date and time of the picture are the same.  
-If they are duplicates, then the files are flagged as a duplicate and will not be copied across to the new file directory (although they will be updated e.g. geocoded).
-If they are different files with the same file name, then they are renamed by adding a sequentrial number to the end of the file name e.g. 
+ 
+If files have true duplicates, then the second and subsequent files are flagged as duplicates in the Comment section and will not be copied across to the new file directory (although they will be updated e.g. geocoded).
+	
+However, if there are two files with the same name, which were taken in the same month, but they are different files (ie.. different creation date, size, camera), then they are copied across to the new Directory, but they are renamed by adding a sequential number to the end of the file name when they are copied. e.g. 
 File``` WA1234.JPG``` becomes ```WA1234_001.JPG```.
+	
+
+# Summary of Metadata Fields 	
+	
+|Field|Metadata Section|Field in Windows Properties|Field in Lightroom|Fields in IrfanView|Notes|
+|-----|---------------|---------------------------|-------------------|------------------|------------|
+|Title|IFD0|Details/Description/Title|Title|Visible in IPTC/Document Title. Also,XPTITLE & IMAGE_DESCRIPTION|a)Can be set in event processing using “title” in the JSON b)Due to an issue with Apache Imaging, this field is not written if there is an existing value present.|
+|Subject|IFD0|Details/ Description/Subject|Available in Lightroom as Caption|Visible in EXIF/XPSubject|	Can be set in event processing using Description in the JSON|
+|IPTC Keywords (In Windows, Tags)|IFD0|Details/Description/Tags – note  when entering values in Windows, values should be separated by semi colons “;”|Keywording, and unique values will appear in KeyWord List. note , when entering, values in Lightroom  should be separated by commas “,"|Appear in XPKeywords and IPTC Keywords|a)	Existing Keywords are retained b)The same Keywords can be added for all files by providing in the JSON c)When moving files to a new directory, the current directory structure is converted to keywords|
+|IPTC Date Created|IPTC|Not visible|Not used if other dates are visible|Appear as IPTC/Credits-Origin/ Date Created in YYYYMMDD format|This is written as YYYYMMDD, in line with IrfanView, if the date is modified.|
+|Instructions|IPTC|Not visible|Appears as  IPTC/Workflow/Instructions|Appears as IPTC/Description/Special Instructions|a)This field can be used to provide instructions to the program for each image. b)It is updated after processing along with the Comments field. c)This acts the same as the Comments Field (see next item)|
+|Comments (Windows)|IFD0|Details/Description/Comments|User Comment – if this is entered in Lightroom, data is written back to Windows. It does not work the other way round – changes to Windows properties are not received by Lightroom.|Visible in EXIF /XP Comment|a)This field can be used to provide instructions to the program for each image.  b)It is updated after processing along with the Instructions field. c)This acts the same as the Instructions field (see previous item)
+|Author|IFD0|Details/Origin/Authors|Visible as Contact/Creator and Exif/Artist|Visible in IPTC/Description/ Author (byline)|This can be updated for all files, by adding to JSON|
+|Copyright|IFD0|Details/Origin/Copyright|Artist|Visible in IPTC/Description/Copyright|This can be updated for all files by adding to the JSON.|
+|ISO Country Code|IPTC|Not visible|IPTC – ISO Country Code|Not visible|This is added by IME, either from lat, lon or from an event.|
+|Country|IPTC|Not visible|IPTC – Country|Visible from IPTC /Credits Origin|This is added by IME, either from lat, lon or from an event.|
+|Stateprovince|IPTC|Not visible|IPTC – State/Province|Visible from IPTC /Credits Origin|This is added by IME, either from lat, lon or from an event.|
+|city|IPTC|Not visible|IPTC – City|Visible from IPTC /Credits Origin|This is added by IME, either from lat, lon or from an event.|
+|sublocation|IPTC|Not visible|IPTC - Sublocation|Visible from IPTC /Credits Origin|This is added by IME, either from lat, lon or from an event.|
+|Comments (JPG)|Comments|Not visible in Windows|Not visible in Lightroom Classic|Visible from Information / Comments|Each time a file is updated, a comment field is added by IME  e.g. when a file is moved or geocoded.|
+
+
+
