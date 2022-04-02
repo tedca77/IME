@@ -60,15 +60,15 @@ The output directory (d:/Results) should then contain:
 •	A JSON file, config.json, which can be used to modify parameters when running the program.
 If the third parameter is a directory, then files will be copied to the new directory structure using the photo date to put in the correct place.  
 In addition, further parameters can be added to the command. These are:
-•	Update – this will update files with new metadata and move files
-•	Overwritevalues – this will overwrite existing values
-•	Showmetadata – this will show metadata in the console
-•	redoGeocoding – this will force redoing of geocoding using lat, lon information.
-	
-	
-redoGeocoding: - will do geocoding even if the metadata says that geocoding has been done before and will also overwrite the Sublocation
+* **update** – this will update files with new metadata and move files. If this parameter is not provided, then no updates will take place. 
+* **overwrite** – this will overwrite existing values in fields.  For instance, if there is already values in the IPTC location metadata fields, then they will be overwritten with new values.  If this is not set, then no overwriting will take place.
+* **showmetadata** – this will show all metadata in the console before and after updates.  This option is useful when debugging issues with files.
+* **redometadata** – once a file has been processed, a flag will be placed on the file and if subsequent runs are made, the file will not have metadata updated. If this parameter is added, it will force metadata to be updated.  this will force redoing of geocoding using lat, lon information.
 
-
+	Use cases:
+	we want to redo everything....this is based on a paramter
+	all files have been processed,  but then new Place information is added to files...this will overwrite existing values - we can determine th 
+	all files have been processed but then new events are added to the files...we can determine if this is a new event.  If it is, then we can process and overwrite values....
 	
 The user selects the “Root” location to start looking for photos and it will then search all subdirectories, looking for image files;
 
@@ -79,7 +79,7 @@ Information for every file processed is written out to a JSON file.  The filenam
 	* Camera names
 	* Providing other parameters that impact the way the program runs.
 # Places
-Each longitude and latitude value found is represented as a “Place” in IME.  If two photos are taken at virtually the same place (and have very similar latitude and longitude), then this is identified as the same “Place” in IME and IME does not have to use the Open Street Map Service. (This is a good thing, because Open Street Map is a limited service, and condition of use is that it is not swamped with requests.)  The user can specify the distance that determines if the Place is the same (in metres).  Also, the geocoding may not identify the exact address e.g. house numbers may be slightly out.  IME can also be given a set of known Places in the JSON, before it runs, where the correct house address can be provided. e.g. if 86 Acacia Avenue is found, but the actual address is “85 Acacia Avenue”, then this can be provided and also given a user friendly name e.g. “Our first house”. (Each Place added is given a unique number which can be used to allocate images to this place if they do not have longitude and latitude – see next section.) The IPTC metadawta specification has 5 fields for location - the user can modify how IME fills each field from the Open Stret Map values.  The default is as follows:
+Each longitude and latitude value found is represented as a “Place” in IME.  If two photos are taken at virtually the same place (and have very similar latitude and longitude), then this is identified as the same “Place” in IME and IME does not have to use the Open Street Map Service. (This is a good thing, because Open Street Map is a limited service, and condition of use is that it is not swamped with requests.)  The user can specify the distance that determines if the Place is the same (in metres).  Also, the geocoding may not identify the exact address e.g. house numbers may be slightly out.  IME can also be given a set of known Places in the JSON, before it runs, where the correct house address can be provided. e.g. if 86 Acacia Avenue is found, but the actual address is “85 Acacia Avenue”, then this can be provided and also given a user friendly name e.g. “Our first house”. (Each Place added is given a unique number which can be used to allocate images to this place if they do not have longitude and latitude – see next section.) The IPTC metadata specification has 5 fields for location - the user can modify how IME fills each field from the Open Stret Map values.  The default is as follows:
 * **Sublocation** - Amenity, leisure, house-number,road,hamlet,suburb,city_district
 * **City** - town, city, village
 * **State/Province** - county,state_district
@@ -90,13 +90,14 @@ For photos which do not have geographical information (e.g., scanned photos and 
 * Through adding the latitude and longitude – enter ```#latlon:lat,long (no spaces)```
 * Through adding a national Post Code – enter ```#postcode: SW1A1AA (no spaces)```
 * Through adding a Place Identifier – enter ```#place: 1```.
-
+Note that IME will never overwrite longitude and latitude information if it is already in the metadata. If you want to replace the longitude and latitude, you should clear out the old values first. (CHECK!!!)
 If you only use Windows for editing and managing your collection, put the above value somewhere in the Windows Comments Field (with a space after the values) – if you are using Adobe Lightroom or Adobe Bridge, put the value in the Instructions (IPTC) field.
 Note that Windows and tools such as Lightroom allow you to modify metadata on multiple fields at the same time so if you have a group of photos that are all taken at the same place you can add in one go. 
 # Adding Dates
 For scanned photos, the dates in the metadata are unlikely to be correct. An instruction can be added to the Windows Comment or Instructions (IPTC) fields to provide a correct date within the metadata. This is of the form:
 ```#date:YYYY``` or  ```#date:YYYY-MM```  or ```#date:YYYY-MM-DD```
 This updates the **EXIFOriginalDate** field and will then be used with Events (see the next section) to provide location information related to events.  
+If a file has already been processed by IME, and then new date information is added, then IME will re-process the file - this could including finding an event and geocoding. Adding a new date will overwrite the existing date, even if a previous date has been provided. 
 # Finding Events
 Events can be used to add information such as a Title, Description or Keywords to a photo, based on the day or date.  For instance,
 *	Every photo taken on Christmas Day could be given a title of ‘Christmas’;
@@ -118,11 +119,11 @@ An event can have:
 *	location :  either #latlon,~postcode or #place:
 
 In order of priority:
-•	Dates are set irrespective of other instructions
+•	Dates are set irrespective of other instructions. If a new date is found, this can determine if new events are applicable.
 •	If longitude and latitude metadata is present, it will be used to geocode, if it has not already been geocoded
 •	If there is no latitude and longitude present then any place, postcode or latlon instructions are used
 •	If an event is specified, then it will not overwrite any existing latitude and longitude information.  However, if there is no latitude and longitude information, it will be updated.
-	
+What if multipl events are found with conflicting location data? 
 	
 	
 # Audit Trail of Changes
