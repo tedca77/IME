@@ -297,3 +297,12 @@ If you run IME without a JSON file (as described above) you can see the JSON fil
 	
 # For Developers
 IME has been developed in Java 17 with Maven build on Intellij. 
+	
+## Use Cases
+1. User wants to geocode entire collection of photos.  
+   First run against part of the collection using read-only option to identify Places:
+	```ImageMetadataEnhancer.exe "d:/ALL Photos/2000-2005" "d:/Results"  
+   Then run against entire collection, providing input file with known place names.
+	```ImageMetadataEnhancer.exe "d:/ALL Photos" "d:/Results/config.json" update```
+2. User wants to geocode collection in two parts.  First run against part of the collection using read-only option
+2. User wants to goecode collection in two parts.
