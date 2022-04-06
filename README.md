@@ -297,12 +297,12 @@ If you run IME without a JSON file (as described above) you can see the JSON fil
 	
 # For Developers
 IME has been developed in Java 17 with Maven build on Intellij.
-	Processing:DONE - means that it has been geocoded and other metadata has been added.  Files will not be processed again on subsequent runs, unless the redo option is selected.   
-	Event processing can take place on photos that have been processed. unless the event has additional information. Event processing will not update latitude and longitude if they are already present. (a warning message is provided and is written to the error file. 
-	Adding additional events and rerunning will look for photos which match the event date.  If found, and the event is new, then it will attempt to update the photo metadata and geocode, if longitude and latitide is not present.  ()if it is , it will not overwrite). 
-	Adding additional events in the metadata will force processing of events, even if the file has already been processed.  It will attempt to update the photo metadata and geocode, if longitude and latitide is not already present.  (if it is , it will not overwrite). 
-	Adding additional date information in the metadata and rerunning will update the dates on the photos and also look for photos which match the event date.  If found, and the event is new, then it will attempt to update the photo metadata and geocode, if longitude and latitide is not present. If it is an existing event ()if it is , it will not overwrite). 
-	Adding additional location information in the metadata (lat,Long, postcode, or Place) running will look for photos which match the event date.  If found, and the event is new, then it will attempt to update the photo metadata and geocode, if longitude and latitide is not present.  ()if it is , it will not overwrite). 
+* Processing:DONE - means that it has been geocoded and other metadata has been added.  Files will not be processed again on subsequent runs, unless the redo option is selected.   
+* Event processing can take place on photos that have been processed. unless the event has additional information. Event processing will not update latitude and longitude if they are already present. (a warning message is provided and is written to the error file. 
+* Adding additional events and rerunning will look for photos which match the event date.  If found, and the event is new, then it will attempt to update the photo metadata and geocode, if longitude and latitide is not present.  ()if it is , it will not overwrite). 
+* Adding additional events in the metadata will force processing of events, even if the file has already been processed.  It will attempt to update the photo metadata and geocode, if longitude and latitide is not already present.  (if it is , it will not overwrite). 
+* Adding additional date information in the metadata and rerunning will update the dates on the photos and also look for photos which match the event date.  If found, and the event is new, then it will attempt to update the photo metadata and geocode, if longitude and latitide is not present. If it is an existing event ()if it is , it will not overwrite). 
+* Adding additional location information in the metadata (lat,Long, postcode, or Place) running will look for photos which match the event date.  If found, and the event is new, then it will attempt to update the photo metadata and geocode, if longitude and latitide is not present.  ()if it is , it will not overwrite). 
 	
 ## Use Cases
 1. User wants to geocode entire collection of photos.  
@@ -314,15 +314,22 @@ IME has been developed in Java 17 with Maven build on Intellij.
   First run against part of the collection using read-only option to identify Places:  
 	```ImageMetadataEnhancer.exe "d:/ALL Photos/Before 2005/2004" "d:/Results" ```   
    Then run against first part of the collection, providing input file with known place names and update option   
-	```ImageMetadataEnhancer.exe "d:/ALL Photos/Before 2005" "d:/Results/configPlaces.json" update```
+	```ImageMetadataEnhancer.exe "d:/ALL Photos/Before 2005" "d:/Results/configPlaces.json" update```  
    Then run against second part of the collection, providing input json file with known place names and containing all the files from the first part processing.  Set the update and append parameters.  This ensures that duplicates are identified across the complete collection.  
 	```ImageMetadataEnhancer.exe "d:/ALL Photos/After 2005" "d:/Results/configBefore2005.json" update append```
 3. User wants to geocode entire collection and move to a new structure based on date of photo (YYYY and MM) 
    First run against part of the collection using read-only option to identify Places:  
 	```ImageMetadataEnhancer.exe "d:/ALL Photos/2000-2005" "d:/Results" ```   
-   Then run against entire collection, providing input file with known place names and update option.  The third parameter is the directory for files to be copied to. 
+   Then run against entire collection, providing input file with known place names and update option.  The third parameter is the directory for files to be copied to.   
 	```ImageMetadataEnhancer.exe "d:/ALL Photos" "d:/Results/config.json" "e:/New Photo Directory" update```  
 	
-4. User has already geocoded files (without moving to a new directory) but wants to search for event information. Events are coded in the json file.
-	  Run against the entire collection using update options:  
-	```ImageMetadataEnhancer.exe "d:/ALL Photos" "d:/Results/configEvents.json" update ``` 
+4. User has already geocoded files but wants to search for event information. Events are coded in the json file.
+     Run against the entire collection using update options:  
+	```ImageMetadataEnhancer.exe "d:/ALL Photos" "d:/Results/configEvents.json" update ```  
+     This will add additional information to the photo and if location information (postcode, place or Lat,Long) are added to the event, these will be added to the     photo.  If the photo already has lat/lon, they will not be replaced.  If multiple events are found for a photo, then the first one to add the location information is used. If this job is run multiple times, then once the event has been identified once, it will not be processed again.  
+	
+5. User has already geocoded files but wants to add additional location information(postcode, place or Lat,Long) to some photos. The metadata is updated before running IME.  The json should contain details of any places that are going to be used to specify location.
+     Run against the entire collection using update options:  
+	```ImageMetadataEnhancer.exe "d:/ALL Photos" "d:/Results/configPlaces.json" update ```  
+     This will convert location information (postcode, place or Lat,Long) into lat/lon and then geocode, aND UPDATE THE LAT/LON VALUES. If the photo already has lat/lon, it will not be replaced.  If this job is run multiple times, then, once the lat,lon has been added, it will not be added again.  	
+	
