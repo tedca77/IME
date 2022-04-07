@@ -76,4 +76,5 @@ public class FileObject {
     String windowsTitle;
     String windowsSubject;
     List<String> comments;
+    Boolean duplicate;
 }

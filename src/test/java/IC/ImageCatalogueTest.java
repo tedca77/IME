@@ -48,7 +48,7 @@ class ImageCatalogueTest {
     }
     @Test
     @DisplayName("Test 1")
-    @Disabled
+    //@Disabled
     void update1Test() {
         // Test: 1
         // Uses TestSource1
@@ -62,7 +62,7 @@ class ImageCatalogueTest {
             System.out.println("json file found"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
             String fileName="T_"+"nodescriptivemetadata_haslonlat.jpg";
-            FileObject fNew=processFile(new File(startDir+"/TestNewDir/2021/8/"+fileName), null,null, null,true);
+            FileObject fNew= readAndUpdateFile(new File(startDir+"/TestNewDir/2021/8/"+fileName), null,null, null,true);
             if(fNew!=null) {
                 assertEquals("Corfe Castle", fNew.getCity());
                 assertEquals("GB", fNew.getCountry_code());
@@ -92,7 +92,7 @@ class ImageCatalogueTest {
     }
     @Test
     @DisplayName("Test 2")
-    @Disabled
+    //@Disabled
     void update2Test() {
         //Test 2
         // Uses TestSource2
@@ -105,7 +105,7 @@ class ImageCatalogueTest {
             System.out.println("json file found"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
             String fileName="T_"+"no metadata IPTC location filled in.jpg";
-            FileObject fNew=processFile(new File(startDir+"/TestNewDir/2021/8/"+fileName), null,null, null,true);
+            FileObject fNew= readAndUpdateFile(new File(startDir+"/TestNewDir/2021/8/"+fileName), null,null, null,true);
             if(fNew!=null) {
                 assertEquals("Filled in city", fNew.getCity());
                 assertEquals("Filled in country", fNew.getCountry_name());
@@ -130,7 +130,7 @@ class ImageCatalogueTest {
     }
     @Test
     @DisplayName("Test 3 ")
-     @Disabled
+   // @Disabled
     void update3Test() {
         //Test: 3
         // Uses TestSource2
@@ -143,7 +143,7 @@ class ImageCatalogueTest {
             System.out.println("json file found"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
             String fileName="T_"+"no metadata IPTC location filled in.jpg";
-            FileObject fNew=processFile(new File(startDir+"/TestNewDir/2021/8/"+fileName), null,null, null,true);
+            FileObject fNew= readAndUpdateFile(new File(startDir+"/TestNewDir/2021/8/"+fileName), null,null, null,true);
             if(fNew!=null) {
                 assertEquals("Corfe Castle", fNew.getCity());
                 assertEquals("GB", fNew.getCountry_code());
@@ -160,14 +160,14 @@ class ImageCatalogueTest {
             }
             else
             {
-                fail("Did not find output file");
+                fail("Did not find output file:"+startDir+"/TestNewDir/2021/8/"+fileName);
             }
         } else {
             fail("Setup Copy files to Test Area could not complete");
         }
     }
     @Test
-    @Disabled
+   // @Disabled
     @DisplayName("Read1 - 1 image (rotated| has descriptive metadata      | has lat and lon      | update | Move       | no JSON                ")
     void update4Test() {
         //Test: 4
@@ -196,7 +196,7 @@ class ImageCatalogueTest {
     }
     @Test
     @DisplayName("Test 5")
-     @Disabled
+    // @Disabled
     void update5Test() {
         //Test: 5
         // Uses TestSource1
@@ -209,7 +209,7 @@ class ImageCatalogueTest {
             System.out.println("json file found"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
             String fileName="T_"+"nodescriptivemetadata_haslonlat.jpg";
-            FileObject fNew=processFile(new File(startDir+"/Test/DirKeyword1 DirKeyword2/"+fileName), null,null, null,true);
+            FileObject fNew= readAndUpdateFile(new File(startDir+"/Test/DirKeyword1 DirKeyword2/"+fileName), null,null, null,true);
             if(fNew!=null)
             {
                 assertEquals("",fNew.getCity());
@@ -233,7 +233,7 @@ class ImageCatalogueTest {
     }
     @Test
     @DisplayName("Test 6")
-    @Disabled
+    //@Disabled
     void update6Test() {
         //Test: 6
         // Uses TestSource1
@@ -246,7 +246,7 @@ class ImageCatalogueTest {
             System.out.println("json file found"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
             String fileName="T_"+"nodescriptivemetadata_haslonlat.jpg";
-            FileObject fNew=processFile(new File(startDir+"/Test/DirKeyword1 DirKeyword2/"+fileName), null,null, null,true);
+            FileObject fNew= readAndUpdateFile(new File(startDir+"/Test/DirKeyword1 DirKeyword2/"+fileName), null,null, null,true);
             if(fNew!=null) {
                 assertEquals("Corfe Castle", fNew.getCity());
                 assertEquals("GB", fNew.getCountry_code());
@@ -268,8 +268,8 @@ class ImageCatalogueTest {
         }
     }
     @Test
-     @Disabled
-    //@DisplayName("Test 7")
+    // @Disabled
+    @DisplayName("Test 7")
     void update7Test() {
         //Test: 7
         // Uses TestSource4
@@ -284,7 +284,7 @@ class ImageCatalogueTest {
             System.out.println("json file found"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
            //
-            FileObject fNew=processFile(new File(startDir+"/Test/"+"T_"+"IPTC-win date year.jpg"), null,null, null,true);
+            FileObject fNew= readAndUpdateFile(new File(startDir+"/Test/"+"T_"+"IPTC-win date year.jpg"), null,null, null,true);
             if (fNew != null) {
                 assertEquals("Modified, Copyright;Copyright (Notice) 2021.1 IPTC - www.iptc.org  (ref2021.1)",fNew.getIPTCCopyright());
                 assertEquals("IME1;IME2;Keyword1ref2021.1;Keyword2ref2021.1;Keyword3ref2021.1",fNew.getIPTCKeywords());
@@ -301,7 +301,7 @@ class ImageCatalogueTest {
     }
     @Test
     @DisplayName("Test 8")
-    @Disabled
+   // @Disabled
     void update8Test() {
         //Test: 8
         // Uses TestSource4
@@ -318,7 +318,7 @@ class ImageCatalogueTest {
             System.out.println("json file found"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
             //
-            FileObject fNew=processFile(new File(startDir+"/Test/"+"T_"+"IPTC-win date year.jpg"), null,null, null,true);
+            FileObject fNew= readAndUpdateFile(new File(startDir+"/Test/"+"T_"+"IPTC-win date year.jpg"), null,null, null,true);
             if (fNew != null) {
                 assertEquals("1985:01:01 00:00:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
                 assertEquals("1999:11:23 00:00:00",formatter.format( convertToDateViaInstant(fNew.getFileModified())));
@@ -338,7 +338,7 @@ class ImageCatalogueTest {
     }
     @Test
     @DisplayName("Test 9")
-    @Disabled
+   // @Disabled
     void update9Test() {
         //Test: 9
         // Uses TestSource4
@@ -353,7 +353,7 @@ class ImageCatalogueTest {
             System.out.println("json file found"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
             //
-            FileObject fNew=processFile(new File(startDir+"/Test/"+"T_"+"IPTC-win date year month.jpg"), null,null, null,true);
+            FileObject fNew= readAndUpdateFile(new File(startDir+"/Test/"+"T_"+"IPTC-win date year month.jpg"), null,null, null,true);
             if (fNew != null) {
                 assertEquals("1985:07:01 00:00:00", formatter.format(convertToDateViaInstant(fNew.getBestDate())));
                 assertEquals("198507",fNew.getIPTCDateCreated());
@@ -368,7 +368,7 @@ class ImageCatalogueTest {
     }
     @Test
     @DisplayName("Test 10")
-    @Disabled
+   // @Disabled
     void update10Test() {
         //Test: 10
         // Uses TestSource4
@@ -385,7 +385,7 @@ class ImageCatalogueTest {
             System.out.println("json file found"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
             //
-            FileObject fNew=processFile(new File(startDir+"/Test/"+"T_"+"IPTC-win date year month day.jpg"), null,null, null,true);
+            FileObject fNew= readAndUpdateFile(new File(startDir+"/Test/"+"T_"+"IPTC-win date year month day.jpg"), null,null, null,true);
             if (fNew != null) {
                 assertEquals("1985:07:14 00:00:00", formatter.format(convertToDateViaInstant(fNew.getBestDate())));
                 assertEquals("19850714",fNew.getIPTCDateCreated());
@@ -417,7 +417,7 @@ class ImageCatalogueTest {
             System.out.println("json file found"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
             //
-            FileObject fNew=processFile(new File(startDir+"/Test/"+"T_"+"lightroom date year.jpg"), null,null, null,true);
+            FileObject fNew= readAndUpdateFile(new File(startDir+"/Test/"+"T_"+"lightroom date year.jpg"), null,null, null,true);
             if (fNew != null) {
                 assertEquals("2001:01:01 00:00:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
                 assertEquals("2001",fNew.getIPTCDateCreated());
@@ -447,7 +447,7 @@ class ImageCatalogueTest {
             System.out.println("json file found"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
             //
-            FileObject fNew=processFile(new File(startDir+"/Test/"+"T_"+"lightroom date year month.jpg"), null,null, null,true);
+            FileObject fNew= readAndUpdateFile(new File(startDir+"/Test/"+"T_"+"lightroom date year month.jpg"), null,null, null,true);
             if (fNew != null) {
                 assertEquals("2001:07:01 00:00:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
                 assertEquals("200107",fNew.getIPTCDateCreated());
@@ -480,7 +480,7 @@ class ImageCatalogueTest {
             System.out.println("json file found"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
             //
-            FileObject fNew=processFile(new File(startDir+"/Test/"+"T_"+fileName), null,null, null,true);
+            FileObject fNew= readAndUpdateFile(new File(startDir+"/Test/"+"T_"+fileName), null,null, null,true);
             if (fNew != null) {
                 assertEquals("2001:07:14 00:00:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
                 assertEquals("20010714",fNew.getIPTCDateCreated());
@@ -510,7 +510,7 @@ class ImageCatalogueTest {
             assertNotEquals(jsonFile.length(),0);
             //
             FileObject fNew;
-            fNew=processFile(new File(startDir+"/TestNewDir/2019/4/"+"T_"+"Added event with postcode.jpg"), null,null, null,true);
+            fNew= readAndUpdateFile(new File(startDir+"/TestNewDir/2019/4/"+"T_"+"Added event with postcode.jpg"), null,null, null,true);
             if (fNew != null) {
                 assertEquals("2019:04:14 12:30:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
                 assertEquals(	"City of Westminster",fNew.getCity());
@@ -541,7 +541,7 @@ class ImageCatalogueTest {
             assertNotEquals(jsonFile.length(),0);
             //
             FileObject fNew;
-            fNew=processFile(new File(startDir+"/TestNewDir/2019/7/"+"T_"+"Added event with place.jpg"), null,null, null,true);
+            fNew= readAndUpdateFile(new File(startDir+"/TestNewDir/2019/7/"+"T_"+"Added event with place.jpg"), null,null, null,true);
             if (fNew != null) {
                 assertEquals("2019:07:21 00:00:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
                 assertEquals(	"Larkhill",fNew.getCity());
@@ -572,7 +572,7 @@ class ImageCatalogueTest {
             assertNotEquals(jsonFile.length(),0);
             //
             FileObject fNew;
-            fNew=processFile(new File(startDir+"/TestNewDir/2019/7/"+"T_"+"Find event date place.jpg"), null,null, null,true);
+            fNew= readAndUpdateFile(new File(startDir+"/TestNewDir/2019/7/"+"T_"+"Find event date place.jpg"), null,null, null,true);
             if (fNew != null) {
                 assertEquals("2019:07:21 21:01:01",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
                 assertEquals(	"Larkhill",fNew.getCity());
@@ -603,7 +603,7 @@ class ImageCatalogueTest {
             assertNotEquals(jsonFile.length(),0);
             //
             FileObject fNew;
-            fNew=processFile(new File(startDir+"/TestNewDir/2020/6/"+"T_"+"Find event date time no place.jpg"), null,null, null,true);
+            fNew= readAndUpdateFile(new File(startDir+"/TestNewDir/2020/6/"+"T_"+"Find event date time no place.jpg"), null,null, null,true);
             if(fNew!=null) {
                 assertEquals("2020:06:23 21:01:01", formatter.format(convertToDateViaInstant(fNew.getBestDate())));
             }
@@ -633,7 +633,7 @@ class ImageCatalogueTest {
             FileObject fNew;
 
 
-            fNew=processFile(new File(startDir+"/TestNewDir/2021/7/"+"T_"+"Find event date postcode.jpg"), null,null, null,true);
+            fNew= readAndUpdateFile(new File(startDir+"/TestNewDir/2021/7/"+"T_"+"Find event date postcode.jpg"), null,null, null,true);
             if(fNew!=null) {
                 assertEquals("2021:07:21 21:01:01", formatter.format(convertToDateViaInstant(fNew.getBestDate())));
                 assertEquals("City of Westminster", fNew.getCity());
@@ -662,7 +662,7 @@ class ImageCatalogueTest {
             assertNotEquals(jsonFile.length(),0);
             //
             FileObject fNew;
-            fNew=processFile(new File(startDir+"/TestNewDir/2021/8/"+"T_"+"Added event withlatlon.jpg"), null,null, null,true);
+            fNew= readAndUpdateFile(new File(startDir+"/TestNewDir/2021/8/"+"T_"+"Added event withlatlon.jpg"), null,null, null,true);
             if(fNew!=null) {
             assertEquals("2021:08:01 00:00:00",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
             assertEquals(	"",fNew.getCity());
@@ -690,7 +690,7 @@ class ImageCatalogueTest {
             //
             FileObject fNew;
               //
-            fNew=processFile(new File(startDir+"/TestNewDir/2021/8/"+"T_"+"Find event date latlon.jpg"), null,null, null,true);
+            fNew= readAndUpdateFile(new File(startDir+"/TestNewDir/2021/8/"+"T_"+"Find event date latlon.jpg"), null,null, null,true);
             if(fNew!=null) {
                 assertEquals("2021:08:02 21:01:01", formatter.format(convertToDateViaInstant(fNew.getBestDate())));
                 assertEquals("", fNew.getCity());
@@ -718,7 +718,7 @@ class ImageCatalogueTest {
             assertNotEquals(jsonFile.length(),0);
             //
             FileObject fNew;
-            fNew=processFile(new File(startDir+"/TestNewDir/2021/9/"+"T_"+"find eventcalendar no place.jpg"), null,null, null,true);
+            fNew= readAndUpdateFile(new File(startDir+"/TestNewDir/2021/9/"+"T_"+"find eventcalendar no place.jpg"), null,null, null,true);
             if(fNew!=null)
             {
             assertEquals("2021:09:12 21:01:01",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
@@ -746,7 +746,7 @@ class ImageCatalogueTest {
             assertNotEquals(jsonFile.length(),0);
             //
             FileObject fNew;
-            fNew=processFile(new File(startDir+"/TestNewDir/2021/10/"+"T_"+"Added latlon.jpg"), null,null, null,true);
+            fNew= readAndUpdateFile(new File(startDir+"/TestNewDir/2021/10/"+"T_"+"Added latlon.jpg"), null,null, null,true);
             if(fNew!=null)
             {
                 assertEquals("2021:10:20 21:01:01",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
@@ -775,7 +775,7 @@ class ImageCatalogueTest {
             assertNotEquals(jsonFile.length(),0);
             //
             FileObject fNew;
-            fNew=processFile(new File(startDir+"/TestNewDir/2021/10/"+"T_"+"Added place.jpg"), null,null, null,true);
+            fNew= readAndUpdateFile(new File(startDir+"/TestNewDir/2021/10/"+"T_"+"Added place.jpg"), null,null, null,true);
             if(fNew!=null)
             {
             assertEquals("2021:10:20 21:01:01",formatter.format( convertToDateViaInstant(fNew.getBestDate())));
@@ -804,7 +804,7 @@ class ImageCatalogueTest {
             assertNotEquals(jsonFile.length(),0);
             //
             FileObject fNew;
-            fNew=processFile(new File(startDir+"/TestNewDir/2021/10/"+"T_"+"Addedpostcode.jpg"), null,null, null,true);
+            fNew= readAndUpdateFile(new File(startDir+"/TestNewDir/2021/10/"+"T_"+"Addedpostcode.jpg"), null,null, null,true);
             if(fNew!=null) {
                 assertEquals("2021:10:20 21:01:01", formatter.format(convertToDateViaInstant(fNew.getBestDate())));
                 assertEquals("City of Westminster", fNew.getCity());
@@ -815,5 +815,33 @@ class ImageCatalogueTest {
             fail("Setup Copy files to Test Area could not complete");
         }
     }
-
+    @Test
+    @DisplayName("Test 25")
+    @Disabled
+    void update25Test() {
+        // Test: 25
+        // Uses TestSource6
+        // checking duplicate images - two are the same in different folders, other two are different with same name
+        // No Json input file, but update parameter added and New Directory provided, so will copy to TestNewDir
+        // File is in a sub-directory so the old directory name is added as keywords (one for each word in directory name)
+        // Duplicate file should not be moved...
+        //Duplicate file name should be moved but with different name _001 added to file root.
+        System.out.println("==========================TEST 25 =================================");
+        if (copyToTestArea(startDir + "/TestSource" + 6, startDir + "/Test")) {
+            ImageCatalogue.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir","update"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("json file found"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
+            File f_notmoved= new File(startDir + "/Test/T_WP_20150611_001.jpg");
+            File f_moved=new File(startDir + "/TestNewDir/2015/6/T_WP_20150611_001.jpg");
+            File f_moved2=new File(startDir + "/TestNewDir/2015/6/T_WP_20150611_004.jpg");
+            File f_moved3=new File(startDir + "/TestNewDir/2015/6/T_WP_20150611_004_001.jpg");
+            assertTrue(f_notmoved.exists());
+            assertTrue(f_moved.exists());
+            assertTrue(f_moved2.exists());
+            assertTrue(f_moved3.exists());
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
 }

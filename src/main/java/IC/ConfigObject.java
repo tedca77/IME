@@ -30,8 +30,8 @@ public class ConfigObject {
     private Boolean update;
     private Boolean showmetadata;
     private Boolean overwrite;
-    private Boolean redoGeocode;
-    private Boolean appendPhotos;
+    private Boolean redo;
+    private Boolean append;
     private String thumbsize;
     private Integer cacheDistance;
     private Integer pauseSeconds;

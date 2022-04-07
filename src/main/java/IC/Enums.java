@@ -22,7 +22,7 @@ public class Enums {
 
 
         public enum argOptions {
-            overwrite,update,showmetadata,redoGeocoding,append
+            overwrite,update,showmetadata,redo,append
         }
         /*
            update - if false, no updates will take place to records ...default false
@@ -33,6 +33,9 @@ public class Enums {
           */
        public enum processMode {
            postcode,geocode,place,latlon,event,date
+        }
+        public enum statusValues {
+            processed,movedfile,renamedfile
         }
 
 }

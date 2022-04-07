@@ -52,8 +52,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.GpsTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -85,7 +84,7 @@ public class ImageCatalogue {
     static int countTooSmall = 0; // images too small (images processed is countImages-countTooSmall)
     static int countProcessed = 0; // images processed (images processed is countImages-countTooSmall)
     static int countLATLONG = 0;  // images with lat/long info
-    static int countALREADYGEOCODED = 0; // images already geocoded
+    static int countALREADYPROCESSED = 0; // images already processed
     static int countGEOCODED = 0; // images which were successfully geocoded
     static int countNOTGEOCODED = 0; // images which were not successfully geocoded (but with lat/long)
     static int countDateUpdate = 0;   // images where the date was updated.
@@ -96,13 +95,15 @@ public class ImageCatalogue {
     static int countAddedEvent = 0;   // images where an event has been added  manually
     static int countUPDATED = 0; // images which were not successfully updated
     static int countErrors = 0;   // images where there were errors (e.g. failure of geocode or others)....
+    static int countMoved = 0;    // images which have been moved
+    static int countDuplicates = 0;  // images which are duplicates
 //
     static int countDriveFiles = 0;
     static int countDriveImages = 0;
     static int countDriveTooSmall = 0;
     static int countDriveProcessed = 0;
     static int countDriveLATLONG = 0;
-    static int countDriveALREADYGEOCODED = 0;
+    static int countDriveALREADYPROCESSED = 0;
     static int countDriveGEOCODED = 0;
     static int countDriveNOTGEOCODED = 0;
     static int countDriveDateUpdate = 0;
@@ -113,6 +114,8 @@ public class ImageCatalogue {
     static int countDriveAddedEvent = 0;
     static int countDriveUPDATED = 0;
     static int countDriveErrors = 0;
+    static int countDriveMoved = 0;
+    static int countDriveDuplicates = 0;
     static ArrayList<CameraObject> cameras = new ArrayList<>();
     static ArrayList<FileObject> fileObjects = new ArrayList<>();
     static ArrayList<FileObject> duplicateObjects = new ArrayList<>();
@@ -122,19 +125,18 @@ public class ImageCatalogue {
 
     static ArrayList<TrackObject> tracks = new ArrayList<>();
     // Default Variables - that can be modified
-    static int messageLength=160; //length of Console Message
+    static int messageLength=140; //length of Console Message
     static String videoDefaults="mp4~mp4a";
     static String imageDefaults="jpg~jpeg~bmp";
     static String jsonDefault="config.json";
     static Long minFileSizeDefault=4000L;
     static String thumbSizeDefault="360x270";
-    static String timeZoneDefault="Europe/London";
     static ArrayList<String> isocountryDefault=new ArrayList<>(Collections.singletonList("country_code"));
     static ArrayList<String> countryDefault=new ArrayList<>(Collections.singletonList("country"));
     static ArrayList<String> stateprovinceDefault=new ArrayList<>(Arrays.asList("county","state_district"));
     static ArrayList<String> cityDefault=new ArrayList<>(Arrays.asList("town","city","village"));
     static ArrayList<String> sublocationDefault=new ArrayList<>(Arrays.asList("amenity","leisure","house_number","road","hamlet","suburb","city_district"));
-    static int cacheDistanceDefault=100; // this is the distance from a point that detemrines this is the same place in Metres.
+    static int cacheDistanceDefault=100; // this is the distance from a point that determines this is the same place in Metres.
     static int pauseSecondsDefault=2; // this is the pause before a geocode (to not overload the server)
     //
     static Date startTime;
@@ -144,8 +146,7 @@ public class ImageCatalogue {
      * @param args - either single json file or two/three args, first one is root directory, second is output file, third is followed by parameters
      */
     public static void main(String[] args) {
-     //   Logger logger = LoggerFactory.getLogger(ImageCatalogue.class);
-     //   logger.info("Hello World");
+
         z= ZoneId.systemDefault();
         startTime= new Date();
         ConfigObject config=null;
@@ -174,6 +175,8 @@ public class ImageCatalogue {
                     message("Parameter 1 - Root Directory: "+args[0]);
                     message("Output Config File: "+configFileName);
                     message("Parameter 2 - Output Directory: "+args[1]);
+                   // clear ArrayLists - required for JUNIT testing...
+                   clearArrayLists();
 
                 }
                 else
@@ -195,10 +198,8 @@ public class ImageCatalogue {
                 fileObjects.sort(Comparator.comparing(FileObject::getFileName));
             }
             catch(Exception e){
-                message("eerror"+e);
+                message("Error sorting file objects"+e);
             }
-
-            checkDuplicates();
             // sort any ArrayLists....
             fileObjects.sort(Comparator.comparing(FileObject::getBestDate));
 
@@ -223,6 +224,9 @@ public class ImageCatalogue {
             }
             // runs report for console
             runReport();
+            message("Number of Errors:"+errorObjects.size());
+            message("Number of Duplicates found:"+duplicateObjects.size());
+            messageLine("*");
             //Exports reports for cameras, fileObjects etc...
             if(!exportHTML(config.getTempdir()))
             {
@@ -236,7 +240,7 @@ public class ImageCatalogue {
                 message("All Drives - " + "Photos too small                   :" + countTooSmall);
                 message("All Drives - " + "Photos processed                   :" + countProcessed);
                 message("All Drives - " + "Photos with Lat Long               :" + countLATLONG);
-                message("All Drives - " + "Photos already Geocoded            :" + countALREADYGEOCODED);
+                message("All Drives - " + "Photos already Geocoded            :" + countALREADYPROCESSED);
                 message("All Drives - " + "Photos Geocoded                    :" + countGEOCODED);
                 message("All Drives - " + "Photos with failed Geocoding       :" + countNOTGEOCODED);
                 message("All Drives - " + "Photos where date added            :" + countDateUpdate);
@@ -247,6 +251,8 @@ public class ImageCatalogue {
                 message("All Drives - " + "Photos with Event added            :" + countAddedEvent);
                 message("All Drives - " + "Photos Updated                     :" + countUPDATED);
                 message("All Drives - " + "Photos with Errors in processing   :" + countErrors);
+                message("All Drives - " + "Photos which are duplicates        :" + countDuplicates);
+                message("All Drives - " + "Photos which have been movedsing   :" + countMoved);
             }
 
         } catch (Exception e) {
@@ -297,7 +303,7 @@ public class ImageCatalogue {
     }
     /**
      * Reads a JSON Config File - this holds all run parameters
-     * @param configFile - filenamee
+     * @param configFile - filename
      * @return - config object
      */
     public static ConfigObject readConfig(String configFile)
@@ -340,9 +346,13 @@ public class ImageCatalogue {
             {
                 config.setShowmetadata(true);
             }
-            else if(s.trim().equalsIgnoreCase(Enums.argOptions.redoGeocoding.toString()))
+            else if(s.trim().equalsIgnoreCase(Enums.argOptions.redo.toString()))
             {
-                config.setRedoGeocode(true);
+                config.setRedo(true);
+            }
+            else if(s.trim().equalsIgnoreCase(Enums.argOptions.append.toString()))
+            {
+                config.setRedo(true);
             }
             else
             {
@@ -391,16 +401,16 @@ public class ImageCatalogue {
         if(config.getShowmetadata()==null) {config.setShowmetadata(false);}
         if(!config.getUpdate())
         {
-            // the overwrite and redo options are not possible if Update has not been set
+            // overwrite and redo options are not possible if Update has not been set
             config.setOverwrite(false);
-            config.setRedoGeocode(false);
+            config.setRedo(false);
         }
         else
         {
             if(config.getOverwrite()==null) {config.setOverwrite(false);}
-            if(config.getRedoGeocode()==null) {config.setRedoGeocode(false);}
+            if(config.getRedo()==null) {config.setRedo(false);}
         }
-        if(config.getAppendPhotos()==null) {config.setAppendPhotos(false);}
+        if(config.getAppend()==null) {config.setAppend(false);}
         if(config.getImageextensions()==null) {config.setImageextensions(imageDefaults);}
         if(config.getVideoextensions()==null) {config.setVideoextensions(videoDefaults);}
         if(config.getSublocation()==null) {config.setSublocation(sublocationDefault);}
@@ -415,7 +425,7 @@ public class ImageCatalogue {
     }
     /**
      * Writes out HTML reports using freemarker for the main objects.  Freemarker templates are in the project.
-     * FIles are written to the tempDir
+     * Files are written to the tempDir
      * @param tempDir - Output directory
      * @return - returns true or false
      */
@@ -529,7 +539,7 @@ public class ImageCatalogue {
             }
             else
             {
-                if(c.getRedoGeocode()) {
+                if(c.getRedo()) {
                     message("ONLY GEOCODE METADATA WILL BE OVERWRITTEN ");
                 }
                 else
@@ -546,7 +556,7 @@ public class ImageCatalogue {
             }
         }
 
-        if(c.getAppendPhotos()) {
+        if(c.getAppend()) {
             message("PHOTOS WILL BE APPENDED TO PHOTOS LISTED IN JSON");
         }
 
@@ -558,7 +568,7 @@ public class ImageCatalogue {
     }
     /**
      * Exports JSON config file with new lists of objects included.  File is same as input file but with date and time added.
-     * @param c - config opbject
+     * @param c - config object
      * @param inputPath - input Path Name
      * @return - returns true or false
      */
@@ -583,14 +593,11 @@ public class ImageCatalogue {
     public static void runReport()
     {
         messageLine("*");
-        message("Number of Files found:"+fileObjects.size());
-        message("Number of Cameras found:"+cameras.size());
-        message("Number of Places found:"+places.size());
-        message("Number of Events found:"+events.size());
-        message("Number of Tracks found:"+tracks.size());
-        message("Number of Errors:"+errorObjects.size());
-        message("Number of Duplicates found:"+duplicateObjects.size());
-        messageLine("*");
+        message("Number of Files :"+fileObjects.size());
+        message("Number of Cameras :"+cameras.size());
+        message("Number of Places :"+places.size());
+        message("Number of Events :"+events.size());
+        message("Number of Tracks :"+tracks.size());
 
     }
 
@@ -624,7 +631,10 @@ public class ImageCatalogue {
                     }
                 }
             }
-
+            if(fNew.getWindowsSubject()==null)
+            {
+                fNew.setWindowsSubject("");
+            }
 
             if (fNew.getWindowsTitle()==null) {
                 fNew.setWindowsTitle(fNew.getIPTCObjectName());
@@ -636,7 +646,10 @@ public class ImageCatalogue {
                     }
                 }
             }
-
+            if(fNew.getWindowsTitle()==null)
+            {
+                fNew.setWindowsTitle("");
+            }
 
 
         } catch (Exception e) {
@@ -644,7 +657,7 @@ public class ImageCatalogue {
         }
     }
     /**
-     * this method recursively looks at directories and sdubdirectories and identifies image files
+     * this method recursively looks at directories and subdirectories and identifies image files
      * @param dir - root directory to start
      * @param drive - drive (this is used to make up the new filename)
      * @param tempDir - where files are to be written to
@@ -670,7 +683,12 @@ public class ImageCatalogue {
                                 if (!isExcludedPrefix(file.getName(), drive)) {
                                     countImages++;
                                     countDriveImages++;
-                                    long fileSize = file.length();
+                                    Long fileSize = file.length();
+                                    Long testFileSize=FileUtils.sizeOf(file);
+                                    if(!fileSize.equals(testFileSize))
+                                    {
+                                        message ("Discrepancy in file size"+fileSize + ": " +testFileSize);
+                                    }
                                     if (fileSize > config.getMinfilesize()) {
                                         countProcessed++;
                                         countDriveProcessed++;
@@ -684,7 +702,7 @@ public class ImageCatalogue {
                                             messageLine("~");
                                         }
                                         String thumbName = makeThumbName(file);
-                                        FileObject fNew=processFile(file, thumbName,config, drive,false);
+                                        FileObject fNew= readAndUpdateFile(file, thumbName,config, drive,false);
                                         if(fNew==null)
                                         {
                                             countErrors++;
@@ -1067,7 +1085,7 @@ public class ImageCatalogue {
                         System.out.println(file.getCanonicalPath());
                         System.out.println(file.getPath());
                         System.out.println(file.getParent());
-                        //dont rename json file !!
+                        //don't rename json file !!
                         if(!FilenameUtils.getExtension(file.getPath()).equalsIgnoreCase("json") &&
                                 !FilenameUtils.getExtension(file.getPath()).equalsIgnoreCase("db")
                         )
@@ -1108,6 +1126,20 @@ public class ImageCatalogue {
                 return false;
             }
         return renameFiles(new File(copyDir));
+    }
+
+    /**
+     * this is used for clearing arraylists - required for testing only - where variables may not be cleared...
+     */
+    public static void clearArrayLists()
+    {
+        fileObjects.clear();
+        duplicateObjects.clear();
+        cameras.clear();
+        places.clear();
+        events.clear();
+        errorObjects.clear();
+
     }
     /**
      * This is only used for testing. Clears the test area of three subdirectories:
@@ -1227,32 +1259,54 @@ public class ImageCatalogue {
         return false;
     }
     /**
-     *  Checks for duplicate filenames and adds to the duplicate list if found
+     *  Checks for duplicate files and adds to the duplicate list if found.
      */
-    public static void checkDuplicates()
-    {
-       FileObject lastObject = new FileObject();
+    public static void checkDuplicateFile(FileObject fNew) {
+
         for (FileObject f : fileObjects) {
             try {
-                if(lastObject.getFileName()!=null) {
-                    if (lastObject.getFileName().equals(f.getFileName())) {
-                        if (duplicateObjects.size() > 0) {
-                            // we may need to include the previous lastObject, but it may already be included e.g. if there are more than two duplicates
-                            if (!duplicateObjects.get(duplicateObjects.size() - 1).equals(lastObject)) {
-                                duplicateObjects.add(lastObject);
-                            }
-                        } else {
-                            duplicateObjects.add(lastObject);
+
+                if (fNew.getFileName().equals(f.getFileName())) {
+                    File f1 = new File(fNew.getDirectory() + "/" + fNew.getFileName());
+                    File f2 = new File(f.getDirectory() + "/" + f.getFileName());
+
+                    if (f.getCameraModel().equals(fNew.getCameraModel()) && f.getCameraMaker().equals(fNew.getCameraMaker()) &&
+                      f.getBestDate().isEqual(fNew.getBestDate())) {
+
+                        if (!duplicateObjects.contains(f)) {
+                            duplicateObjects.add(f);
                         }
-                        duplicateObjects.add(f);
+                        duplicateObjects.add(fNew);
+                        fNew.setDuplicate(true);
+                        message("Duplicate file - also in:" + f.getDirectory());
+                        addError(fNew.getFileName(), fNew.getDirectory(),fNew.getBestDate(), "Warning - duplicate file - also in:" + f.getDirectory());
+                    } else {
+                        addError(fNew.getFileName(), fNew.getDirectory(),fNew.getBestDate(), "Warning - duplicate file name, but files are not the same: "+f.getDirectory());
+                        message("Duplicate filename but files are different");
                     }
                 }
-                lastObject = f;
-
             } catch (Exception e) {
                 message("error checking duplicates:" + f.getDisplayName() + e);
             }
         }
+    }
+    public static String getUniqueFileName(String dirName,String fileName)
+    {
+         String root= FilenameUtils.getBaseName(fileName);
+         String ext = FilenameUtils.getExtension(fileName);
+         int count=1;
+         while(count<1000) {
+             String testName=root+"_"+String.format("%03d",count)+"."+ext;
+             String testPath= dirName+"/"+testName;
+             File f = new File(testPath);
+             if(!f.exists()) {
+                 return testName;
+             }
+             count++;
+         }
+         addError(fileName,dirName,null,"Too many duplicates for:"+fileName);
+         return null;
+
     }
     /**
      * Checks whether we already have a geocode object - if we do, then we just update the start or end date
@@ -1295,7 +1349,7 @@ public class ImageCatalogue {
     }
 
     /**
-     * Creates a LocalDateTime from a string whith can be YYYY or YYYY-MM  or YYYY-MM-DD
+     * Creates a LocalDateTime from a string with can be YYYY or YYYY-MM  or YYYY-MM-DD
      * @param param - string to convert
      * @return - returns LocalDateTime or null if there is an error
      */
@@ -1327,7 +1381,8 @@ public class ImageCatalogue {
 
     /**
      * Creates a LocalDateTime from a string which can be MM-DD or YYYY-MM-DD
-     * We are not interested in the Year for this test e g. a birthday
+     * We are not interested in the Year for this test e g. a birthday if a start year is not provided - if it is, then nothing before this year will
+     *  be found
      * @param param - string to convert
      * @return - returns LocalDateTime or null if there is an error
      */
@@ -1335,7 +1390,7 @@ public class ImageCatalogue {
     {
         String[] values = param.split("-", -1);
         try {
-            int year = 1900;
+            int year = 1800;
             int month = 1;
             int day = 1;
             if (values.length == 1) {
@@ -1365,7 +1420,7 @@ public class ImageCatalogue {
             boolean result= new File(temp).mkdir();
             if(!result)
             {
-                message("Did not create new output directory - it may already exist:"+temp);
+               // message("Did not create new output directory - it may already exist:"+temp);
             }
 
         } catch (Exception e) {
@@ -1491,7 +1546,7 @@ public class ImageCatalogue {
      */
     public static void readConfigLists(ConfigObject c)
     {
-        if(c.getAppendPhotos()) {
+        if(c.getAppend()) {
             // we need to read in the photos
             message("NUMBER OF PHOTOS READ FROM CONFIG FILE:"+c.getPhotos().size());
             fileObjects=c.getPhotos();
@@ -1502,7 +1557,7 @@ public class ImageCatalogue {
             cameras=c.getCameras();
             //sort in case there are gaps in numbering
             cameras.sort(Comparator.comparing(CameraObject::getCameraid));
-            if(!c.getAppendPhotos()) {
+            if(!c.getAppend()) {
                 for (CameraObject cc : cameras) {
                     cc.setCameracount(0);
                 }
@@ -1517,7 +1572,7 @@ public class ImageCatalogue {
             int highestPlace=getHighestPlace();
             for(Place g : places)
             {
-                if(!c.getAppendPhotos()) {
+                if(!c.getAppend()) {
                     g.setCountPlace(0);
                 }
                 if(g.getPlaceid()==null)
@@ -1545,6 +1600,8 @@ public class ImageCatalogue {
             //sort in case there are gaps in numbering
             events.sort(Comparator.comparing(EventObject::getEventid));
         }
+        runReport();
+        messageLine("*");
     }
 
     /**
@@ -1565,48 +1622,41 @@ public class ImageCatalogue {
         return newDirectory;
     }
     /**
-     * Moves a file if it does not already exist in the new structure
+     * Moves a file to the new structure
      * @param config - config Object (contains program variables)
      * @param f - fileObject to be moved
-     * @return - returns new directory or null
+     * @return - returns result
      */
-    public static String moveFile(ConfigObject config, FileObject f)
-    {
+    public static Boolean moveFile(ConfigObject config, FileObject f,String newFileName) {
         //
 
-            String newDirectory = getNewDirectory(config,f);
-            File oldFile= new File(f.getDirectory()+"/"+f.getFileName());
-            File newFile =new File(newDirectory+"/"+f.getFileName());
-            if(newFile.exists()) {
-                addError(f.getFileName(),newDirectory,f.getBestDate(),"File already exists in the new directory structure - it will not be copied");
-                newDirectory=null;
+        String newDirectory = getNewDirectory(config, f);
+        File oldFile = new File(f.getDirectory() + "/" + f.getFileName());
+        File newFile = new File(newDirectory + "/" + newFileName);
+
+        String oldThumbName = makeThumbName(oldFile);
+        boolean renameResult = oldFile.renameTo(newFile);
+        if (!renameResult) {
+            message("Could not move file from " + oldFile.getPath() + " to " + newFile.getPath());
+            addError(f.getFileName(),f.getDirectory(),f.getBestDate(),"Could not move image file");
+            return false;
+        }
+        else {
+            String newThumbName = makeThumbName(newFile);
+
+            File oldThumb = new File(config.getTempdir() + "/" + oldThumbName);
+            File newThumb = new File(config.getTempdir() + "/" + newThumbName);
+            //rename file
+            boolean renameResultthumb = oldThumb.renameTo(newThumb);
+            if (!renameResultthumb) {
+                message("Could not move thumb file from " + oldThumb.getName() + " to " + newThumb.getName());
+                addError(f.getFileName(), f.getDirectory(),f.getBestDate(), "Could not move thumbnail file");
             }
-            else
-            {
-                String oldThumbName = makeThumbName(oldFile);
-                boolean renameResult=oldFile.renameTo(newFile);
-                if(!renameResult)
-                {
-                    message("Could not move file from "+oldFile.getPath() + " to "+newFile.getPath());
-                }
-                String newThumbName = makeThumbName(newFile);
-
-                File oldThumb = new File(config.getTempdir() + "/" + oldThumbName);
-                File newThumb = new File(config.getTempdir() + "/" + newThumbName);
-                //rename file
-                boolean renameResultthumb=oldThumb.renameTo(newThumb);
-                if(!renameResultthumb)
-                {
-                    message("Could not move file from "+oldThumb.getName() + " to "+newThumb.getName());
-                }
-                //if rename files - change the name and directory....
-                f.setDirectory(newDirectory);
-                f.setThumbnail(newThumbName);
-            }
-
-            //thee fiule name st
-
-        return newDirectory;
+            //if rename files - change the name and directory....
+            f.setDirectory(newDirectory);
+            f.setThumbnail(newThumbName);
+        }
+        return true;
     }
     /**
      * Constructs a new thumbnail name replacing slashes and colon with underscores - as we need to create a valid file name
@@ -1778,6 +1828,23 @@ public class ImageCatalogue {
         }
     }
     /**
+     * Finds Camera from its internal key
+     * @param i - key value
+     * @return - Camera Object
+     */
+    private static CameraObject getCamera(Integer i)
+    {
+        for(CameraObject c : cameras)
+        {
+            if(c.getCameraid().equals(i))
+            {
+                return c;
+            }
+        }
+        message("Error -could not retrieve Camera with a key of:"+i);
+        return null;
+    }
+    /**
      * Finds Place from its internal key
      * @param i - key value
      * @return - Place Object
@@ -1883,7 +1950,7 @@ public class ImageCatalogue {
      * Checks a File Object's dates against an event date
      * @param config - Config Object
      * @param fNew - File Object
-     * @param e - Event OBject (providing dates)
+     * @param e - Event Object (providing dates)
      * @param existingCommentsString - JPEG comments QArray
      * @return - returns 1 if found a date
      */
@@ -1895,9 +1962,10 @@ public class ImageCatalogue {
             return 0;
         }
         if(!checkIPTCComments(existingCommentsString, "#Event:" + e.getEventid() + "DONE:") || config.getOverwrite()) {
-            //event date
+            //eventcalendar - month and date must be exact (no time value) and year must be greater than or equal to event year....
             if (e.eventcalendar != null) {
-                if (d.getMonth() == e.getExactStartTime().getMonth() && d.getDayOfMonth() == e.getExactStartTime().getDayOfMonth()) {
+                if (d.getMonth() == e.getExactStartTime().getMonth() && d.getDayOfMonth() == e.getExactStartTime().getDayOfMonth() &&
+                     d.getYear()>=e.getExactStartTime().getYear()) {
                     updateEvent(config, fNew, e, existingCommentsString);
                     message("Event calendar match for event:" + e.getEventid() + " " + e.getTitle());
                     countEventsFound++;
@@ -1957,7 +2025,7 @@ public class ImageCatalogue {
         }
         if(dateUpdated!=null)
         {
-            updateBothFields(fNew,param,Enums.processMode.date,existingCommentsString);
+            updateCommentFields(fNew,param,Enums.processMode.date,existingCommentsString);
         }
         return dateUpdated;
     }
@@ -1965,14 +2033,14 @@ public class ImageCatalogue {
      * Creates a FileObject and Updates the file metadata (or displays information only, depending on options chosen)
      * Reads ICAFE metadata objects to use when writing back values
      * @param file - File to process
-     * @param thumbName - name of theumbnail
+     * @param thumbName - name of thumbnail
      * @param config - Configuration Object
      * @param drive - Drive name
      * @return - returns true if successful, false if failure
      */
-    public static FileObject processFile(File file, String thumbName,ConfigObject config, DriveObject drive,boolean readOnly) {
+    public static FileObject readAndUpdateFile(File file, String thumbName, ConfigObject config, DriveObject drive, Boolean readOnly) {
         FileObject fNew = new FileObject();
-        boolean alreadyGeocoded = false;
+        Boolean alreadyProcessed = false;
         readSystemDates(fNew,file);
         IPTC iptc = new IPTC();
 
@@ -1992,10 +2060,12 @@ public class ImageCatalogue {
                     fNew.setWindowsSubject(exif.getImageIFD().getFieldAsString(ExifTag.WINDOWS_XP_SUBJECT));
                 } else if (meta instanceof Comments) {
                     fNew.setComments((((Comments) meta).getComments()));
-                    alreadyGeocoded=checkIPTCComments(fNew.getComments(),"#"+Enums.processMode.geocode+"DONE:");
-                    if(alreadyGeocoded)
+                    alreadyProcessed=checkIPTCComments(fNew.getComments(),"#"+Enums.statusValues.processed+"DONE:");
+                    if(alreadyProcessed)
                     {
-                        message("File has already been geocoded:"+file.getName());
+                        message("File has already been processed:"+file.getName());
+                        countALREADYPROCESSED++;
+                        countDriveALREADYPROCESSED++;
                     }
                 } else if (meta instanceof IPTC) {
                     iptc = (IPTC) meta;
@@ -2009,64 +2079,70 @@ public class ImageCatalogue {
             message("error reading metadata" + e);
             return null;
         }
+        // read in JPEG metadata
         readJPEGMetadata(file, fNew);
-        //create thumbnail and update FileObject
+        // the readOnly check is used when reading in files but not doing processing - it is used for reading files for testing
+        // assertions only - i.e. for testing purposes only
         if(!readOnly) {
-            fNew.setThumbnail(createThumbFromPicture(file, config.getTempdir(), thumbName, config.getWidth(), config.getHeight(), fNew.getOrientation()));
-            // Geocodes if lat and long present
-            String dateUpdated = processDates(fNew, newCommentsString,config);
-            if (dateUpdated != null) {
-                message("File updated with a new date:" + dateUpdated);
-            }
-            if (fNew.getLatitude() != null && fNew.getLongitude() != null) {
-                geocodeLatLong(alreadyGeocoded, config, fNew, newCommentsString);
-            }
-            if(forwardCode(config, fNew, newCommentsString, null))
-            {
-                message("Forward coding done");
-            }
-           if(processEvents(config, fNew, newCommentsString)>0)
-            {
-                message("Events processing done");
-            }
-            updateFile(config, drive, file, newCommentsString, iptc, exif,  fNew);
+            //
+           processFile(fNew,config,file,thumbName,alreadyProcessed,drive,newCommentsString,iptc,exif);
         }
         return fNew;
     }
-    /**
-     * Decides whether to Reverse Geocodes a file object
-     * @param alreadyGeocoded - flag wshows whether it has already been geocoded
-     * @param config - Config Object
-     * @param fNew - File Object
-     * @param newCommentsString - JPEG Comments String
-     */
-    public static void geocodeLatLong(Boolean alreadyGeocoded,ConfigObject config,FileObject fNew,ArrayList<String> newCommentsString)
+    public static void processFile(FileObject fNew,ConfigObject config,File file, String thumbName,Boolean alreadyProcessed,DriveObject drive,ArrayList<String> newCommentsString,IPTC iptc,JpegExif exif)
     {
-        countLATLONG++;
-        countDriveLATLONG++;
-        if(alreadyGeocoded)
-        {
-            countALREADYGEOCODED++;
-            countDriveALREADYGEOCODED++;
+        Boolean updateRequired=false;
+        //always check for duplicates
+        checkDuplicateFile(fNew);
+        //always create thumbnail and update FileObject
+        fNew.setThumbnail(createThumbFromPicture(file, config.getTempdir(), thumbName, config.getWidth(), config.getHeight(), fNew.getOrientation()));
+        // if a date has been added to the metadata, this need processing
+        String dateUpdated = processDates(fNew, newCommentsString,config);
+        if (dateUpdated != null) {
+            message("File updated with a new date:" + dateUpdated);
+            updateRequired=true;
         }
-        if(!alreadyGeocoded || config.getRedoGeocode() ) {
-            if(geocode(fNew, fNew.getLatitude(),fNew.getLongitude(),config,alreadyGeocoded)) {
-
-                updateBothFields(fNew,fNew.getLatitude()+","+fNew.getLongitude(),Enums.processMode.geocode,newCommentsString);
+        // Geocodes if lat and long present
+        if (fNew.getLatitude() != null && fNew.getLongitude() != null) {
+            countLATLONG++;
+            countDriveLATLONG++;
+            if(config.getRedo() || !alreadyProcessed) {
+                if(geocode(fNew, fNew.getLatitude(),fNew.getLongitude(),config)) {
+                    updateCommentFields(fNew,fNew.getLatitude()+","+fNew.getLongitude(),Enums.processMode.geocode,newCommentsString);
+                    message("Reverse Geocoding done");
+                    updateRequired = true;
+                }
             }
         }
+        else
+        {
+            // If a location has been added to the metadata, this needs processing - only if no longitude and latitude
+            if(forwardCode(config, fNew, newCommentsString, null))
+            {
+                message("Forward coding done");
+                updateRequired=true;
+            }
+        }
+        // events can be processed
+        if(processEvents(config, fNew, newCommentsString)>0)
+        {
+            message("Events processing done");
+            updateRequired=true;
+        }
+        if(updateRequired && config.getUpdate() ) {
+            updateFile(config, drive, file, newCommentsString, iptc, exif, fNew);
+        }
     }
-
     /**
-     * Revers4e Geocodes an Object
+     * Reverse Geocodes an Object
      * @param fNew - file Object
      * @param lat - latitude
      * @param lon - longitude
      * @param config - Config Object
-     * @param alreadyGeocoded - flag if already geocoded
+
      * @return - true or false , if successful
      */
-    public static Boolean geocode(FileObject fNew,Double lat,Double lon,ConfigObject config,Boolean alreadyGeocoded)
+    public static Boolean geocode(FileObject fNew,Double lat,Double lon,ConfigObject config)
     {
         Place g;
         g = checkCachedGeo(lat,lon, fNew.getBestDate(), Double.valueOf(config.getCacheDistance()));
@@ -2087,7 +2163,7 @@ public class ImageCatalogue {
             fNew.setPlaceKey(g.getPlaceid());
         }
         if (g != null) {
-            setFileObjectGEOValues(fNew, g,alreadyGeocoded,config);
+            setFileObjectGEOValues(fNew, g,config);
             countGEOCODED++;
             countDriveGEOCODED++;
             return true;
@@ -2178,7 +2254,7 @@ public class ImageCatalogue {
              }
         }
         fNew.setEventKeys(fNew.getEventKeys()+e.getEventid()+";");
-        updateBothFields(fNew,e.getEventid().toString(),Enums.processMode.event,newCommentsString);
+        updateCommentFields(fNew,e.getEventid().toString(),Enums.processMode.event,newCommentsString);
 
     }
     public static Boolean updateLatLon(Double lat, Double lon,FileObject fNew,ConfigObject config)
@@ -2214,7 +2290,7 @@ public class ImageCatalogue {
      * When a Date is provided, will update the EXIFOriginal and Best Date
      * Will update the IPTC date with a partial date either YYYY, YYYYMM or YYYYMMDD
      * @param param - parameter provided with the Date tag
-     * @param fNew - fileObject beiong processed
+     * @param fNew - fileObject being processed
      * @return - returns a string of the value
      */
     public static String updateDate(String param, FileObject fNew, ConfigObject config) {
@@ -2270,13 +2346,13 @@ public class ImageCatalogue {
                         try {
                             Double lat = Double.valueOf(values[0]);
                             Double lon = Double.valueOf(values[1]);
-                            geocode(fNew, lat, lon, config, false);
+                            geocode(fNew, lat, lon, config);
                             // we should also set lat and lon if it is correct
                             if (fNew.getPlaceKey() != null) {
                                 if (updateLatLon(lat, lon, fNew, config)) {
                                     countAddedLATLONG++;
                                     countDriveAddedLATLONG++;
-                                    updateBothFields(fNew,lat+","+lon,p,newCommentsString);
+                                    updateCommentFields(fNew,lat+","+lon,p,newCommentsString);
 
                                 }
 
@@ -2322,10 +2398,10 @@ public class ImageCatalogue {
                             message("Place has been found - place:" + param);
                             if (updateLatLon(g.getLatAsDouble(), g.getLonAsDouble(), fNew, config)) {
                                 fNew.setPlaceKey(g.getPlaceid());
-                                setFileObjectGEOValues(fNew, g, false, config);
+                                setFileObjectGEOValues(fNew, g,  config);
                                 countAddedPlace++;
                                 countDriveAddedPlace++;
-                                updateBothFields(fNew,param,p,newCommentsString);
+                                updateCommentFields(fNew,param,p,newCommentsString);
                             }
 
                         }
@@ -2352,13 +2428,13 @@ public class ImageCatalogue {
                                 if (values2.length == 2) {
                                     Double lat = Double.valueOf(values2[0]);
                                     Double lon = Double.valueOf(values2[1]);
-                                    geocode(fNew, lat, lon, config, false);
+                                    geocode(fNew, lat, lon, config);
                                     // we should also set lat and lon if it is correct
                                     if (fNew.getPlaceKey() != null) {
                                         if (updateLatLon(lat, lon, fNew, config)) {
                                             countAddedPostcode++;
                                             countDriveAddedPostcode++;
-                                            updateBothFields(fNew, param, p, newCommentsString);
+                                            updateCommentFields(fNew, param, p, newCommentsString);
                                         }
 
                                     } else {
@@ -2385,21 +2461,20 @@ public class ImageCatalogue {
     }
 
     /**
-     * Sets Geographic fields onthe fileObject from a Place object
+     * Sets Geographic fields on the fileObject from a Place object
      * @param fNew - fileObject
      * @param g - placeObject
-     * @param alreadyGeocoded - flag if already Geocoded
      * @param config - config object
      */
-    public static void setFileObjectGEOValues(FileObject fNew,Place g,Boolean alreadyGeocoded, ConfigObject config)
+    public static void setFileObjectGEOValues(FileObject fNew,Place g, ConfigObject config)
 
     {
-        fNew.setDisplayName(conditionallyUpdateGeoField(fNew.getDisplayName(),g.getDisplay_name(),"Display Name,",alreadyGeocoded,config));
-        fNew.setCity(conditionallyUpdateGeoField(fNew.getCity(),g.getIPTCCity(),"City",alreadyGeocoded,config));
-        fNew.setCountry_code(conditionallyUpdateGeoField(fNew.getCountry_code(),g.getIPTCCountryCode(),"Country Code",alreadyGeocoded,config));
-        fNew.setCountry_name(conditionallyUpdateGeoField(fNew.getCountry_name(),g.getIPTCCountry(),"Country Name",alreadyGeocoded,config));
-        fNew.setStateProvince(conditionallyUpdateGeoField(fNew.getStateProvince(),g.getIPTCStateProvince(),"State / Province",alreadyGeocoded,config));
-        fNew.setSubLocation(conditionallyUpdateGeoField(fNew.getSubLocation(),g.getIPTCSublocation(),"Sub Location",alreadyGeocoded,config));
+        fNew.setDisplayName(conditionallyUpdateGeoField(fNew.getDisplayName(),g.getDisplay_name(),"Display Name,",config));
+        fNew.setCity(conditionallyUpdateGeoField(fNew.getCity(),g.getIPTCCity(),"City",config));
+        fNew.setCountry_code(conditionallyUpdateGeoField(fNew.getCountry_code(),g.getIPTCCountryCode(),"Country Code",config));
+        fNew.setCountry_name(conditionallyUpdateGeoField(fNew.getCountry_name(),g.getIPTCCountry(),"Country Name",config));
+        fNew.setStateProvince(conditionallyUpdateGeoField(fNew.getStateProvince(),g.getIPTCStateProvince(),"State / Province",config));
+        fNew.setSubLocation(conditionallyUpdateGeoField(fNew.getSubLocation(),g.getIPTCSublocation(),"Sub Location",config));
     }
     /**
      * @param fNew - this sets values on the new FileObject (reads metadata using Apache Imaging)
@@ -2444,9 +2519,10 @@ public class ImageCatalogue {
             }
             catch(Exception e)
             {
-                message("Error acessing exif metadata");
+                message("Error accessing exif metadata");
             }
         }
+        fNew.setDuplicate(false);
         fNew.setEventKeys(""); //set this to blank at start....
         if(fNew.getOrientation()==null)
         {
@@ -2477,10 +2553,11 @@ public class ImageCatalogue {
             message("Could not read width and height for "+file.getName());
         }
         fNew.setCameraKey(addCamera(fNew.getCameraMaker(),fNew.getCameraModel(), fNew.getBestDate()));
-        if(cameras.get(fNew.getCameraKey()-1).getFriendlyname()!=null)
+        if(getCamera(fNew.getCameraKey()).getFriendlyname()!=null)
         {
-            fNew.setCameraName(cameras.get(fNew.getCameraKey()-1).getFriendlyname());
+            fNew.setCameraName(getCamera(fNew.getCameraKey()).getFriendlyname());
         }
+
     }
 
     /**
@@ -2585,24 +2662,28 @@ public class ImageCatalogue {
             return false;
         }
     }
-    public static String conditionallyUpdateGeoField(String currentValue, String newValue,String fieldName,Boolean alreadyGeocoded,ConfigObject config)
+
+    /**
+     * Update an IPTC field - we want to show the value of the field even for read only mode, so we decide whether to update the field, even if we are
+     * not in update mode....
+     * @param currentValue
+     * @param newValue
+     * @param fieldName
+     * @param config
+     * @return
+     */
+    public static String conditionallyUpdateGeoField(String currentValue, String newValue,String fieldName,ConfigObject config)
+
     {
         // we update field if:
-        // 1. it has not already been geocoded and the existing field is empty OR
-        // 2. overwrite is set (i.e. it will overwrite existing values) but not if it has  already been geocoded
-        // 3. we have asked to force redo the geocoding
-
-        // we do not update the field if the new value is blank howe
+        // 1. the current value is blank
+        // 2. overwrite is set (i.e. it will overwrite existing values)
 
         // note the new value might be blank after geocoding....
-        if (StringUtils.isNullOrEmpty(currentValue) && !alreadyGeocoded || (config.getOverwrite() && !alreadyGeocoded) || config.getRedoGeocode()) {
-            if(!StringUtils.isNullOrEmpty(currentValue)) {
-                message("New Value found and overwritten for:" + fieldName + " - " + newValue + "  , current value:" + currentValue);
-            }
-            else
-            {
-                message("New Value found and written for:" + fieldName + " - " + newValue + "  , current value:" + currentValue);
-            }
+        if (StringUtils.isNullOrEmpty(currentValue)  || config.getOverwrite() ) {
+
+            message("New Value found and written for:" + fieldName + " - " + newValue + "  , current value:" + currentValue);
+
             return newValue;
         }
         else
@@ -2620,7 +2701,7 @@ public class ImageCatalogue {
      * @param p - processMode
      * @param newCommentsString - JPEG comments array
       */
-    public static void updateBothFields(FileObject fNew,String param, Enums.processMode p,ArrayList<String> newCommentsString)
+    public static void updateCommentFields(FileObject fNew, String param, Enums.processMode p, ArrayList<String> newCommentsString)
     {
         fNew.setWindowsComments(updateInstructions(fNew.getWindowsComments(),p,param));
         fNew.setIPTCInstructions(updateInstructions(fNew.getIPTCInstructions(),p,param));
@@ -2638,16 +2719,28 @@ public class ImageCatalogue {
         for (String n : newKeys) {
             iptcs.add(new IPTCDataSet(IPTCApplicationTag.KEY_WORDS, n));
         }
-        iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_CODE, fNew.getCountry_code()));
-        iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_NAME, fNew.getCountry_name()));
-        iptcs.add(new IPTCDataSet(IPTCApplicationTag.PROVINCE_STATE, fNew.getStateProvince()));
-        iptcs.add(new IPTCDataSet(IPTCApplicationTag.SUB_LOCATION, fNew.getSubLocation()));
-        iptcs.add(new IPTCDataSet(IPTCApplicationTag.CITY, fNew.getCity()));
+        if ( fNew.getCountry_code() != null) {
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_CODE, fNew.getCountry_code()));
+        }
+        if ( fNew.getCountry_name() != null) {
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.COUNTRY_NAME, fNew.getCountry_name()));
+        }
+        if ( fNew.getStateProvince() != null) {
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.PROVINCE_STATE, fNew.getStateProvince()));
+        }
+        if ( fNew.getSubLocation() != null){
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.SUB_LOCATION, fNew.getSubLocation()));
+        }
+        if ( fNew.getCity() != null) {
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.CITY, fNew.getCity()));
+        }
         //Copyright is a multi value field so this always adds a new one...
         if (drive.getIPTCCopyright() != null) {
             iptcs.add(new IPTCDataSet(IPTCApplicationTag.COPYRIGHT_NOTICE, drive.getIPTCCopyright()));
         }
-        iptcs.add(new IPTCDataSet(IPTCApplicationTag.CAPTION_ABSTRACT, fNew.getWindowsSubject()));
+        if ( fNew.getWindowsSubject() != null) {
+            iptcs.add(new IPTCDataSet(IPTCApplicationTag.CAPTION_ABSTRACT, fNew.getWindowsSubject()));
+        }
         if (StringUtils.isNullOrEmpty(fNew.getIPTCDateCreated())) {
             DateFormat formatter = new SimpleDateFormat("yyyyMMdd");
             iptcs.add(new IPTCDataSet(IPTCApplicationTag.DATE_CREATED, formatter.format(convertToDateViaInstant(fNew.getBestDate()))));
@@ -2673,7 +2766,7 @@ public class ImageCatalogue {
     public static void updateFile(ConfigObject config,DriveObject drive, File file,ArrayList<String> newCommentsString,IPTC iptc,JpegExif exif,FileObject fNew)
     {
 
-        if(config.getUpdate()) {
+
             try {
                List<IPTCDataSet> iptcs = new ArrayList<>();
                updateIPTCFields(iptcs,fNew,config,drive);
@@ -2683,17 +2776,20 @@ public class ImageCatalogue {
                 FileOutputStream fout = new FileOutputStream(outFile, false);
                 List<Metadata> metaList = new ArrayList<>();
                 String newDirectory=null;
+                String newFileName=fNew.getFileName();
                 if(config.getNewdir()!=null) {
                     newDirectory = getNewDirectory(config,fNew);
                     File newFile = new File(newDirectory + "/" + fNew.getFileName());
-                    if (!newFile.exists()) {
-                        addComment(newCommentsString, "#Moved fileDONE:" + fNew.getDirectory());
-                        fNew.setWindowsComments(fNew.getWindowsComments()+"#Moved fileDONE:"+ fNew.getDirectory());
-                        fNew.setIPTCInstructions(fNew.getIPTCInstructions()+"#Moved fileDONE:"+ fNew.getDirectory());
-                    }
-                    else
-                    {
-                        newDirectory=null;
+                    if(!fNew.getDuplicate()) {
+                        if (newFile.exists()) {
+                            newFileName = getUniqueFileName(newDirectory, fNew.getFileName());
+                            addComment(newCommentsString, "#"+Enums.statusValues.renamedfile+"DONE:" + fNew.getFileName());
+                            fNew.setWindowsComments(fNew.getWindowsComments() + "#"+Enums.statusValues.renamedfile+"DONE:" + fNew.getFileName());
+                            fNew.setIPTCInstructions(fNew.getIPTCInstructions() + "#"+Enums.statusValues.renamedfile+"DONE:" + fNew.getFileName());
+                        }
+                        addComment(newCommentsString, "#"+Enums.statusValues.movedfile+"DONE:" + fNew.getDirectory());
+                        fNew.setWindowsComments(fNew.getWindowsComments() + "#"+Enums.statusValues.movedfile+"DONE:" + fNew.getDirectory());
+                        fNew.setIPTCInstructions(fNew.getIPTCInstructions() + "#"+Enums.statusValues.movedfile+"DONE:" + fNew.getDirectory());
                     }
                 }
                 // we update the Special Instructions if they have been provided....
@@ -2729,45 +2825,78 @@ public class ImageCatalogue {
                     message("Cannot delete file:" + file.getPath());
                 }
                 if (!changeExifMetadata(outFile3, file, fNew)) {
-                    addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Error in updating Exif metadata");
+                    message("File size is:"+fNew.getFileSize());
+                    addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Error in updating Exif metadata - possible file corruption"+"File size:"+fNew.getFileSize());
                     message("Error in updating Exif metadata");
-                    Files.copy(outFile3.toPath(), file.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
+                    try {
+                        message("Trying to copy file");
+                        Files.copy(outFile3.toPath(), file.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
+                    }
+                    catch(Exception e)
+                    {
+                        message("trying to move...");
+                        Files.move(outFile3.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+                    }
+
                 }
                 File finalFile = file;
-                if (newDirectory != null)
+                // if we are moving the file
+                if (config.getNewdir()!= null)
                 {
-                    String ok=moveFile(config,fNew);
-                    if(ok!=null) {
-                        finalFile = new File(newDirectory + "/" + fNew.getFileName());
+                    //don't move if a duplicate.
+                    if(!fNew.getDuplicate()) {
+                        if (moveFile(config, fNew,newFileName) ) {
+                            finalFile = new File(newDirectory + "/" + newFileName);
+                            fNew.setFileName(newFileName);
+                            countDriveMoved++;
+                            countMoved++;
+                        } else {
+                            message("Did not move file" + fNew.getFileName());
+                            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Error moving file");
+                        }
                     }
                     else
                     {
-                        message("Did not move file"+fNew.getFileName());
+                        countDuplicates++;
+                        countDriveDuplicates++;
                     }
                 }
                 Files.setAttribute(finalFile.toPath(), "creationTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileCreated()).getTime()));
                 Files.setAttribute(finalFile.toPath(), "lastAccessTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileAccessed()).getTime()));
                 Files.setAttribute(finalFile.toPath(), "lastModifiedTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileModified()).getTime()));
-                if (!outFile.delete()) {
-                    addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not delete temporary file out"+ outFile.getName());
-                    message("Cannot delete file:" + outFile.getPath());
-                }
-                if (!outFile2.delete()) {
-                    addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not delete temporary file out3"+ outFile2.getName());
-                    message("Cannot delete temp out2 file:" + outFile2.getPath());
-                }
-                if (!outFile3.delete()) {
-                    addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not delete temporary file out2"+ outFile3.getName());
-                    message("Cannot delete temp out2 file:" + outFile3.getPath());
-                }
+                cleanUpTempFiles(file,fNew);
+
                 countUPDATED++;
                 countDriveUPDATED++;
             } catch (Exception e) {
-                message("Cannot update File"+e);
+                message("Cannot update File - it will not be moved"+e);
+                cleanUpTempFiles(file,fNew);
             }
+
+    }
+    public static void cleanUpTempFiles(File file,FileObject fNew)
+    {
+
+        String fout_name3 = FilenameUtils.getFullPath(file.getPath()) + "out3" + FilenameUtils.getName(file.getPath());
+        File outFile3 = new File(fout_name3);
+        String fout_name2 = FilenameUtils.getFullPath(file.getPath()) + "out2" + FilenameUtils.getName(file.getPath());
+        File outFile2 = new File(fout_name2);
+        String fout_name = FilenameUtils.getFullPath(file.getPath()) + "out" + FilenameUtils.getName(file.getPath());
+        File outFile = new File(fout_name);
+        if (!outFile.delete()) {
+            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not delete temporary file out"+ outFile.getName());
+            message("Cannot delete file:" + outFile.getPath());
+        }
+        if (!outFile2.delete()) {
+            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not delete temporary file out3"+ outFile2.getName());
+            message("Cannot delete temp out2 file:" + outFile2.getPath());
+        }
+        if (!outFile3.delete()) {
+            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not delete temporary file out2"+ outFile3.getName());
+            message("Cannot delete temp out2 file:" + outFile3.getPath());
         }
     }
-
 
     /**
      *  this uses Apache Imaging to write out the latitude and Longitude -
@@ -2943,10 +3072,14 @@ public class ImageCatalogue {
                 message("Event calendar or event date must be specified - event :" + e.getEventid() + " " + e.getTitle());
                 addError("-", "-", null, "Error in Event ID: " + e.getEventid() + "- Calendar or Event date not specified");
                 i.remove();
+            }
+             else if (e.getEventdate() != null && e.getEventcalendar() != null) {
+                    message("You cannot specify both an Event calendar and an event date - event :" + e.getEventid() + " " + e.getTitle());
+                    addError("-", "-", null, "Error in Event ID: " + e.getEventid() + "- Calendar and Event date both specified");
+                    i.remove();
             } else {
                 if (e.getEventcalendar() != null) {
-                    // we have a valid calendar
-                    // alendar so set start and end times
+                    // we have a valid calendar, so set start and end times
                     LocalDateTime d = createLocalDateCalendar(e.getEventcalendar());
                     if (d != null) {
                         e.setExactStartTime(d);
@@ -3006,7 +3139,7 @@ public class ImageCatalogue {
      *  Reads metadata using ICAFE library
      *  THIS EXAMPLE LARGELY COPIED FROM ICAFE SAMPLE CODE
      * @param file - file to read
-     * @return - either true (sucessful) or false
+     * @return - either true (successful) or false
      */
     public static Boolean readMetadata(File file) {
         try {
@@ -3087,7 +3220,7 @@ public class ImageCatalogue {
             countDriveTooSmall = 0;
             countDriveProcessed = 0;
             countDriveLATLONG=0;
-            countDriveALREADYGEOCODED=0;
+            countDriveALREADYPROCESSED =0;
             countDriveGEOCODED = 0;
             countDriveNOTGEOCODED=0;
             countDriveDateUpdate=0;
@@ -3098,6 +3231,8 @@ public class ImageCatalogue {
             countDriveAddedEvent=0;
             countDriveUPDATED=0;
             countDriveErrors=0;
+            countDriveDuplicates=0;
+            countDriveMoved=0;
             message("Reading drive: "+d.getStartdir());
 
             //recursively find all files
@@ -3109,7 +3244,7 @@ public class ImageCatalogue {
             message("Photos too small                   "+ex + countDriveTooSmall);
             message("Photos processed                   "+ex + countDriveProcessed);
             message("Photos with Lat Long               "+ex + countDriveLATLONG);
-            message("Photos already Geocoded            "+ex + countDriveALREADYGEOCODED);
+            message("Photos already Geocoded            "+ex + countDriveALREADYPROCESSED);
             message("Photos Geocoded                    "+ex + countDriveGEOCODED);
             message("Photos with failed Geocoding       "+ex + countDriveNOTGEOCODED);
             message("Photos where date added            "+ex + countDriveDateUpdate);
@@ -3120,6 +3255,8 @@ public class ImageCatalogue {
             message("Photos with Event added            "+ex + countDriveAddedEvent);
             message("Photos updated                     "+ex + countDriveUPDATED);
             message("Photos with Errors in processing   "+ex + countDriveErrors);
+            message("Photos which are duplicates        "+ex + countDriveDuplicates);
+            message("Photos which have been moved       "+ex + countDriveMoved);
         }
     }
     private static void printMetadata(MetadataEntry entry, String indent, String increment) {
