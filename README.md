@@ -188,38 +188,40 @@ If you run IME without a JSON file (as described above) you can see the JSON fil
 	
 ## Top Level Parameters
 	 
-* update: - if false, no updates will take place to records ...the default is false
-* showmetadata: - metadata will be shown before (and also after, if update is true) .. default false
+* **update**: - if false, no updates will take place to records (default is false)
+* **showmetadata**: - metadata will be shown before (and also after, if update is true) .. (default false)
 * overwriteValues: - if metadata already exists in a field, it will be replaced, unless it has already been geocoded by IME -  default false. (If the new field value is blank, then it will write a blank value)
-* appendPhotos
-* tempdir - 
-* newdir - 
-* minfilesize - 
-* thumbsize 
-* cachedistance 
-* pauseseconds - 
-* timeZone - 
-* isocountrycode
-* country
-* stateprovince
-* city
-* sublocation
-* newfilenames
-*imageextensions
-*openapikey
-* height
-* width
-
-	
-	
+* **append**: if true, will append files in the JSON with files in the current run, useful for checking duplicates (default false)
+* **redo**: if true, will redo all processing (default false)
+* **tempdir**: - directory to hold results, including thumbnails 
+* **newdir**: - directory to move files to 
+* **minfilesize**: minimum size of the file to process  - in bytes - default is 4000 bytes 
+* **thumbsize**: size of the thumbnail - recommended is 360x270 
+* **cachedistance**: distance in metres between points that determine if photos are the same place (default 75 metres)
+* **pauseseconds**: pause time before making a call to OpenStreetMaps (default is 2 seconds, minimum is 1 second)
+* **timeZone**: specified time zone of all photos (not currently used) (default is Europe/London)
+* **isocountrycode**: specifies OpenStreetMap fields to use for mapping to IPTC Country Code (default is "country_code") 
+* **country**: specifies OpenStreetMap fields to use for mapping to IPTC Country (default is "country") 
+* **stateprovince**: specifies OpenStreetMap fields to use for mapping to IPTC State / Province (default is "county","state_district") 
+* **city**: specifies OpenStreetMap fields to use for mapping to IPTC City (default is "town","city","village") 
+* **sublocation**: specifies OpenStreetMap fields to use for mapping to IPTC Sub Location  (default is "leisure","amenity","house_number","road","hamlet","suburb","city_district") 
+* **newfilenames**: specifies OpenStreetMap fields to use for mapping to IPTC Country Code (default is "country_code") 
+* **imageextensions**: 
+* **openapikey**: An Open API key is required if carrying out Post Code look ups.
+* **height**: 
+* **width**:
 
 ## Drives
 This section specifies one or more drives. (Repeat the section within the curly brackets and add a comma between).
-* startdir
-* iptccategory
-* iptckeywords
-* iptccopyright
-* excludspec provides one or more directories to exclude and one or more fileprefixes to avoid.
+* **startdir**: The start location to search - all subdirectories will be searched from this point 
+* **iptccategory**: value of IPTC category to update - all photos will be updated with this valuye
+* **iptckeywords**: values of IPTC Keywords to update - all photos will be updated with these values
+* **iptccopyright**: values of IPTC Copyright field to update - all photos will be updated with these values
+* **excludspec**: provides one or more directories to exclude and one or more fileprefixes to avoid.
+* **directories**: a list of directory names to ignore
+* **name**: the names of directory names to ignore
+* **fileprefixes**: a list of file names to ignore
+* **name**: one or more file names to igonre
 ```
 	"drives": [
 		{
@@ -246,8 +248,17 @@ This section specifies one or more drives. (Repeat the section within the curly 
 	
 ## Events
 This section provides a number of events
+
+
+
+
 ## Cameras
-This section allows you to provide user friendly names for each camera or phone. IME will try and match the camera maker, and camera model to determine the camera name. 
+This section allows you to provide user friendly names for each camera or phone. IME will try and match the camera maker, and camera model to determine the camera name. This information is only used for the output from IME, to help you identify different cameras.
+
+* friendlyname: Name you can give to a camera based on the maker and model and program name
+* cameramaker: Camera Maker
+* cameramodel: Camera Model
+* programname: Camera software program name
 ```
 	"cameras": [
 		{
@@ -265,6 +276,57 @@ This section allows you to provide user friendly names for each camera or phone.
 	],
 ```
 ## Places
+
+This section is quite complicated, so it is recommended to simply copy from the output from an IME run and modify as appropriate - for instancing adding a "friendlyname"
+
+* **display_name**:
+* **lat**:
+* **lon**:
+* **address**:
+* **friendlyname**:
+* **placeid**:
+* **iptcstateProvince**: value for IPTC State/Province 
+* **iptccountry**:value for IPTC Countrye
+* **iptcsublocation**: value for IPTC Sub Location
+* **iptccity**: value for IPTC City
+* **iptccountryCode**: value for IPTC State/Province 
+```
+{
+			"display_name": "Tower of London, Tower Hill, Tower Liberty, Whitechapel, London Borough of Tower Hamlets, London, Greater London, England, EC3N 4AB, United Kingdom",
+			"lat": "51.509191",
+			"lon": "-0.076062",
+			"address": {
+				"amenity": null,
+				"suburb": "Whitechapel",
+				"city": "London",
+				"county": null,
+				"state_district": "Greater London",
+				"state": "England",
+				"postcode": "EC3N 4AB",
+				"country": "United Kingdom",
+				"country_code": "gb",
+				"road": "Tower Hill",
+				"village": null,
+				"hamlet": null,
+				"house_number": null,
+				"town": null,
+				"city_district": null,
+				"leisure": null
+			},
+			"friendlyname": null,
+			"placeid": 161,
+			"iptcstateProvince": "Greater London",
+			"iptccountry": "United Kingdom",
+			"iptcsublocation": "Tower Hill, Whitechapel",
+			"iptccity": "London",
+			"iptccountryCode": "GB"
+		},
+
+
+
+
+
+```
 
 # Summary of Metadata Fields 	
 	
