@@ -36,24 +36,29 @@ IME will leave the standard Windows fields (Date Modified, Date Accessed and Dat
 2. Run as a Windows command  
 ```ImageMetadataEnhancer.exe  <directory to search> <output directory> <new directory structure> <parameters>```  
 
-First parameter (directory to search) is the top level directory where the program will start to find image files photos. IME will then search all subdirectories, looking for image files
-Second parameter (output directory) is the location of the output files.  This should be in a different location than the photos.  If there are spaces in the directory names, you should enclose in double quotes. The output directory should then contain:
-•	A number of HTML files (Places.html, Files.html, Cameras.,html, Duplicates..html). These can be opened with a browser.
-•	A thumbnail for each photo
-•	A number of KML and KML files
-•	Output is written to a file output.txt
-•	A JSON file, config.json, which can be used to modify parameters when running the program. 
-Third parameter (new directory structure) – is the new directory which files are to be copied to.  The new directory structure will be /Year/Month/Photo1 etc.  Files will be be copied to the new directory structure using the photo date to put in the correct place.  
-In addition, further parameters can be added to the command. These are:
+**First parameter** (directory to search) is the top level directory where the program will start to find image files photos. IME will then search all subdirectories, looking for image files  
+**Second parameter** (output directory) is the location of the output files.  This should be in a different location than the photos.  If there are spaces in the directory names, you should enclose in double quotes. The output directory should then contain:  
+
+* A number of HTML files (Places.html, Files.html, Cameras.,html, Duplicates..html). These can be opened with a browser.
+* A thumbnail for each photo
+* A number of KML and KML files
+* Output is written to a file output.txt
+* A JSON file, config.json, which can be used to modify parameters when running the program.        
+
+**Third parameter** (new directory structure) – is the new directory which files are to be copied to.  The new directory structure will be /Year/Month/Photo1 etc.  Files will be be copied to the new directory structure using the photo date to put in the correct place.      
+
+In addition, further "run time" parameters can be added to the command. These are:
 * **update** – this will update files with new metadata and move files. If this parameter is not provided, then no updates will take place. 
 * **overwrite** – this will overwrite existing values in fields.  For instance, if there is already values in the IPTC location metadata fields, then they will be overwritten with new values.  If this is not set, then no overwriting will take place.
 * **showmetadata** – this will show all metadata in the console before and after updates.  This option is useful when debugging issues with files.
-* **redo** – once a file has been processed, a flag will be placed on the file and if subsequent runs are made, the file will not not be processed again. If this parameter is added, it will force processing including geocoding. 
-As an example  
-```ImageMetadataEnhancer.exe “d:/Photos” “d:/Results” “d:/newDir”```
-•	The directory with existing photos (to search) is: d:/Photos
-•	The results will be sent to : d: /Results
-•	Files will be copied to a new structure at : d:/newDir i.e. d:/newDir/2021/08/photo1.jpg
+* **redo** – once a file has been processed, a flag will be placed on the file and if subsequent runs are made, the file will not not be processed again. If this parameter is added, it will force processing including geocoding.  
+
+
+As an example:
+```ImageMetadataEnhancer.exe “d:/Photos” “d:/Results” “d:/newDir”```   
+* The directory with existing photos (to search) is: d:/Photos
+* The results will be sent to : d: /Results
+* Files will be copied to a new structure at : d:/newDir i.e. d:/newDir/2021/08/photo1.jpg
 
 # JSON Output
 Information for every file processed is written out to a JSON file.  The JSON filename includes the date and time e.g. **config20220401120138.json**.  This can be used as input to other runs and provides a way of adding:
@@ -63,6 +68,7 @@ Information for every file processed is written out to a JSON file.  The JSON fi
 	* Providing other parameters that impact the way the program runs.
 # Places
 Each longitude and latitude value found is represented as a **“Place”** in IME.  If two photos are taken at virtually the same place (i.e. they have similar latitude and longitude), then this is identified as the same “Place” in IME and IME does not have to use the Open Street Map Service. (This is a good thing, because Open Street Map is a limited service, and condition of use is that it is not swamped with requests.)  The user can specify the distance that determines if the Place is the same (in metres).  Also, the geocoding may not identify the exact address e.g. house numbers may be slightly out.  IME can also be given a set of known Places in the JSON, before it runs, where the correct house address can be provided. e.g. if 86 Acacia Avenue is found, but the actual address is “85 Acacia Avenue”, then this can be modified in the JSON file and also given a user friendly name e.g. “Our first house”. (Each Place added is given a unique number which can be used to allocate images to this place if they do not have longitude and latitude – see next section.)   
+
 The IPTC metadata specification has 5 fields for location - the user can modify how IME fills each field from the Open Stret Map values.  The default is as follows:
 * **Sublocation** - Amenity, leisure, house-number,road,hamlet,suburb,city_district
 * **City** - town, city, village
@@ -79,7 +85,8 @@ Note that IME will never overwrite longitude and latitude information if it is a
 # Adding Dates
 For scanned photos, the dates in the metadata are unlikely to be correct. An instruction can be added to the Windows Comment or Instructions (IPTC) fields to provide a correct date within the metadata. This is of the form:
 ```#date:YYYY``` or  ```#date:YYYY-MM```  or ```#date:YYYY-MM-DD```
-This updates the **EXIFOriginalDate** field.    
+This updates the **EXIFOriginalDate** field.   
+
 If a file has already been processed by IME, and then new date information is added to it, then IME will re-process the file - this could including finding an event and geocoding. Adding a new date will overwrite the existing date, even if a previous date has been provided. 
 # Finding Events
 Events can be used to add information such as a Title, Description or Keywords to a photo, based on the day or date.  For instance,
@@ -101,11 +108,11 @@ An event can have:
 *	endtime: (HH.mm) – Optional – the end time of a single event
 *	location :  either #latlon,~postcode or #place:
 
-In order of priority:
-•	Dates are set irrespective of other instructions. If a new date is found, this can determine if new events are applicable;
-•	If longitude and latitude metadata is present, it will be used to geocode, if it has not already been geocoded;
-•	If there is no latitude and longitude present, then any place, postcode or latlon instructions are used;
-•	If an event is found, then metadata can be updated, although IME will not overwrite any existing latitude and longitude information.  If multiple events are matched (e.g. a holiday amnd a birthday during the holiday), the first event will be used for updating the metadata.
+In order of priority, IME will process files as follows:
+* Dates are set irrespective of other instructions. If a new date is found, this can determine if new events are applicable;
+* If longitude and latitude metadata is present, it will be used to geocode, if it has not already been geocoded;
+* If there is no latitude and longitude present, then any place, postcode or latlon instructions are used;
+* If an event is found, then metadata can be updated, although IME will not overwrite any existing latitude and longitude information.  If multiple events are matched (e.g. a holiday amnd a birthday during the holiday), the first event will be used for updating the metadata.
 	
 # Audit Trail of Changes
 On completion of processing, IME will add a value to the following fields:
@@ -147,16 +154,37 @@ IME uses Open Street Map APIs to carry out reverse geocoding and post code look 
 	
 # Viewing information in other tools
 * Adobe Lightroom - you may have to update the metadata in Lightroom.  Select the Images or directories and right clck on one image and select "Read Metadata from Selected Files"
-* Adobe Bridge - 
+* Adobe Bridge - this is free software from Adobe which has good metadatta editing capability
 * IrfanView - open a file and click on the Image / Information menu option.  You will see buttons for IPTC Info, EXIF Info and Comments.
-* Windows - rigfht click on any image and select properties. This will allow viewing of most metadata. 
+* Windows - right click on any image and select properties. This will allow viewing of most metadata. 
+* ExifTool - this provides a very good report on all metadata on a file
 # Limitations
-* Only tested on Windows, although it is believed that it will work unchanged on Linux, Apple and other systems that support Java. 
-* Only supports JPEG / JPG files, although with testing may also support other formats.
+* IME is currently only tested on Windows, although it is believed that it will work unchanged on Linux, Apple and other systems that support Java. 
+* IME Only supports JPEG / JPG files, although with testing may also support other formats.
 * There is a bug in Apache Imaging library which means that if the Windows Title field already has a value, it cannot be overwritten. This only impacts the use of Events. 
 	
 # JSON File input
-The best way of running IME is to run it once without a JSON input file and then modify the output file to form the input for the next run.  To run with as JSON file, the first paramter should be a JSON file. e.g. ```ImageMetadata.exe "d:/photos/config.json```. Note you can also add overwrite, redo and parameters to override the values in the JSON file.
+The best approach for using IME is to run it once without a JSON input file and then modify the output file to form the input for the next run.  To run with a JSON file, the first parameter should be a JSON file. e.g. ```ImageMetadata.exe "d:/photos/config.json"```. All "run time parameters (as described above) can be specified in the JSON file, but they can be overridden by adding to the command line.
+
+The following sections outline the various sections of the JSON file - the best waty of understanding the JSON file it to look at the output from a run of IME.
+
+oviding a JSON File
+
+A JSON file can be provided as input for:
+* Specifying Events, Places and Cameras
+* Modifying other parameters of the program
+* Merging results with other runs from IME (across different root directories)
+
+If you run IME without a JSON file (as described above) you can see the JSON file as output and modify the parameters.
+
+	•	IME provides various updating modes, allowing processing without updating files – it is suggested that the program is run initially in read only mode first, to identify and correctly identify Places.
+•	It can work across multiple drives and directories if your collection is spread around;
+•	 Some directories, file types and files can be excluded from the processing e.g. jpg files are often found in program files e.g. icons, which should be excluded from the analysis.
+•	Files below a certain size can also be excluded;
+•	Other metadata can also be added :
+•	IPTC Copyright
+•	IPTC Keywords
+
 	
 ## Top Level Parameters
 	 
@@ -257,28 +285,11 @@ This section allows you to provide user friendly names for each camera or phone.
 |sublocation|IPTC|Not visible|IPTC - Sublocation|Visible from IPTC /Credits Origin|This is added by IME, either from lat, lon or from an event.|
 |Comments (JPG)|Comments|Not visible in Windows|Not visible in Lightroom Classic|Visible from Information / Comments|Each time a file is updated, a comment field is added by IME  e.g. when a file is moved or geocoded.|
 
-# Providing a JSON File
-
-A JSON file can be provided as input for:
-* Specifying Events, Places and Cameras
-* Modifying other parameters of the program
-* Merging results with other runs from IME (across different root directories)
-
-If you run IME without a JSON file (as described above) you can see the JSON file as output and modify the parameters.
-
-	•	IME provides various updating modes, allowing processing without updating files – it is suggested that the program is run initially in read only mode first, to identify and correctly identify Places.
-•	It can work across multiple drives and directories if your collection is spread around;
-•	 Some directories, file types and files can be excluded from the processing e.g. jpg files are often found in program files e.g. icons, which should be excluded from the analysis.
-•	Files below a certain size can also be excluded;
-•	Other metadata can also be added :
-•	IPTC Copyright
-•	IPTC Keywords
-
-
 # References
-	
+
+
 # For Developers
-IME has been developed in Java 17 with Maven build on Intellij.
+IME has been developed in Java 17 with Maven build on Intellij.  A JUNIT-based test library is also provided. 
 	
 IME makes extensive use of open source java libraries,  including 
 *	ICAFE – read and writing IPTC data
