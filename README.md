@@ -88,6 +88,12 @@ For scanned photos, the dates in the metadata are unlikely to be correct. An ins
 This updates the **EXIFOriginalDate** field.   
 
 If a file has already been processed by IME, and then new date information is added to it, then IME will re-process the file - this could including finding an event and geocoding. Adding a new date will overwrite the existing date, even if a previous date has been provided. 
+# Adding IPTC Metadata
+It is also possible to add some IPTC metadata to every photo - this is specified at the Drive level. The fields that can currently be updated are as follows:   
+* **IPTC category**: this will replace the existing category 
+* **IPTC Keywords**: these should be entered separated by semi-colon i.e. ```"keyword1;keyword2"```.  These are added to existing keywords.
+* **IPTC Copyright**: this will adda new Copyright statement to this field.
+
 # Finding Events
 Events can be used to add information such as a Title, Description or Keywords to a photo, based on the day or date.  For instance,
 *	Every photo taken on Christmas Day could be given a title of ‘Christmas’;
@@ -129,7 +135,9 @@ In each case, the command which had been entered will be updated with “DONE”
 ```
 # Moving Files to a New Directory
 One of the things that IME can do is move all photos to a new directory structure.  This is of the structure 
-```YEAR / MONTH / FILENAME``` ie.  ```2016/05/WA123245.JPG```
+```YEAR / MONTH / FILENAME``` ie.  ```2016/05/WA123245.JPG```.    
+
+When moving files, the old directory is written to the comments metadata. The old directory structure is also added to the Windows keywords metadata, it is could include information on the origin of the files that have been moved.  
  
 If files have true duplicates, then the second and subsequent files are flagged as duplicates in the Comment section and will not be copied across to the new file directory (although they will be updated e.g. geocoded).
 	
@@ -193,6 +201,7 @@ If you run IME without a JSON file (as described above) you can see the JSON fil
 * overwriteValues: - if metadata already exists in a field, it will be replaced, unless it has already been geocoded by IME -  default false. (If the new field value is blank, then it will write a blank value)
 * **append**: if true, will append files in the JSON with files in the current run, useful for checking duplicates (default false)
 * **redo**: if true, will redo all processing (default false)
+* **overwrite**: if true, will overwrite existing values (default false)
 * **tempdir**: - directory to hold results, including thumbnails 
 * **newdir**: - directory to move files to 
 * **minfilesize**: minimum size of the file to process  - in bytes - default is 4000 bytes 
@@ -206,10 +215,9 @@ If you run IME without a JSON file (as described above) you can see the JSON fil
 * **city**: specifies OpenStreetMap fields to use for mapping to IPTC City (default is "town","city","village") 
 * **sublocation**: specifies OpenStreetMap fields to use for mapping to IPTC Sub Location  (default is "leisure","amenity","house_number","road","hamlet","suburb","city_district") 
 * **newfilenames**: specifies OpenStreetMap fields to use for mapping to IPTC Country Code (default is "country_code") 
-* **imageextensions**: 
+* **imageextensions**: a list of file extensions to process separated by "~" - for JPG should be ```"jpg~jpeg"```. IME has not been tested with other file formats.
 * **openapikey**: An Open API key is required if carrying out Post Code look ups.
-* **height**: 
-* **width**:
+
 
 ## Drives
 This section specifies one or more drives. (Repeat the section within the curly brackets and add a comma between).
