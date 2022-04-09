@@ -103,7 +103,7 @@ Events can be used to add information such as a Title, Description or Keywords t
 For scanned photos, you should use the #date: instruction to provide a correct date – the date is always processed before events.
 Events are defined in the JSON file – if the date provided in the JSON file matches the photo creation date (**EXIFOriginalDate**), then the event info will be copied across to the photo – this can also include geographical information on the event, if it exists.  
 Normally the date of the photo is sufficient to find the correct event.  However, if you want to hard code the event. i.e. not based on a date, you can enter an instruction for the event  – enter ```#event:123```.
-An event can have:
+An event can have the following information in the JSON:
 *	title
 *	description (Subject)
 *	keywords (separated by semi-colons)
@@ -118,7 +118,7 @@ In order of priority, IME will process files as follows:
 * Dates are set irrespective of other instructions. If a new date is found, this can determine if new events are applicable;
 * If longitude and latitude metadata is present, it will be used to geocode, if it has not already been geocoded;
 * If there is no latitude and longitude present, then any place, postcode or latlon instructions are used;
-* If an event is found, then metadata can be updated, although IME will not overwrite any existing latitude and longitude information.  If multiple events are matched (e.g. a holiday amnd a birthday during the holiday), the first event will be used for updating the metadata.
+* If an event is found, then metadata can be updated, although IME will not overwrite any existing latitude and longitude information.  If multiple events are matched (e.g. a holiday and a birthday during the holiday), the title, description and keywords are concatenated together in the metadata.
 	
 # Audit Trail of Changes
 On completion of processing, IME will add a value to the following fields:
@@ -172,27 +172,16 @@ IME uses Open Street Map APIs to carry out reverse geocoding and post code look 
 * There is a bug in Apache Imaging library which means that if the Windows Title field already has a value, it cannot be overwritten. This only impacts the use of Events. 
 	
 # JSON File input
-The best approach for using IME is to run it once without a JSON input file and then modify the output file to form the input for the next run.  To run with a JSON file, the first parameter should be a JSON file. e.g. ```ImageMetadata.exe "d:/photos/config.json"```. All "run time parameters (as described above) can be specified in the JSON file, but they can be overridden by adding to the command line.
-
-The following sections outline the various sections of the JSON file - the best waty of understanding the JSON file it to look at the output from a run of IME.
-
-oviding a JSON File
-
-A JSON file can be provided as input for:
+The best approach for using IME is to run it once without a JSON input file and then modify the JSON output file to form the input for the next run. 
+A JSON file can provide input for:
+* Specifying multiple drives to search and excluding specified directories or files
 * Specifying Events, Places and Cameras
 * Modifying other parameters of the program
 * Merging results with other runs from IME (across different root directories)
 
-If you run IME without a JSON file (as described above) you can see the JSON file as output and modify the parameters.
+To run with a JSON file, the first parameter should be a JSON filename. e.g. ```ImageMetadata.exe "d:/photos/config.json"```. All "run time parameters (as described above) can be specified in the JSON file, but they can be overridden by adding to the command line.
 
-	•	IME provides various updating modes, allowing processing without updating files – it is suggested that the program is run initially in read only mode first, to identify and correctly identify Places.
-•	It can work across multiple drives and directories if your collection is spread around;
-•	 Some directories, file types and files can be excluded from the processing e.g. jpg files are often found in program files e.g. icons, which should be excluded from the analysis.
-•	Files below a certain size can also be excluded;
-•	Other metadata can also be added :
-•	IPTC Copyright
-•	IPTC Keywords
-
+The following sections outline the various sections of the JSON file - the best way of understanding the JSON file it to look at the output from a run of IME.
 	
 ## Top Level Parameters
 	 
@@ -258,6 +247,9 @@ This section specifies one or more drives. (Repeat the section within the curly 
 This section provides a number of events
 
 
+```
+
+```
 
 
 ## Cameras
