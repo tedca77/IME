@@ -135,11 +135,11 @@ In each case, the command which had been entered will be updated with “DONE”
 #postcodeDONE:SW1A1AA
 ```
 When IME is first run in update mode, #processedDONE: is added to the three comments sections.  If it is run again, and finds the processedDONE: text, it will not update metadata and will not recreate the thumbnail file.  However, it will  
-* a) check for duplicates 
-* b) check if new date information has been provided 
-* c) check if new location iformation has been provided 
-* d) check if new events have been found. 
-* e) reverse geocode the longitude and latitude
+* check for duplicates 
+* check if new date information has been provided 
+* check if new location iformation has been provided 
+* check if new events have been found. 
+* reverse geocode any longitude and latitude, in order to match up with Places (as stated elsewhere, if Places are provided in the JSON, the program will not have to use Open Street Map to look up Longitud and latitude. 
 
 # Moving Files to a New Directory
 One of the features of IME is to move all photos to a new directory structure.  This is of the structure:
@@ -256,9 +256,24 @@ This section specifies one or more drives. (Repeat the section within the curly 
 ## Events
 This section provides a number of events
 
-
+*	erventid : provides an id for the event
+*	description (Subject):
+*	keywords (separated by semi-colons): 
+*	eventcalendar : This is used to indicate that the same date each year will be found e.g. for a birthday (MM-DD or YYYY-MM-DD – if the year is provided, then IME will only find dates equal or after the year provided)
+*	eventdate; (YYYY-MM-DD) – the date of a single event
+*	enddate: (YYYY-MM-DD) - Optional  - the end date of a single event
+*	eventtime (HH.mm) – Optional – the start time of a single event
+*	endtime: (HH.mm) – Optional – the end time of a single event
+*	location :  either #latlon,~postcode or #place:
 ```
-
+                        {
+				"eventid":10,
+				"title":"Jo and Dave Wedding",
+				"description":"JO and Dave's Wedding in Putney",
+				"eventdate":"2021-07-21",
+				"location":"#postcode:SW151LB",
+				"keywords": "Wedding"
+			},
 ```
 
 
