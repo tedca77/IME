@@ -61,11 +61,12 @@ As an example:
 * Files will be copied to a new structure at : d:/newDir i.e. d:/newDir/2021/08/photo1.jpg
 
 # JSON Output
-Information for every file processed is written out to a JSON file.  The JSON filename includes the date and time e.g. **config20220401120138.json**.  This can be used as input to other runs and provides a way of adding:
-	* Events
-	* Places
-	* Camera names
-	* Providing other parameters that impact the way the program runs.
+Information for every file processed is written out to a JSON file.  The JSON filename includes the date and time e.g. **config20220401120138.json**.  This can be used as input to other runs and provides a way of adding:   
+* Events
+* Places
+* Camera names
+* Providing other parameters that impact the way the program runs.
+
 # Places
 Each longitude and latitude value found is represented as a **“Place”** in IME.  If two photos are taken at virtually the same place (i.e. they have similar latitude and longitude), then this is identified as the same “Place” in IME and IME does not have to use the Open Street Map Service. (This is a good thing, because Open Street Map is a limited service, and condition of use is that it is not swamped with requests.)  The user can specify the distance that determines if the Place is the same (in metres).  Also, the geocoding may not identify the exact address e.g. house numbers may be slightly out.  IME can also be given a set of known Places in the JSON, before it runs, where the correct house address can be provided. e.g. if 86 Acacia Avenue is found, but the actual address is “85 Acacia Avenue”, then this can be modified in the JSON file and also given a user friendly name e.g. “Our first house”. (Each Place added is given a unique number which can be used to allocate images to this place if they do not have longitude and latitude – see next section.)   
 
@@ -134,12 +135,12 @@ In each case, the command which had been entered will be updated with “DONE”
 #placeDONE: 34
 #postcodeDONE:SW1A1AA
 ```
-When IME is first run in update mode, #processedDONE: is added to the three comments sections.  If it is run again, and finds the processedDONE: text, it will not update metadata and will not recreate the thumbnail file.  However, it will  
-* check for duplicates 
-* check if new date information has been provided 
-* check if new location iformation has been provided 
-* check if new events have been found. 
-* reverse geocode any longitude and latitude, in order to match up with Places (as stated elsewhere, if Places are provided in the JSON, the program will not have to use Open Street Map to look up Longitud and latitude. 
+When IME is first run in update mode, #processedDONE: is added to the three comments sections.  If it is run again, and finds the processedDONE: text, it will not update metadata and will not recreate the thumbnail file, if it already exists.  However, it will:  
+* check for duplicates and identify
+* check if new date information has been provided, and use this to find new Events 
+* check if new location information has been provided, and if so, geocode the file 
+* check if new events have been found and update the file
+* reverse geocode any longitude and latitude information, in order to generate a list of Places, and a summary of photos for each Place, but it will not update the file. To avoid the extra processing, if you can copy the Places found fromm a JSON output file, to a JSON input file, it will be more efficient.   
 
 # Moving Files to a New Directory
 One of the features of IME is to move all photos to a new directory structure.  This is of the structure:
