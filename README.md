@@ -42,23 +42,29 @@ IME will leave the standard Windows date fields (Date Modified, Date Accessed an
 * A number of HTML files (Places.html, Files.html, Cameras.,html, Duplicates..html). These can be opened with a browser.
 * A thumbnail for each photo
 * A number of KML and KML files
-* Output is written to a file output.txt
-* A JSON file, config.json, which can be used to modify parameters when running the program.        
+* Output is written to a file called configYYYYMMDDhhMMss.json - where the date and time are added.   
 
-**Third parameter** (new directory structure) – is the new directory which files are to be copied to.  The new directory structure will be /Year/Month/Photo1 etc.  Files will be be copied to the new directory structure using the photo date to put in the correct place.      
+As an example:
+```ImageMetadataEnhancer.exe “d:/Photos” “d:/Results”```   
+* The directory with existing photos (to search) is: d:/Photos
+* The results will be sent to : d: /Results     
 
-In addition, further "run time" parameters can be added to the command. These are:
-* **update** – this will update files with new metadata and move files. If this parameter is not provided, then no updates will take place. 
-* **overwrite** – this will overwrite existing values in fields.  For instance, if there is already values in the IPTC location metadata fields, then they will be overwritten with new values.  If this is not set, then no overwriting will take place.
-* **showmetadata** – this will show all metadata in the console before and after updates.  This option is useful when debugging issues with files.
-* **redo** – once a file has been processed, a flag will be placed on the file and if subsequent runs are made, the file will not not be processed again. If this parameter is added, it will force processing including geocoding.  
+** Please not that file directories should be specified with a forward slash "/".**
 
+**Third parameter** (new directory structure) – is the new directory which files are to be copied to.  The new directory structure will be /Year/Month/Photo1 etc.  Files will be be copied to the new directory structure using the photo date to put in the correct place.
 
 As an example:
 ```ImageMetadataEnhancer.exe “d:/Photos” “d:/Results” “d:/newDir”```   
 * The directory with existing photos (to search) is: d:/Photos
 * The results will be sent to : d: /Results
 * Files will be copied to a new structure at : d:/newDir i.e. d:/newDir/2021/08/photo1.jpg
+
+In addition, further "run time" parameters can be added to the command. These are:
+* **update** – this will update files with new metadata and move files. If this parameter is not provided, then no updates will take place. 
+* **overwrite** – this will overwrite existing values in fields.  For instance, if there is already values in the IPTC location metadata fields, then they will be overwritten with new values.  If this is not set, then no overwriting will take place.
+* **showmetadata** – this will show all metadata in the console before and after updates.  This option is useful when debugging issues with files.
+* **redo** – once a file has been processed, a flag will be placed on the file and if subsequent runs are made, the file will not not be processed again. If this parameter is added, it will force processing including geocoding.  
+* **clear** - this will remove any existing comments in the metadata, added by IME. (This is explained later.)
 
 # JSON Output
 Information for every file processed is written out to a JSON file.  The JSON filename includes the date and time e.g. **config20220401120138.json**.  This can be used as input to other runs and provides a way of adding:   
@@ -67,8 +73,10 @@ Information for every file processed is written out to a JSON file.  The JSON fi
 * Camera names
 * Providing other parameters that impact the way the program runs.
 
+The structure of this file is explained later in this document.
+
 # Places
-Each longitude and latitude value found is represented as a **“Place”** in IME.  If two photos are taken at virtually the same place (i.e. they have similar latitude and longitude), then this is identified as the same “Place” in IME and IME does not have to use the Open Street Map Service. (This is a good thing, because Open Street Map is a limited service, and condition of use is that it is not swamped with requests.)  The user can specify the distance that determines if the Place is the same (in metres).  Also, the geocoding may not identify the exact address e.g. house numbers may be slightly out.  IME can also be given a set of known Places in the JSON, before it runs, where the correct house address can be provided. e.g. if 86 Acacia Avenue is found, but the actual address is “85 Acacia Avenue”, then this can be modified in the JSON file and also given a user friendly name e.g. “Our first house”. (Each Place added is given a unique number which can be used to allocate images to this place if they do not have longitude and latitude – see next section.)   
+Each longitude and latitude value found is represented as a **“Place”** in IME.  If two photos are taken at virtually the same place (i.e. they have similar latitude and longitude), then this is identified as the same “Place” in IME and IME does not have to use the Open Street Map Service to carry out a second geocoding. (This is a good thing, because Open Street Map is a limited service, and condition of use is that it is not swamped with requests.)  The user can specify the distance that determines if the Place is the same (in metres).  Also, the geocoding may not identify the exact address e.g. house numbers may be slightly out.  IME can also be given a set of known Places in the JSON, before it runs, where the correct house address can be provided. e.g. if 86 Acacia Avenue is found, but the actual address is “85 Acacia Avenue”, then this can be modified in the JSON file and also given a user friendly name e.g. “Our first house”. (Each Place added is given a unique number which can be used to allocate images to this place if they do not have longitude and latitude – see next section.)   
 
 The IPTC metadata specification has 5 fields for location - the user can modify how IME fills each field from the Open Stret Map values.  The default is as follows:
 * **Sublocation** - Amenity, leisure, house-number,road,hamlet,suburb,city_district
@@ -88,12 +96,12 @@ For scanned photos, the dates in the metadata are unlikely to be correct. An ins
 ```#date:YYYY``` or  ```#date:YYYY-MM```  or ```#date:YYYY-MM-DD```
 This updates the **EXIFOriginalDate** field which appears as "Date Taken" in Windows properties.   
 
-If a file has already been processed by IME, and then new date information is added to it, then IME will re-process the file - this could including finding an Event oe adding geolocation information. Adding a new date will overwrite the existing date, even if a previous date has been provided. 
+If a file has already been processed by IME, and then new information is added, then IME will re-process the file - this could including finding an Event or adding geolocation information. Adding a new date will overwrite the existing date, even if a previous date has been provided. 
 # Adding IPTC Metadata
-It is also possible to add some IPTC metadata to every photo - this is specified at the Drive level. The fields that can currently be updated are as follows:   
+It is also possible to add some IPTC metadata to every photo - this is specified at the Drive level (IME can operate across multiple drives). The fields that can currently be updated are as follows:   
 * **IPTC category**: this will replace the existing category 
 * **IPTC Keywords**: these should be entered separated by semi-colon i.e. ```"keyword1;keyword2"```.  These are added to existing keywords.
-* **IPTC Copyright**: this will adda new Copyright statement to this field.
+* **IPTC Copyright**: this will add a new Copyright statement to this field.
 
 # Finding Events
 Events can be used to add information such as a Title, Description or Keywords to a photo, based on the day or date.  For instance,
@@ -101,7 +109,7 @@ Events can be used to add information such as a Title, Description or Keywords t
 *	Every photo taken on a birthday could be given a title of the persons birthday
 *	Every photo taken on a holiday between two dates can be marked with a location.
 
-For scanned photos, you should use the #date: instruction to provide a correct date – the date is always processed before events.
+For scanned photos, you should use the #date: instruction to provide a correct date – the date is always processed before events. (As described above.)
 Events are defined in the JSON file – if the date provided in the JSON file matches the photo creation date (**EXIFOriginalDate**), then the event info will be copied across to the photo – this can also include geographical information on the event, if it exists.  
 Normally the date of the photo is sufficient to find the correct event.  However, if you want to hard code the event. i.e. not based on a date, you can enter an instruction for the event  – enter ```#event:123```.
 An event can have the following information in the JSON:
@@ -122,7 +130,7 @@ In order of priority, IME will process files as follows:
 * If an Event is found, then metadata can be updated, although IME will not overwrite any existing latitude and longitude information.  If multiple events are matched (e.g. a holiday and a birthday during the holiday), the title, description and keywords are concatenated together in the metadata.
 
 # Running Multiple Times
-IME has been designed so that it can run mutiple times across your image library, without having to rerun all the processing again. It does this by adding comments into the files which provides an audit trail of changes.  
+IME has been designed so that it can run mutiple times across your image library, without having to rerun all the processing again. It does this by adding comments into the files which provides an audit trail of changes, and information on Places and Events that have been found.  
 On completion of processing, IME will add a value to the following fields:
 1.	JPEG Comments section – this is modified with a new comment for each modification;
 2.	Instructions (IPTC) metadata is updated with a new comment or an updated comment;
@@ -136,7 +144,7 @@ In each case, the command which had been entered will be updated with “DONE”
 #postcodeDONE:SW1A1AA
 ```
 When IME is first run in update mode, #processedDONE: is added to the three comments sections.  If it is run again, and finds the processedDONE: text, it will not update metadata and will not recreate the thumbnail file, if it already exists.  However, it will:  
-* check for duplicates and identify
+* check for duplicates and identify them
 * check if new date information has been provided, and use this to find new Events 
 * check if new location information has been provided, and if so, geocode the file 
 * check if new events have been found and update the file
@@ -160,17 +168,15 @@ In IME, a duplicate file is where two files have:
 * the same creation date
 * the same camera maker and model.
 	
-Most new cameras produce a filename that is likely to be unique as it includes the time of capture down to a thousandth of a second in the file name. However, earlier cameras and phones (and scanners) had much shorter file names and the chance of duplicate file names is quite high.
+Most new cameras produce a filename that is likely to be unique as it includes the time of capture down to a thousandth of a second in the file name. However, earlier cameras and phones (and scanners) had much shorter file names and the chance of duplicate file names in your archives is high.
 	
 IME produces a report of any possible duplicates and when in "update mode" puts a comment in the metadata (for any duplicates) to indicate it has been identified as a duplicate. It is recommended to run IME in read-only mode first, to determine any directories or photos that have been duplicated. 
 	
 IME will only look for duplicates in the directory structure being processed. If you only process part of your collection, then it will not pick up duplicates elsewhere.  You can get round this in two ways a) by processing all files in one run or b)by providing the JSON output file from other runs as an input file for the program - this will then match against all photos in your collection.  For instance, if your collection is split into **Photos before 2000** and **Photos after 2000** then run IME against the "Photos before 2000" directory, rename the JSON output file and provide as an input file when running against "Photos after 2000".  You will then get a report of photos for your complete collection and any duplicates will be identified across the complete collection.  
 	
 # Use of Open Street Map
-IME uses Open Street Map APIs to carry out reverse geocoding and post code look up.  This requires an internet connection. For post code lookup, you will also require an Open Street Map API key. This is entered in the JSON file - further information available below.  IME minimises calls to Open Street Map by saving Places and checking Places before making a call to OpenStreet Map. (This also speeds up operation.)   For each new longitude and latidtude pair, IME calculates how close it is to each of the saved places and if within a specified distance, it will use the cached value. So if you have taken 10 photos in the same location, only one call to Open Street Map is required.   A sensible distance is 75 metres, although this can be modified in the JSON input file. Saved Places are also written out to the JSON file and can be used as input to other runs, removing the need for an Open Street Map look up when a photo is next found close to other photos.  It is recommended that Places information in the JSON output file is always copied to the next JSON input file, to save making calls to Opne Street Map. 
+IME uses Open Street Map APIs to carry out reverse geocoding and post code look up.  This requires an internet connection. For post code lookup, you will also require an Open Street Map API key. This is entered in the JSON file - further information available below.  IME minimises calls to Open Street Map by saving Places and checking Places before making a call to OpenStreet Map. (This also speeds up operation.)   For each new longitude and latidtude pair, IME calculates how close it is to each of the saved places and if within a specified distance, it will use the cached value. So if you have taken 10 photos in the same location, only one call to Open Street Map is required.   A sensible distance is 75 metres, although this can be modified in the JSON input file. Places are also written out to the JSON file and can be used as input to other runs, removing the need for an Open Street Map look up when a photo is next found close to other photos.  It is recommended that Places information in the JSON output file is always copied to the next JSON input file, to save making calls to Open Street Map. 
 	
-
-
 # Viewing information in other tools
 * **Adobe Lightroom** - you may have to update the metadata in Lightroom.  Select the Images or directories and right click on one image and select "Read Metadata from Selected Files"
 * **Adobe Bridge** - this is free software from Adobe which has good metadatta editing capability
@@ -181,6 +187,7 @@ IME uses Open Street Map APIs to carry out reverse geocoding and post code look 
 * IME is currently only tested on Windows, although it is believed that it will work unchanged on Linux, Apple and other systems that support Java. 
 * IME is currently only tested with JPEG / JPG files, although with testing may also support other formats.
 * There is a bug in Apache Imaging library which means that if the Windows Title field already has a value, it cannot be overwritten. This only impacts the use of Events. 
+* IME has only been tested with UK national postcodes.
 	
 # JSON File input
 The best approach for using IME is to run it once without a JSON input file and then modify the JSON output file to form the input for the next run. 
@@ -257,34 +264,33 @@ This section specifies one or more drives. (Repeat the section within the curly 
 ## Events
 This section provides a number of events
 
-*	erventid : provides an id for the event
-*	description (Subject):
-*	keywords (separated by semi-colons): 
-*	eventcalendar : This is used to indicate that the same date each year will be found e.g. for a birthday (MM-DD or YYYY-MM-DD – if the year is provided, then IME will only find dates equal or after the year provided)
-*	eventdate; (YYYY-MM-DD) – the date of a single event
-*	enddate: (YYYY-MM-DD) - Optional  - the end date of a single event
-*	eventtime (HH.mm) – Optional – the start time of a single event
-*	endtime: (HH.mm) – Optional – the end time of a single event
-*	location :  either #latlon,~postcode or #place:
+* **eventid**: provides an id for the event
+* **description**: provides a description or subject which is written to all photos that match this event
+* **keywords** : (separated by semi-colons): 
+* **eventcalendar**: This is used to indicate that the same date each year will be found e.g. for a birthday (MM-DD or YYYY-MM-DD – if the year is provided, then IME will only find dates equal or after the year provided)
+* **eventdate**: (YYYY-MM-DD) – the date of a single event
+* **enddate**: (YYYY-MM-DD) - Optional  - the end date of a single event
+* **eventtime**: (HH.mm) – Optional – the start time of a single event
+* **endtime**: (HH.mm) – Optional – the end time of a single event
+* **location**:  either #latlon,~postcode or #place:
 ```
                         {
 				"eventid":10,
-				"title":"Jo and Dave Wedding",
-				"description":"JO and Dave's Wedding in Putney",
+				"title":"Fred and Ginger's Wedding",
+				"description":"Fred and Ginger's Wedding in LondonPutney",
 				"eventdate":"2021-07-21",
 				"location":"#postcode:SW151LB",
-				"keywords": "Wedding"
+				"keywords": "Wedding;Fred;Ginger"
 			},
 ```
-
 
 ## Cameras
 This section allows you to provide user friendly names for each camera or phone. IME will try and match the camera maker, and camera model to determine the camera name. This information is only used for the output from IME, to help you identify different cameras.
 
-* friendlyname: Name you can give to a camera based on the maker and model and program name
-* cameramaker: Camera Maker
-* cameramodel: Camera Model
-* programname: Camera software program name
+* **friendlyname**: Name you can give to a camera based on the maker and model and program name
+* **cameramaker**: Camera Maker
+* **cameramodel**: Camera Model
+* **programname**: Camera software program name
 ```
 	"cameras": [
 		{
@@ -303,14 +309,14 @@ This section allows you to provide user friendly names for each camera or phone.
 ```
 ## Places
 
-This section is quite complicated, so it is recommended to simply copy from the output from an IME run and modify as appropriate - for instancing adding a "friendlyname"
+This section is quite complicated, so it is recommended to simply copy from the output from an IME run and modify as appropriate - for instancing adding a "friendlyname", or correcting a street address.
 
-* **display_name**:
-* **lat**:
-* **lon**:
-* **address**:
-* **friendlyname**:
-* **placeid**:
+* **display_name**: this is shown in the HTML output but does not update the files
+* **lat**: latitude value
+* **lon**: longitude value
+* **address**: a section that includes the various parts of the addrewss
+* **friendlyname**: a name the user can give to Places 
+* **placeid**: a unique ID for Places.  This is generated by IME.  If running across your archive in sections, you have to ensure that this ID is unique.
 * **iptcstateProvince**: value for IPTC State/Province 
 * **iptccountry**:value for IPTC Countrye
 * **iptcsublocation**: value for IPTC Sub Location
@@ -348,10 +354,6 @@ This section is quite complicated, so it is recommended to simply copy from the 
 			"iptccountryCode": "GB"
 		},
 
-
-
-
-
 ```
 
 # Summary of Metadata Fields 	
@@ -374,7 +376,11 @@ This section is quite complicated, so it is recommended to simply copy from the 
 |Comments (JPG)|Comments|Not visible in Windows|Not visible in Lightroom Classic|Visible from Information / Comments|Each time a file is updated, a comment field is added by IME  e.g. when a file is moved or geocoded.|
 
 # References
-
+Adobe Lightroom
+Adobe Bridge
+IrfanView
+ExifTool
+IPTC 
 
 # For Developers
 IME has been developed in Java 17 with Maven build on Intellij.  A JUNIT-based test library is also provided. 
