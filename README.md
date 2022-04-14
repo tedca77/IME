@@ -358,8 +358,8 @@ This section is quite complicated, so it is recommended to simply copy from the 
 
 # Summary of Metadata Fields 	
 	
-|Field|Metadata Section|Field in Windows Properties|Field in Lightroom|Fields in IrfanView|Notes|
-|-----|---------------|---------------------------|-------------------|------------------|------------|
+|Field|Metadata Section|Field in Windows Properties|Field in Lightroom|Fields in IrfanView|notes|
+|-----|----------|---------------------|-----------------|------------------|----------------------|
 |Title|IFD0|Details/Description/Title|Title|Visible in IPTC/Document Title. Also,XPTITLE & IMAGE_DESCRIPTION|a)Can be set in event processing using “title” in the JSON b)Due to an issue with Apache Imaging, this field is not written if there is an existing value present.|
 |Subject|IFD0|Details/ Description/Subject|Available in Lightroom as Caption|Visible in EXIF/XPSubject|	Can be set in event processing using Description in the JSON|
 |IPTC Keywords (In Windows, Tags)|IFD0|Details/Description/Tags – note  when entering values in Windows, values should be separated by semi colons “;”|Keywording, and unique values will appear in KeyWord List. note , when entering, values in Lightroom  should be separated by commas “,"|Appear in XPKeywords and IPTC Keywords|a)	Existing Keywords are retained b)The same Keywords can be added for all files by providing in the JSON c)When moving files to a new directory, the current directory structure is converted to keywords|
