@@ -81,6 +81,7 @@ class ImageCatalogueTest {
                 assertEquals("United Kingdom", c.getPhotos().get(0).getCountry_name());
                 assertEquals("Dorset, South West England", c.getPhotos().get(0).getStateProvince());
                 assertEquals("", c.getPhotos().get(0).getSubLocation());
+                assertEquals(countDriveImages,1);
             }
             else
             {

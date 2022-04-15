@@ -37,5 +37,8 @@ public class Enums {
         public enum statusValues {
             processed,movedfile,renamedfile
         }
+        public enum doneValues {
+           DONE,FAILED
+        }
 
 }

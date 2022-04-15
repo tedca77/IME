@@ -36,6 +36,8 @@ public class Rest {
         try {
             HttpClient client = HttpClientBuilder.create().build();
             HttpUriRequest httpUriRequest = new HttpGet(command);
+            httpUriRequest.addHeader("Accept-Charset", "utf-8");
+            httpUriRequest.addHeader("Accept", "application/json");
             HttpResponse response = client.execute(httpUriRequest);
             BufferedReader rd = new BufferedReader(
                     new InputStreamReader(response.getEntity().getContent()));
