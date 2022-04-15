@@ -391,37 +391,25 @@ This section is quite complicated, so it is recommended to simply copy from the 
 2. Adobe Bridge [https://www.adobe.com/uk/products/bridge.html]
 3. IrfanView [https://www.irfanview.com]
 4. ExifTool [https://exiftool.org]
-5. IPTC [https://iptc.org/]
-6. IPTC Message Board [https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata]
-7. IPTC Message Group [https://groups.io/g/iptc-photometadata/messages]
+5. IPTC Specification [https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata]
+6. IPTC Message Group [https://groups.io/g/iptc-photometadata/messages]
 
 # For Developers
 IME has been developed in Java 17 with Maven build on Intellij.  A JUNIT-based test library is also provided. 
 	
-IME makes extensive use of open source java libraries,  including 
+IME is built using open source java libraries,  including 
 *	ICAFE – read and writing IPTC data
 *	Javaxt – thumbnail creation
 *	Apache Commons Imaging – read and writing EXIF and Windows data 
 *	Freemarker – for outputting HTML reports
 *	JavaAPI for KML generation.
-
-Use cases:
-	we want to redo everything....this is based on a paramter
-	all files have been processed,  but then new Place information is added to files...this will overwrite existing values - we can determine th 
-	all files have been processed but then new events are added to the files...we can determine if this is a new event.  If it is, then we can process and overwrite values....
-	
-* Processing:DONE - means that it has been geocoded and other metadata has been added.  Files will not be processed again on subsequent runs, unless the redo option is selected.   
-* Event processing can take place on photos that have been processed. unless the event has additional information. Event processing will not update latitude and longitude if they are already present. (a warning message is provided and is written to the error file. 
-* Adding additional events and rerunning will look for photos which match the event date.  If found, and the event is new, then it will attempt to update the photo metadata and geocode, if longitude and latitide is not present.  ()if it is , it will not overwrite). 
-* Adding additional events in the metadata will force processing of events, even if the file has already been processed.  It will attempt to update the photo metadata and geocode, if longitude and latitide is not already present.  (if it is , it will not overwrite). 
-* Adding additional date information in the metadata and rerunning will update the dates on the photos and also look for photos which match the event date.  If found, and the event is new, then it will attempt to update the photo metadata and geocode, if longitude and latitide is not present. If it is an existing event ()if it is , it will not overwrite). 
-* Adding additional location information in the metadata (lat,Long, postcode, or Place) running will look for photos which match the event date.  If found, and the event is new, then it will attempt to update the photo metadata and geocode, if longitude and latitide is not present.  ()if it is , it will not overwrite). 
+Thanks to al developers for working on these libraries.
 	
 ## Use Cases
 1. User wants to geocode entire collection of photos.  
-   First run against part of the collection using read-only option to identify Places:  
-	```ImageMetadataEnhancer.exe "d:/ALL Photos/2000-2005" "d:/Results" ```   
-   Then run against entire collection, providing input file with known place names and update option   
+   First run against the collection in read-only mode to identify Duplicates and provide correct Place names and Camera names:  
+	```ImageMetadataEnhancer.exe "d:/ALL Photos" "d:/Results" ```   
+   Then run against entire collection, providing input file with known place names and set the update option   
 	```ImageMetadataEnhancer.exe "d:/ALL Photos" "d:/Results/config.json" update```  
 2. User wants to geocode collection in two parts.  
   First run against part of the collection using read-only option to identify Places:  
