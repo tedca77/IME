@@ -66,7 +66,18 @@ In addition, further "run time" parameters can be added to the command. These ar
 * **redo** – once a file has been processed, a flag will be placed on the file and if subsequent runs are made, the file will not not be processed again. If this parameter is added, it will force processing including geocoding.  
 * **clear** - this will remove any existing comments in the metadata, added by IME. (This is explained later.)
 
-# JSON Output
+# Outputs
+## HTML Outputs ##
+IME produces a number of HTML files that can be viewed with a browser.  Note that if you have two many files (and not enough memory) you might not be able to open this file.
+* cameras.html - lists all cameras and the number of photos taken with each camera (or phone)
+* photosbydate.html - lists all photos in date order
+* tracks.html - links all photos as daily tracks
+* places.html - reports all geocoded files by Place
+* errors.html - lists all errors and warnings (e.g. for duplicate files)
+* events.html - lists all photos that have been matched with Events
+* duplicates. html - lists all duplicate files.
+
+## JSON Output ##
 Information for every file processed is written out to a JSON file.  The JSON filename includes the date and time e.g. **config20220401120138.json**.  This can be used as input to other runs and provides a way of adding:   
 * Events
 * Places
