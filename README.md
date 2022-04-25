@@ -1,11 +1,11 @@
 # Image Metadata Enhancer
 IME (Image Metadata Enhancer) improves the metadata information on images and helps you discover and organise photos on your drives.  
 
-It is particularly useful for photo collections with **latitude and longitude** geographic information (e.g. usually taken on mobile phones, but also on many digital cameras) by converting latitude and longitude to recognisable place addresses.  (This is known as “reverse geocoding”.) It is designed to update address information in the IPTC metadata so it is visible in tools such as Adobe Lightroom and Adobe Bridge which support the IPTC metadata standard and which can search enhanced metadata.
+It is particularly useful for photo collections with **latitude and longitude** geographic information (e.g. usually taken on mobile phones, but also on many digital cameras) by converting latitude and longitude to recognisable place addresses.  (This is known as “reverse geocoding”.) It is designed to update address information in the IPTC metadata and Windows Tags so the information is visible in tools such as Adobe Lightroom and Adobe Bridge which support the IPTC metadata standard and which can search enhanced metadata and can also utilise Windows search.
 
 IME works through all photos on one or more drives or directories and reads the geographical information (latitude and longitude) and then uses the **Open Street Map** web lookup service to populate the IPTC section with the full location.  (You need to be connected to the Internet for this to work.) Where the dates or location are missing or incorrect, there are a number of options for manually adding dates or providing locations via postcode, latitute and longitude, already identified places and through Events. 
 
-IME will discover photos on your storage drives, and identify duplicate photos in different folders. IME has been designed so that it can be run repeatedly on a collection of photos – it will not attempt to redo geocoding if it has been successful. However, if additional information is provided on Dates, Places or Events, then IME will reprocess photos.  It can also copy files to a new, organised structure based on Year and Month, leaving behind any duplicate files.
+IME will discover photos on your storage drives, and identify duplicate photos in different folders. IME has been designed so that it can be run repeatedly on a collection of photos – it will not attempt to redo geocoding if it has already been processed. However, if additional information is provided on Dates, Places or Events, then IME will reprocess photos.  It can also copy files to a new, organised structure based on Year and Month, leaving behind any duplicate files.
 
 Image Metadata Enhancer has extensive reporting and output of metadata information, including geographical information.
 * A set of HTML pages is generated, which can be viewed, with a browser – this includes thumbnails of each photo;
@@ -17,17 +17,17 @@ IME is simple to run, from a Command Prompt on Windows. An "exe" version is avai
 IME is copyright but open source - source code is available on this Github repository. The software is currently only tested on Windows. 
 # Why is this tool needed?
 1.	Most personal photo libraries are disorganised  – this tool helps discover duplicates and organises files by the date the photo was taken.
-2.	Many "Cloud-based" photo libraries provide reverse geocoding when a file is uploaded.  However, you may not want to put all photos in a single Cloud environment, due to the ongoing cost of storage.  Many Cloud systems do not update the metadata within photos, so any enhanced metadata created is of no use if the photos are transferred to other storage environments.  This tool is designed for people with collections on local disk drives or SANs who require similar geocoding facilities to "Cloud systems" but without additional cost.
-3.	It is difficult to review geographical and other metadata across a collection of images – in Windows you have to select properties on each photo in turn.  IME helps you view the geographical information and remind you of trips and visits, and helps to identify where photos have been taken.
+2.	Many "Cloud-based" photo libraries provide reverse geocoding when a file is uploaded.  However, you may not want to put all photos in a single Cloud environment, due to the ongoing cost of storage.  Many Cloud systems do not update the metadata within photos, so any enhanced metadata created by the Cloud system is of no use if the photos are transferred to other storage environments.  This tool is designed for people with collections on local disk drives or SANs who require similar geocoding facilities to "Cloud systems" but without additional cost.
+3.	It is difficult to search or review geographical and other metadata across a collection of images – in Windows you have to select properties on each photo in turn.  IME helps you view the geographical information and remind you of trips and visits, and helps to identify where photos have been taken.
 4.	Windows thumbnail generation can be slow for large collections – IME generates thumbnails which are faster to view in the HTML reports.
 5.	Adobe Lightroom “Classic” is a great tool – but reverse Geocoding is only possible by purchasing one of the Lightroom Cloud-based packages. Adobe Bridge does not have geocoding capabilities. There is a plug in for Lightroom Classic which does something similar, but this tool is independent of Lightroom or other tools.
 # About Photo Metadata
 Photo metadata in stored within each image file (such as JPEG files which are produced by most mobile phones).  The metadata is organised in a set of categories.  These categories include:
 * **EXIF** – this contains the longitude and latitude information, as well as information on the camera / phone,  date of photo etc.
-* **IPTC** – this contains the additional geographical information e.g. City, State /Province, Country etc.  Windows Explorer and Windows Properties do not show most of the IPTC data – the easiest way to see this is using the freeware IrfanView,( an excellent image viewer and editor which is useful for sizing and cropping photos).  ExifTool is another program that can be used to view all metadata.  You can also use Adobe Lightroom (which I also use) and other professional software most of which is quite expensive. Adobe Bridge is free software which provides equivalent searching to Lightroom for IPTC metadata.
-* **JPEG Comments** – this section allows multiple comments to be entered. (Adobe LightRoom Classic and Windows do not show these comments).
-* **Windows metadata** (e.g. Title, Comments, Subject) – Windows shows some of the EXIF and IPTC data as Windows properties – the Windows metadata is available by right clicking on a a file and selecting “Properties” in Windows. 
-One of the difficulties is that different programs given metadata different names, so it is not always that clear which item of metadata is referred to.  At the end of this documentation, there is a table with the key metadata items relevant to this program.  (See further information.) 
+* **IPTC** – this contains the additional geographical information e.g. City, State /Province, Country etc.  Windows Explorer and Windows Properties do not show most of the IPTC data – the easiest way to see this is using the freeware IrfanView,( an excellent image viewer and editor which is useful for sizing and cropping photos).  ExifTool is another excellent program that can be used to view all metadata.  You can also use Adobe Lightroom (which I also use) and other professional software most of which is quite expensive. Adobe Bridge is free software which provides equivalent searching to Lightroom for IPTC metadata.
+* **JPEG Comments** – this section allows multiple comments to be stored. (Adobe LightRoom Classic and Windows do not show these comments).
+* **Windows metadata** (e.g. Title, Comments, Subject, Tags) – Windows shows some of the EXIF and IPTC data as Windows properties – the Windows metadata is available by right clicking on a a file and selecting “Properties” in Windows. 
+One of the difficulties is that different programs given metadata different names and WIndows will pick from both JPEG andf IPTC sections to populate some of these fields, so it is not always that clear which item of metadata is referred to.  At the end of this documentation, there is a table with the key metadata items relevant to this program.  (See further information.) 
 
 IME will leave the standard Windows date fields (Date Modified, Date Accessed and Date Created) unchanged after processing.
 # Getting Started
@@ -37,38 +37,40 @@ IME will leave the standard Windows date fields (Date Modified, Date Accessed an
 ```ImageMetadataEnhancer.exe  <directory to search> <output directory> <new directory structure> <parameters>```  
 
 **First parameter** (directory to search) is the top level directory where the program will start to find image files photos. IME will then search all subdirectories, looking for image files  
-**Second parameter** (output directory) is the location of the output files.  This should be in a different location than the photos.  If there are spaces in the directory names, you should enclose in double quotes. The output directory should then contain:  
+**Second parameter** (output directory) is the location of the output files.  This should be in a different location than the photos.  
+If there are spaces in the directory names, you should enclose in double quotes. The output directory should then contain:  
 
-* A number of HTML files (Places.html, Files.html, Cameras.,html, Duplicates..html). These can be opened with a browser.
+* A number of HTML files (Places.html, Files.html, Cameras.html, Duplicates.html). These can be opened with a browser.
 * A thumbnail for each photo
 * A number of KML and KML files
 * Output is written to a file called configYYYYMMDDhhMMss.json - where the date and time are added.   
 
 As an example:
 ```ImageMetadataEnhancer.exe “d:/Photos” “d:/Results”```   
-* The directory with existing photos (to search) is: d:/Photos
-* The results will be sent to : d: /Results     
+* The directory with existing photos (to search) is: ```d:/Photos```
+* The results will be sent to : ```d:/Results```     
 
-** Please not that file directories should be specified with a forward slash "/".**
+** Please note that for consistency, that file directories should be specified with a forward slash "/".**
 
-**Third parameter** (new directory structure) – is the new directory which files are to be copied to.  The new directory structure will be /Year/Month/Photo1 etc.  Files will be be copied to the new directory structure using the photo date to put in the correct place.
+**Third parameter** (new directory structure) – is the new directory which files are to be copied to.  The new directory structure will be /Year/Month/Photo1 etc.  This should be a different area than the directory to search and the output directory.  Files will be be copied to the new directory structure using the photo date to put in the correct place.
 
 As an example:
 ```ImageMetadataEnhancer.exe “d:/Photos” “d:/Results” “d:/newDir”```   
-* The directory with existing photos (to search) is: d:/Photos
-* The results will be sent to : d: /Results
-* Files will be copied to a new structure at : d:/newDir i.e. d:/newDir/2021/08/photo1.jpg
+* The directory with existing photos (to search) is: ```d:/Photos```
+* The results will be sent to : ```d:/Results```
+* Files will be copied to a new structure at : ```d:/newDir``` i.e. ```d:/newDir/2021/08/photo1.jpg```
 
 In addition, further "run time" parameters can be added to the command. These are:
 * **update** – this will update files with new metadata and move files. If this parameter is not provided, then no updates will take place. 
 * **overwrite** – this will overwrite existing values in fields.  For instance, if there is already values in the IPTC location metadata fields, then they will be overwritten with new values.  If this is not set, then no overwriting will take place.
 * **showmetadata** – this will show all metadata in the console before and after updates.  This option is useful when debugging issues with files.
 * **redo** – once a file has been processed, a flag will be placed on the file and if subsequent runs are made, the file will not not be processed again. If this parameter is added, it will force processing including geocoding.  
+* * **keywordlocations** – this copies location address information to Keywords (or Windows Tags) in addition to the iPTC fields.  This is particularly useful if you do not have a tool such as Adobe Lightroom, and simply want use use Windows search features.  
 * **clear** - this will remove any existing comments in the metadata, added by IME. (This is explained later.)
 
 # Outputs
 ## HTML Outputs ##
-IME produces a number of HTML files that can be viewed with a browser.  Note that if you have two many files (and not enough memory) you might not be able to open this file.
+IME produces a number of HTML files that can be viewed with a browser.  Note that if you have too many files (and not enough memory on your desktop) you might not be able to open this file.
 * cameras.html - lists all cameras and the number of photos taken with each camera (or phone)
 * photosbydate.html - lists all photos in date order
 * tracks.html - links all photos as daily tracks
@@ -95,12 +97,13 @@ The IPTC metadata specification has 5 fields for location - the user can modify 
 * **State/Province** - county,state_district
 * **Country** - country
 * **ISO Country Code** - country_code 
+* 
 # Adding geolocation information to files without Latitude and Longitude
-For photos which do not have latitude and longitude information (e.g., scanned photos and photos from cameras without geolocation), geographical details can be added by adding an instruction to the metadata, in one of three ways before processing:
+For photos which do not have latitude and longitude information (e.g., scanned photos and photos from cameras without geolocation), geographical details can be added by adding an instruction to the metadata, in one of three ways, before processing:
 * Through adding the latitude and longitude – enter ```#latlon:lat,long (no spaces)```
 * Through adding a national Post Code – enter ```#postcode:SW1A1AA (no spaces)```
 * Through adding a Place Identifier – enter ```#place:1```.
-If you only use Windows for editing and managing your collection, put the above value somewhere in the Windows Comments Field (with a space after the values) – if you are using Adobe Lightroom or Adobe Bridge, put the value in the Instructions (IPTC) field. Note that Windows and tools such as Lightroom allow you to modify metadata on multiple fields at the same time so if you have a group of photos that are all taken at the same place you can add in one go.   
+If you only use Windows for editing and managing your collection, put the above value somewhere in the Windows Comments Field (with a space after the values) – if you are using Adobe Lightroom or Adobe Bridge (or similar tool), you can put the value in the Instructions (IPTC) field. Note that Windows and tools such as Lightroom allow you to modify metadata on multiple fields at the same time so if you have a group of photos that are all taken at the same place you can add in one go.   
 Note that IME will never overwrite longitude and latitude information if it is already in the metadata. If you want to replace the longitude and latitude, you should clear out the old values first.
 # Adding Dates
 For scanned photos, the dates in the metadata are unlikely to be correct. An instruction can be added to the Windows Comment or Instructions (IPTC) fields to provide a correct date within the metadata. This is of the form:
@@ -124,13 +127,13 @@ For scanned photos, you should use the #date: instruction to provide a correct d
 Events are defined in the JSON file – if the date provided in the JSON file matches the photo creation date (**EXIFOriginalDate**), then the event info will be copied across to the photo – this can also include geographical information on the event, if it exists.  
 Normally the date of the photo is sufficient to find the correct event.  However, if you want to hard code the event. i.e. not based on a date, you can enter an instruction for the event  – enter ```#event:123```.
 An event can have the following information in the JSON:
-*	title
-*	description (Subject)
-*	keywords (separated by semi-colons)
-*	eventcalendar : This is used to indicate that the same date each year will be found e.g. for a birthday (MM-DD or YYYY-MM-DD – if the year is provided, then IME will only find dates equal or after the year provided)
-*	eventdate; (YYYY-MM-DD) – the date of a single event
+*	title:
+*	description: (Subject)
+*	keywords: (separated by semi-colons)
+*	eventcalendar: This is used to indicate that the same date each year will be found e.g. for a birthday (MM-DD or YYYY-MM-DD – if the year is provided, then IME will only find dates equal or after the year provided)
+*	eventdate: (YYYY-MM-DD) – the date of a single event
 *	enddate: (YYYY-MM-DD) - Optional  - the end date of a single event
-*	eventtime (HH.mm) – Optional – the start time of a single event
+*	eventtime: (HH.mm) – Optional – the start time of a single event
 *	endtime: (HH.mm) – Optional – the end time of a single event
 *	location :  either #latlon,~postcode or #place:
 
@@ -181,7 +184,7 @@ In IME, a duplicate file is where two files have:
 	
 Most new cameras produce a filename that is likely to be unique as it includes the time of capture down to a thousandth of a second in the file name. However, earlier cameras and phones (and scanners) had much shorter file names and the chance of duplicate file names in your archives is high.
 	
-IME produces a report of any possible duplicates and when in "update mode" puts a comment in the metadata (for any duplicates) to indicate it has been identified as a duplicate. It is recommended to run IME in read-only mode first, to determine any directories or photos that have been duplicated. 
+IME produces a report of any possible duplicates and when in "update mode" puts a comment in the metadata (for any duplicates) to indicate it has been identified as a duplicate. It is recommended to run IME in read-only mode first, to determine any directories or photos that have been duplicated, and so that dupicates can be removed before processing.
 	
 IME will only look for duplicates in the directory structure being processed. If you only process part of your collection, then it will not pick up duplicates elsewhere.  You can get round this in two ways a) by processing all files in one run or b)by providing the JSON output file from other runs as an input file for the program - this will then match against all photos in your collection.  For instance, if your collection is split into **Photos before 2000** and **Photos after 2000** then run IME against the "Photos before 2000" directory, rename the JSON output file and provide as an input file when running against "Photos after 2000".  You will then get a report of photos for your complete collection and any duplicates will be identified across the complete collection.  
 	
@@ -190,15 +193,16 @@ IME uses Open Street Map APIs to carry out reverse geocoding and post code look 
 	
 # Viewing information in other tools
 * **Adobe Lightroom** - you may have to update the metadata in Lightroom.  Select the Images or directories and right click on one image and select "Read Metadata from Selected Files"
-* **Adobe Bridge** - this is free software from Adobe which has good metadatta editing capability
+* **Adobe Bridge** - this is free software from Adobe which has good metadata editing capability. However, the latest downloadable version has limited searching capability, due to bugs. 
 * **IrfanView** - open a file and click on the Image / Information menu option.  You will see buttons for IPTC Info, EXIF Info and Comments.
-* **Windows** - right click on any image and select properties. This will allow viewing of most metadata. 
-* **ExifTool** - this provides a very good report on all metadata on a file
+* **Windows** - right click on any image and select properties. This will allow viewing of most metadata. You also search using the Windows search bar - searching Tags is an efficient way to find information.
+* **ExifTool** - this provides a very good report on all metadata on a file.
 # Limitations
 * IME is currently only tested on Windows, although it is believed that it will work unchanged on Linux, Apple and other systems that support Java. 
 * IME is currently only tested with JPEG / JPG files, although with testing may also support other formats.
 * There is a bug in Apache Imaging library which means that if the Windows Title field already has a value, it cannot be overwritten. This only impacts the use of Events. 
 * IME has only been tested with UK national postcodes.
+* IME should support Intenrational character sets (i.e. UTF-8), but has currently only been tested on a small subset of countries.
 	
 # JSON File input
 The best approach for using IME is to run it once without a JSON input file and then modify the JSON output file to form the input for the next run. 
@@ -210,7 +214,7 @@ A JSON file can provide input for:
 
 To run with a JSON file, the first parameter should be a JSON filename. e.g. ```ImageMetadata.exe "d:/photos/config.json"```. All "run time" parameters (as described above) can be specified in the JSON file, but they can be overridden by adding to the command line.
 
-The following sections outline the various sections of the JSON file - the best way of understanding the JSON file it to look at the output from a run of IME.
+The following sections outline the various sections of the JSON file - ytou can gain an understanding of the JSON file by looking at output from a run of IME.
 	
 ## Top Level Parameters
 	 
@@ -220,6 +224,7 @@ The following sections outline the various sections of the JSON file - the best 
 * **append**: if true, will append files in the JSON with files in the current run, useful for checking duplicates (default false)
 * **redo**: if true, will redo all processing (default false)
 * **overwrite**: if true, will overwrite existing values (default false)
+* **keywordlocationse**: if true, copy location information to the keywords (Tags) field (default false)
 * **tempdir**: - directory to hold results, including thumbnails 
 * **newdir**: - directory to move files to 
 * **minfilesize**: minimum size of the file to process  - in bytes - default is 4000 bytes 
@@ -245,8 +250,8 @@ This section specifies one or more drives. (Repeat the section within the curly 
 * **iptccopyright**: values of IPTC Copyright field to update - all photos will be updated with these values
 * **excludspec**: provides one or more directories to exclude and one or more fileprefixes to avoid.
 * **directories**: a list of directory names to ignore
-* **name**: the names of directory names to ignore
-* **fileprefixes**: a list of file names to ignore
+* **name**: the names of directories to ignore
+* **fileprefixes**: a list of file names to ignore i.e. if the file name starts with this string
 * **name**: one or more file names to igonre
 ```
 	"drives": [
@@ -320,7 +325,7 @@ This section allows you to provide user friendly names for each camera or phone.
 ```
 ## Places
 
-This section is quite complicated, so it is recommended to simply copy from the output from an IME run and modify as appropriate - for instancing adding a "friendlyname", or correcting a street address.
+This section is quite complicated, so it is recommended to simply copy from the output from an IME run and modify as appropriate - for instance adding a "friendlyname", or correcting a street address.
 
 * **display_name**: this is shown in the HTML output but does not update the files
 * **lat**: latitude value
@@ -373,7 +378,7 @@ This section is quite complicated, so it is recommended to simply copy from the 
 |-----|----------|---------------------|-----------------|------------------|----------------------|
 |Title|IFD0|Details/Description/Title|Title|Visible in IPTC/Document Title. Also,XPTITLE & IMAGE_DESCRIPTION|a)Can be set in event processing using “title” in the JSON    b)Due to an issue with Apache Imaging, this field is not written if there is an existing value present.|
 |Subject|IFD0|Details/ Description/Subject|Available in Lightroom as Caption|Visible in EXIF/XPSubject|	Can be set in event processing using Description in the JSON|
-|IPTC Keywords (In Windows, Tags)|IFD0|Details/Description/Tags – note  when entering values in Windows, values should be separated by semi colons “;”|Keywording, and unique values will appear in KeyWord List. note , when entering, values in Lightroom  should be separated by commas “,"|Appear in XPKeywords and IPTC Keywords|a)	Existing Keywords are retained b)The same Keywords can be added for all files by providing in the JSON c)When moving files to a new directory, the current directory structure is converted to keywords|
+|Keywords (In Windows, Tags)|IFD0|Details/Description/Tags – note  when entering values in Windows, values should be separated by semi colons “;”|Keywording, and unique values will appear in KeyWord List. note , when entering, values in Lightroom  should be separated by commas “,"|Appear in XPKeywords and IPTC Keywords|a)	Existing Keywords are retained b)The same Keywords can be added for all files by providing in the JSON c)When moving files to a new directory, the current directory structure is converted to keywords|
 |IPTC Date Created|IPTC|Not visible|Not used if other dates are visible|Appear as IPTC/Credits-Origin/ Date Created in YYYYMMDD format|This is written as YYYYMMDD, in line with IrfanView, if the date is modified.|
 |Instructions|IPTC|Not visible|Appears as  IPTC/Workflow/Instructions|Appears as IPTC/Description/Special Instructions|a)This field can be used to provide instructions to the program for each image. b)It is updated after processing along with the Comments field. c)This acts the same as the Comments Field (see next item)|
 |Comments (Windows)|IFD0|Details/Description/Comments|User Comment – if this is entered in Lightroom, data is written back to Windows. It does not work the other way round – changes to Windows properties are not received by Lightroom.|Visible in EXIF /XP Comment|a)This field can be used to provide instructions to the program for each image.  b)It is updated after processing along with the Instructions field. c)This acts the same as the Instructions field (see previous item)
