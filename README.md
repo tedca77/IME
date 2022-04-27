@@ -374,23 +374,39 @@ This section is quite complicated, so it is recommended to simply copy from the 
 
 # Summary of Metadata Fields 	
 	
-|Field|Metadata Section|Field in Windows Properties|Field in Lightroom|Fields in IrfanView|Notes and Comments|
-|-----|----------|---------------------|-----------------|------------------|----------------------|
-|Title|IFD0|Details/Description/Title|Title|Visible in IPTC/Document Title. Also,XPTITLE & IMAGE_DESCRIPTION|a)Can be set in event processing using “title” in the JSON    b)Due to an issue with Apache Imaging, this field is not written if there is an existing value present.|
-|Subject|IFD0|Details/ Description/Subject|Available in Lightroom as Caption|Visible in EXIF/XPSubject|	Can be set in event processing using Description in the JSON|
-|Keywords (In Windows, Tags)|IFD0|Details/Description/Tags – note  when entering values in Windows, values should be separated by semi colons “;”. WIndows will combine together XPKeywords and IPTC keywords for display in Properties.|Keywording, and unique values will appear in KeyWord List. note , when entering, values in Lightroom  should be separated by commas “,". In irfanView, enter each keyword on a separate line|Appear in XPKeywords and IPTC Keywords|a)	Existing Keywords are retained in either the Tags or IPTC sections b)The same Keywords can be added for all files by providing in the JSON - these are added both to XP Keywords and IPTC fields  c)When moving files to a new directory, the current directory structure is converted to IPTC and XPkeywords|
-|IPTC Date Created|IPTC|Not visible|Not used if other dates are visible|Appear as IPTC/Credits-Origin/ Date Created in YYYYMMDD format|This is written as YYYYMMDD, in line with IrfanView, if the date is modified.|
-|Instructions|IPTC|Not visible|Appears as  IPTC/Workflow/Instructions|Appears as IPTC/Description/Special Instructions|a)This field can be used to provide instructions to the program for each image. b)It is updated after processing along with the Comments field. c)This acts the same as the Comments Field (see next item)|
-|Comments (Windows)|IFD0|Details/Description/Comments|User Comment – if this is entered in Lightroom, data is written back to Windows. It does not work the other way round – changes to Windows properties are not received by Lightroom.|Visible in EXIF /XP Comment|a)This field can be used to provide instructions to the program for each image.  b)It is updated after processing along with the Instructions field. c)This acts the same as the Instructions field (see previous item)
-|Author|IFD0|Details/Origin/Authors|Visible as Contact/Creator and Exif/Artist|Visible in IPTC/Description/ Author (byline)|This can be updated for all files, by adding to JSON|
-|Copyright|IFD0|Details/Origin/Copyright|Artist|Visible in IPTC/Description/Copyright|This can be updated for all files by adding to the JSON.|
-|ISO Country Code|IPTC|Not visible|IPTC – ISO Country Code|Not visible|This is added by IME, either from lat, lon or from an event.|
-|Country|IPTC|Not visible|IPTC – Country|Visible from IPTC /Credits Origin|This is added by IME, either from lat, lon or from an event.|
-|Stateprovince|IPTC|Not visible|IPTC – State/Province|Visible from IPTC /Credits Origin|This is added by IME, either from lat, lon or from an event.|
-|city|IPTC|Not visible|IPTC – City|Visible from IPTC /Credits Origin|This is added by IME, either from lat, lon or from an event.|
-|sublocation|IPTC|Not visible|IPTC - Sublocation|Visible from IPTC /Credits Origin|This is added by IME, either from lat, lon or from an event.|
-|Comments (JPG)|Comments|Not visible in Windows|Not visible in Lightroom Classic|Visible from Information / Comments|Each time a file is updated, a comment field is added by IME  e.g. when a file is moved or geocoded.|
+|Field|Metadata Section|Windows Properties|Lightroom|IrfanView|
+|-----|----------|---------------------|-----------------|------------------|
+|Title|IFD0|Details/Description/Title|Title Visible in . Also,XPTITLE & IMAGE_DESCRIPTION|Information/EXIF/XPTitle|
+|Keywords|IFD0|Shown in Tags|Keywords|Information/EXIF/XPKeywords|
+|IPTC Keywords|IFD0|Shown in Tags|??|??|
+|Subject|IFD0|Subject|Available in Lightroom as Caption|Information/EXIF/XPSubject|
+|IPTC Date Created|IFD0|Date Taken|?|Information/EXIF/DateTimeOriginal |
+|IPTC Date Created|IPTC|Not visible|Not used if other dates are visible|Information/IPTC/Credits-Origin/Date |
+|Instructions|IPTC|Not visible|IPTC/Workflow/Instructions|Information/IPTC/Description/Special Instructions|
+|Comments (Windows)|IFD0|Details/Description/Comments|.|Information/EXIF/XP Comment|
+|Author|IFD0|Details/Origin/Authors|Visible as Contact/Creator and Exif/Artist|Information/IPTC/Description/ Author (byline)|
+|Copyright|IFD0|Details/Origin/Copyright|Artist|Information/IPTC/Description/Copyright|
+|ISO Country Code|IPTC|Not visible|IPTC – ISO Country Code|Not visible|
+|Country|IPTC|Not visible|IPTC – Country|Information//Credits Origin|
+|Stateprovince|IPTC|Not visible|IPTC – State/Province|Information/IPTC/Credits Origin|
+|city|IPTC|Not visible|IPTC – City|Information/IPTC/City|
+|sublocation|IPTC|Not visible|IPTC - Sublocation|Information/IPTC/SubLocation|
+|JPG Comments|Comments|Not visible|Not visible in Lightroom Classic|Information/Comments|
+|Latitude|Comments|Not visible|Not visible in Lightroom Classic|Information/EXIF/GPSLatitude|
+|Longitude|Comments|Not visible|Not visible in Lightroom Classic|Information/EXIF/GPSLongitude|
 
+Notes
+
+* **Title** - a)Can be set in event processing using “title” in the JSON    b)Due to an issue with Apache Imaging, this field is not written if there is an existing value present.
+* **Comments (Windows)** if this is entered in Lightroom, data is written back to Windows. It does not work the other way round – changes to Windows properties are not received by Lightroom
+* **WIndows Tags** – note  when entering values in Windows, values should be separated by semi colons “;”. WIndows will combine together XPKeywords and IPTC keywords for display in Properties.  In Lightroom, |Keywording, and unique values will appear in KeyWord List. note , when entering, values in Lightroom  should be separated by commas “,". In irfanView, enter each keyword on a separate line a) Existing Keywords are retained in either the Tags or IPTC sections b)The same Keywords can be added for all files by providing in the JSON - these are added both to XP Keywords and IPTC fields  c)When moving files to a new directory, the current directory structure is converted to IPTC and XPkeywords
+* **Instructions** This field can be used to provide instructions to the program for each image. It is updated after processing along with the Comments (Windows) field. and JPG Comments.
+* **Copyright** This can be updated for all files, by adding to JSON
+* **JPG COmments** Each time a file is updated, a comment field is added by IME  e.g. when a file is moved or geocoded.
+.
+|This is written as YYYYMMDD, in line with IrfanView, if the date is modified.
+
+Date - Created in YYYYMMDD format
 # References
 1. Adobe Lightroom [https://www.adobe.com/uk/products/photoshop-lightroom.html]
 2. Adobe Bridge [https://www.adobe.com/uk/products/bridge.html]
