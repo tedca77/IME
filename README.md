@@ -376,11 +376,11 @@ This section is quite complicated, so it is recommended to simply copy from the 
 	
 |Field|Metadata Section|Windows Properties|Lightroom|IrfanView|
 |-----|----------|---------------------|-----------------|------------------|
-|Title|IFD0|Details/Description/Title|Title Visible in . Also,XPTITLE & IMAGE_DESCRIPTION|Information/EXIF/XPTitle|
+|Title|IFD0|Title|?|Information/EXIF/XPTitle (and ImageDescription)|
 |Keywords|IFD0|Shown in Tags|Keywords|Information/EXIF/XPKeywords|
-|IPTC Keywords|IFD0|Shown in Tags|??|??|
+|IPTC Keywords|IFD0|Shown in Tags|??|Information/IPTC/Keywords|
 |Subject|IFD0|Subject|Available in Lightroom as Caption|Information/EXIF/XPSubject|
-|IPTC Date Created|IFD0|Date Taken|?|Information/EXIF/DateTimeOriginal |
+|Date Created|IFD0|Date Taken|?|Information/EXIF/DateTimeOriginal |
 |IPTC Date Created|IPTC|Not visible|Not used if other dates are visible|Information/IPTC/Credits-Origin/Date |
 |Instructions|IPTC|Not visible|IPTC/Workflow/Instructions|Information/IPTC/Description/Special Instructions|
 |Comments (Windows)|IFD0|Details/Description/Comments|.|Information/EXIF/XP Comment|
@@ -397,9 +397,10 @@ This section is quite complicated, so it is recommended to simply copy from the 
 
 Notes
 
-* **Title** - a)Can be set in event processing using “title” in the JSON    b)Due to an issue with Apache Imaging, this field is not written if there is an existing value present.
+* **Title** - a)Can be set in event processing. Due to an issue with Apache Imaging, this field is not written if there is an existing value present.
+* **Subject** - if no description is provided, Windows will show the Subject to be the same as the Title field - can be set in Event processing. 
 * **Comments (Windows)** if this is entered in Lightroom, data is written back to Windows. It does not work the other way round – changes to Windows properties are not received by Lightroom
-* **WIndows Tags** – note  when entering values in Windows, values should be separated by semi colons “;”. WIndows will combine together XPKeywords and IPTC keywords for display in Properties.  In Lightroom, |Keywording, and unique values will appear in KeyWord List. note , when entering, values in Lightroom  should be separated by commas “,". In irfanView, enter each keyword on a separate line a) Existing Keywords are retained in either the Tags or IPTC sections b)The same Keywords can be added for all files by providing in the JSON - these are added both to XP Keywords and IPTC fields  c)When moving files to a new directory, the current directory structure is converted to IPTC and XPkeywords
+* **Windows Tags** – note  when entering values in Windows, values should be separated by semi colons “;”. WIndows will combine together XPKeywords and IPTC keywords for display in Properties.  In Lightroom, |Keywording, and unique values will appear in KeyWord List. note , when entering, values in Lightroom  should be separated by commas “,". In irfanView, enter each keyword on a separate line a) Existing Keywords are retained in either the Tags or IPTC sections b)The same Keywords can be added for all files by providing in the JSON - these are added both to XP Keywords and IPTC fields  c)When moving files to a new directory, the current directory structure is converted to IPTC and XPkeywords
 * **Instructions** This field can be used to provide instructions to the program for each image. It is updated after processing along with the Comments (Windows) field. and JPG Comments.
 * **Copyright** This can be updated for all files, by adding to JSON
 * **JPG COmments** Each time a file is updated, a comment field is added by IME  e.g. when a file is moved or geocoded.
