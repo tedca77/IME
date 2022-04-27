@@ -377,9 +377,10 @@ This section is quite complicated, so it is recommended to simply copy from the 
 |Field|Metadata Section|Windows Properties|Lightroom|IrfanView|
 |-----|----------|---------------------|-----------------|------------------|
 |Title|EXIF|Title|?|Information/EXIF/XPTitle (and ImageDescription)|
+|Object Name|IPTC|Not visible|?|Information/IPTC/??|
 |Keywords|EXIF|Shown in Tags|Keywords|Information/EXIF/XPKeywords|
 |IPTC Keywords|IPTC|Shown in Tags|??|Information/IPTC/Keywords|
-|Subject|EXIF|Subject|Available in Lightroom as Caption|Information/EXIF/XPSubject & IPTC/Cation|
+|Subject|EXIF|Subject|Available in Lightroom as Caption|Information/EXIF/XPSubject & IPTC/Caption|
 |Original Date Time|EXIF|Date Taken|?|Information/EXIF/DateTimeOriginal |
 |IPTC Date Created|IPTC|Not visible|Not used if other dates are visible|Information/IPTC/Credits-Origin/Date |
 |Instructions|IPTC|Not visible|IPTC/Workflow/Instructions|Information/IPTC/Description/Special Instructions|
@@ -395,15 +396,16 @@ This section is quite complicated, so it is recommended to simply copy from the 
 |Latitude|EXIF|Not visible|Not visible in Lightroom Classic|Information/EXIF/GPSLatitude|
 |Longitude|EXIF|Not visible|Not visible in Lightroom Classic|Information/EXIF/GPSLongitude|
 
-Notes
+Notes on Processing
 
-* **Title** - a)Can be set in event processing. Due to an issue with Apache Imaging, this field is not written if there is an existing value present.
+* **Title** - Can be set in event processing. Due to an issue with Apache Imaging, this field is not written if there is an existing value present.  If this value is set, then the IPTC OBject Name is also set to the same value.
+* **Keywords / Windows Tags** – Windows combines together the EXIF and IPTC keywords for display of properties and searching.  Note, when entering values in Windows, values should be separated by semi colons “;”.   In Lightroom, Keywording, and unique values will appear in the KeyWord List. When entering, values in Lightroom  should be separated by commas “,". In irfanView, enter each IPTC keyword on a separate line. The same Keywords can be added for all files by providing in the JSON - these are added to IPTC fields only. When moving files to a new directory, the current directory structure is converted to IPTC keywords.
 * **Subject** - if no description is provided, Windows will show the Subject to be the same as the Title field - can be set in Event processing. 
-* **Comments (Windows)** if this is entered in Lightroom, data is written back to Windows. It does not work the other way round – changes to Windows properties are not received by Lightroom
-* **Windows Tags** – note  when entering values in Windows, values should be separated by semi colons “;”. WIndows will combine together XPKeywords and IPTC keywords for display in Properties.  In Lightroom, |Keywording, and unique values will appear in KeyWord List. note , when entering, values in Lightroom  should be separated by commas “,". In irfanView, enter each keyword on a separate line a) Existing Keywords are retained in either the Tags or IPTC sections b)The same Keywords can be added for all files by providing in the JSON - these are added both to XP Keywords and IPTC fields  c)When moving files to a new directory, the current directory structure is converted to IPTC and XPkeywords
+* **JPG Comments** Each time a file is updated, a comment is added by IME. Metadata allows multiple comments to be added to a file. These are displayed separately in IrfanView. e.g. when a file is moved or geocoded.
+* **Comments (Windows)** if this is entered in Lightroom, data is written back to Windows. It does not work the other way round – changes to Windows properties are not received by Lightroom.
 * **Instructions** This field can be used to provide instructions to the program for each image. It is updated after processing along with the Comments (Windows) field. and JPG Comments.
 * **Copyright** This can be updated for all files, by adding to JSON
-* **JPG COmments** Each time a file is updated, a comment field is added by IME  e.g. when a file is moved or geocoded.
+
 .
 |This is written as YYYYMMDD, in line with IrfanView, if the date is modified.
 
