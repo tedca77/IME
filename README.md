@@ -376,24 +376,24 @@ This section is quite complicated, so it is recommended to simply copy from the 
 	
 |Field|Metadata Section|Windows Properties|Lightroom|IrfanView|
 |-----|----------|---------------------|-----------------|------------------|
-|Title|IFD0|Title|?|Information/EXIF/XPTitle (and ImageDescription)|
-|Keywords|IFD0|Shown in Tags|Keywords|Information/EXIF/XPKeywords|
-|IPTC Keywords|IFD0|Shown in Tags|??|Information/IPTC/Keywords|
-|Subject|IFD0|Subject|Available in Lightroom as Caption|Information/EXIF/XPSubject|
-|Date Created|IFD0|Date Taken|?|Information/EXIF/DateTimeOriginal |
+|Title|EXIF|Title|?|Information/EXIF/XPTitle (and ImageDescription)|
+|Keywords|EXIF|Shown in Tags|Keywords|Information/EXIF/XPKeywords|
+|IPTC Keywords|IPTC|Shown in Tags|??|Information/IPTC/Keywords|
+|Subject|EXIF|Subject|Available in Lightroom as Caption|Information/EXIF/XPSubject & IPTC/Cation|
+|Original Date Time|EXIF|Date Taken|?|Information/EXIF/DateTimeOriginal |
 |IPTC Date Created|IPTC|Not visible|Not used if other dates are visible|Information/IPTC/Credits-Origin/Date |
 |Instructions|IPTC|Not visible|IPTC/Workflow/Instructions|Information/IPTC/Description/Special Instructions|
-|Comments (Windows)|IFD0|Details/Description/Comments|.|Information/EXIF/XP Comment|
-|Author|IFD0|Details/Origin/Authors|Visible as Contact/Creator and Exif/Artist|Information/IPTC/Description/ Author (byline)|
-|Copyright|IFD0|Details/Origin/Copyright|Artist|Information/IPTC/Description/Copyright|
+|Comments (Windows)|EXIF|Details/Description/Comments|.|Information/EXIF/XP Comment|
+|Author|IPTC|Details/Origin/Authors|Visible as Contact/Creator and Exif/Artist|Information/IPTC/Description/ Author (byline)|
+|Copyright|IPTC|Details/Origin/Copyright|Artist|Information/IPTC/Description/Copyright|
 |ISO Country Code|IPTC|Not visible|IPTC – ISO Country Code|Not visible|
 |Country|IPTC|Not visible|IPTC – Country|Information//Credits Origin|
 |Stateprovince|IPTC|Not visible|IPTC – State/Province|Information/IPTC/Credits Origin|
 |city|IPTC|Not visible|IPTC – City|Information/IPTC/City|
 |sublocation|IPTC|Not visible|IPTC - Sublocation|Information/IPTC/SubLocation|
 |JPG Comments|Comments|Not visible|Not visible in Lightroom Classic|Information/Comments|
-|Latitude|Comments|Not visible|Not visible in Lightroom Classic|Information/EXIF/GPSLatitude|
-|Longitude|Comments|Not visible|Not visible in Lightroom Classic|Information/EXIF/GPSLongitude|
+|Latitude|EXIF|Not visible|Not visible in Lightroom Classic|Information/EXIF/GPSLatitude|
+|Longitude|EXIF|Not visible|Not visible in Lightroom Classic|Information/EXIF/GPSLongitude|
 
 Notes
 
