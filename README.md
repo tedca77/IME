@@ -377,21 +377,21 @@ This section is quite complicated, so it is recommended to simply copy from the 
 |Field|Metadata Section|Windows Properties|Lightroom|IrfanView|
 |-----|----------|---------------------|-----------------|------------------|
 |Title|EXIF|Title|?|Information/EXIF/XPTitle (and ImageDescription)|
-|Object Name|IPTC|Not visible|?|Information/IPTC/??|
+|Object Name|IPTC|Not visible|?|Information/IPTC/Document Title|
 |Keywords|EXIF|Shown in Tags|Keywords|Information/EXIF/XPKeywords|
 |IPTC Keywords|IPTC|Shown in Tags|??|Information/IPTC/Keywords|
-|Subject|EXIF|Subject|Available in Lightroom as Caption|Information/EXIF/XPSubject & IPTC/Caption|
+|Subject (Caption)|EXIF|Subject|Available in Lightroom as Caption|Information/EXIF/XPSubject & IPTC/Caption|
 |Original Date Time|EXIF|Date Taken|?|Information/EXIF/DateTimeOriginal |
 |IPTC Date Created|IPTC|Not visible|Not used if other dates are visible|Information/IPTC/Credits-Origin/Date |
 |Instructions|IPTC|Not visible|IPTC/Workflow/Instructions|Information/IPTC/Description/Special Instructions|
 |Comments (Windows)|EXIF|Details/Description/Comments|.|Information/EXIF/XP Comment|
-|Author|IPTC|Details/Origin/Authors|Visible as Contact/Creator and Exif/Artist|Information/IPTC/Description/ Author (byline)|
+|Category|IPTC|Not visible|??|Information/IPTC/Keywords/Category|
 |Copyright|IPTC|Details/Origin/Copyright|Artist|Information/IPTC/Description/Copyright|
 |ISO Country Code|IPTC|Not visible|IPTC – ISO Country Code|Not visible|
-|Country|IPTC|Not visible|IPTC – Country|Information//Credits Origin|
+|Country|IPTC|Not visible|IPTC – Country|Information/Credits Origin/Credits Origin|
 |Stateprovince|IPTC|Not visible|IPTC – State/Province|Information/IPTC/Credits Origin|
-|city|IPTC|Not visible|IPTC – City|Information/IPTC/City|
-|sublocation|IPTC|Not visible|IPTC - Sublocation|Information/IPTC/SubLocation|
+|city|IPTC|Not visible|IPTC – City|Information/IPTC/Credits Origin|
+|sublocation|IPTC|Not visible|IPTC - Sublocation|Information/IPTC/Credits Origin|
 |JPG Comments|Comments|Not visible|Not visible in Lightroom Classic|Information/Comments|
 |Latitude|EXIF|Not visible|Not visible in Lightroom Classic|Information/EXIF/GPSLatitude|
 |Longitude|EXIF|Not visible|Not visible in Lightroom Classic|Information/EXIF/GPSLongitude|
