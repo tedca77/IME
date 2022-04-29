@@ -33,6 +33,8 @@ One of the difficulties is that different programs given metadata different name
 IME will leave the standard Windows date fields (Date Modified, Date Accessed and Date Created) unchanged after processing.
 # Getting Started
 **BEFORE RUNNING ENSURE YOU HAVE A VALID BACKUP OF YOUR PHOTO FILES.  IF YOU DON'T HAVE A BACKUP - THEN CREATE ONE BEFORE YOU START !**
+Image Metadata Enhancer is distributed in the hope that it will be useful,  but WITHOUT ANY WARRANTY, under the GNU General Public Licence.  While it has been tested extensively, the range of formats possible are large and the program may not operate correctly with all files, so if you have a backup, you should not lose any photos. 
+
 1. Copy the ImageMetadataEnhancer.exe to your drive e.g. D:/IME/ImageMetadataEnhancer.exe 
 2. Run as a Windows command  
 ```ImageMetadataEnhancer.exe  <directory to search> <output directory> <new directory structure> <parameters>```  
