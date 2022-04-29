@@ -67,8 +67,8 @@ In addition, further "run time" parameters can be added to the command. These ar
 * **overwrite** – this will overwrite existing values in fields.  For instance, if there is already values in the IPTC location metadata fields, then they will be overwritten with new values.  If this is not set, then no overwriting will take place.
 * **showmetadata** – this will show all metadata in the console before and after updates.  This option is useful when debugging issues with files.
 * **redo** – once a file has been processed, a flag will be placed on the file and if subsequent runs are made, the file will not not be processed again. If this parameter is added, it will force processing including geocoding.  
-* **addxpkeyword** – this copies location address information to XP Keywords (or Windows Tags) in addition to the iPTC fields.  This is particularly useful if you do not have a tool such as Adobe Lightroom, and simply want use use Windows search features. 
-* **addiptckeyword** – this copies location address information to IPTC Keywords in addition to the iPTC fields.  This is useful if you are using Adobe Bridge keyword searching. 
+* **addxpkeywords** – this copies location address information to XP Keywords (or Windows Tags) in addition to the iPTC fields.  This is particularly useful if you do not have a tool such as Adobe Lightroom, and simply want use use Windows search features. 
+* **addiptckeywords** – this copies location address information to IPTC Keywords in addition to the iPTC fields.  This is useful if you are using Adobe Bridge keyword searching. 
 * **clear** - this will remove any existing comments in the JPEG Comments section metadata, which have been added by IME. This will force reprocessing next time IME is run. (If you want to remove from the Windows Comments or IPTC Comments, you can edit the metadata for multiple files using your regular editing tools.) 
 
 # Outputs
@@ -233,8 +233,8 @@ The following sections outline the various sections of the JSON file - ytou can 
 * **append**: if true, will append files in the JSON with files in the current run, useful for checking duplicates (default false)
 * **redo**: if true, will redo all processing (default false)
 * **overwrite**: if true, will overwrite existing values (default false)
-* **addxpkeyword**: if true, copy location information to the keywords (Tags) field (default false)
-* **addiptckeyword**: if true, copy location information to the IPTC keyword field (default false)
+* **addxpkeywords**: if true, copy location information to the keywords (Tags) field (default false)
+* **addiptckeywords**: if true, copy location information to the IPTC keyword field (default false)
 * **clear**: if true, does not do any processing, but clears out the JPG Comments fields (default false)
 * **tempdir**: - directory to hold results, including thumbnails 
 * **newdir**: - directory to move files to 
@@ -459,7 +459,7 @@ Details of each photo is written out to the JSON file.  This information does no
 |Latitude|EXIF|Not visible|Not visible in Lightroom Classic|Information/EXIF/GPSLatitude|
 |Longitude|EXIF|Not visible|Not visible in Lightroom Classic|Information/EXIF/GPSLongitude|
 
-Notes on Processing
+##Notes on Processing
 
 * **Title** - Can be set in event processing. Due to an issue with Apache Imaging, this field is not written if there is an existing value present.  If this value is set, then the IPTC OBject Name is also set to the same value.
 * **Keywords / Windows Tags** – Windows combines together the EXIF and IPTC keywords for display of properties and searching.  Note, when entering values in Windows, values should be separated by semi colons “;”.   In Lightroom, Keywording, and unique values will appear in the KeyWord List. When entering, values in Lightroom  should be separated by commas “,". In irfanView, enter each IPTC keyword on a separate line. The same Keywords can be added for all files by providing in the JSON - these are added to IPTC fields only. When moving files to a new directory, the current directory structure is converted to IPTC keywords.
@@ -467,7 +467,7 @@ Notes on Processing
 * **JPG Comments** Each time a file is updated, a comment is added by IME. Metadata allows multiple comments to be added to a file. These are displayed separately in IrfanView. e.g. when a file is moved or geocoded.
 * **Comments (Windows)** if this is entered in Lightroom, data is written back to Windows. It does not work the other way round – changes to Windows properties are not received by Lightroom.
 * **Instructions** This field can be used to provide instructions to the program for each image. It is updated after processing along with the Comments (Windows) field. and JPG Comments.
-* **Copyright** This can be updated for all files, by adding to JSON
+* **Copyright** This can be updated for all files, by adding to JSON.
 
 .
 |This is written as YYYYMMDD, in line with IrfanView, if the date is modified.
