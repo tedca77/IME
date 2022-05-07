@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown=true,value={"imagelinks", "osm_type","cdata","lonAsDouble","latAsDouble","trackKey","startDate","endDate","countPlace","osm_id","licence","place_id"})
@@ -49,6 +50,7 @@ public class Place {
     private Integer trackKey;
     private String imagelinks;
     private String cdata;
+    private ArrayList<String> keywords;
 
     public Double getLatAsDouble()
     {

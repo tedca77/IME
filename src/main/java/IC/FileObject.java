@@ -19,9 +19,13 @@
 package IC;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
+@JsonIgnoreProperties(value={"IPTCKeywordsArray", "windowsKeywordsArray"})
 @Data
 public class FileObject {
     String fileName;
@@ -43,10 +47,8 @@ public class FileObject {
     LocalDateTime fileAccessed;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     String directory;
-    String metaData;
     Integer width;
     Integer height;
-    String dimensions;
     String cameraMaker;
     String cameraModel;
     String cameraName;
@@ -66,7 +68,8 @@ public class FileObject {
     String thumbnail;
     String displayName;
     Integer orientation;
-    String IPTCCopyright;
+    String IPTCCategory;
+    ArrayList<String> IPTCKeywordsArray;
     String IPTCKeywords;
     String IPTCInstructions;
     String IPTCObjectName;
@@ -75,6 +78,8 @@ public class FileObject {
     String windowsComments;
     String windowsTitle;
     String windowsSubject;
-    List<String> comments;
+    ArrayList<String> windowsKeywordsArray;
+    String windowsKeywords;
+    ArrayList<String> comments;
     Boolean duplicate;
 }

@@ -22,6 +22,7 @@ import IC.Rest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.util.WebUtils;
 
+import static IC.ImageCatalogue.assembleKeywords;
 import static IC.ImageCatalogue.assembleLocation;
 import static java.net.URLEncoder.encode;
 
@@ -47,6 +48,7 @@ public class OpenMaps {
             dResult.setIPTCCountry(assembleLocation(dResult,config.getCountry()));
             dResult.setIPTCStateProvince(assembleLocation(dResult,config.getStateprovince()));
             dResult.setIPTCSublocation(assembleLocation(dResult,config.getSublocation()));
+            dResult.setKeywords(assembleKeywords(dResult));
             // we set lat and long to the photo in case there is a difference in OpenMaps
             dResult.setLat(lat);
             dResult.setLon(lon);

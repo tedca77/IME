@@ -32,6 +32,9 @@ public class ConfigObject {
     private Boolean overwrite;
     private Boolean redo;
     private Boolean append;
+    private Boolean clear;
+    private Boolean addxpkeywords;
+    private Boolean addiptckeywords;
     private String thumbsize;
     private Integer cacheDistance;
     private Integer pauseSeconds;

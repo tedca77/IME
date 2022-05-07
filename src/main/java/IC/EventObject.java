@@ -25,12 +25,15 @@ import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+
 @Data
-@JsonIgnoreProperties(value={"exactEndTime", "exactStartTime","imagelinks"})
+@JsonIgnoreProperties(value={"exactEndTime", "exactStartTime","imagelinks","keywordsArray"})
 public class EventObject {
     String title;
     String description;
     String imagelinks;
+    ArrayList<String> keywordsArray;
     String keywords;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     LocalDate eventdate;

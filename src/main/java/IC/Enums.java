@@ -20,9 +20,10 @@ package IC;
 
 public class Enums {
 
+        public enum prog {temp}
 
         public enum argOptions {
-            overwrite,update,showmetadata,redo,append
+            overwrite,update,showmetadata,redo,append,addxpkeywords,addiptckeywords,clear
         }
         /*
            update - if false, no updates will take place to records ...default false
@@ -30,6 +31,8 @@ public class Enums {
            redoGeocoding - will do geocoding even if the metadata says that geocoding has been done before ... default false
            overwriteValues - if the subLocation, country etc. are filled in, then they will not be replaced...default false
            append - will update photos provided on the input JSON - otherwise will clear out photos array
+           addxpkeywords - add location to XP Keywords / tags as well as IPTC data
+           addiptckeywords - add location to IPTC Keywords / tags as well as IPTC data
           */
        public enum processMode {
            postcode,geocode,place,latlon,event,date

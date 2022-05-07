@@ -14,7 +14,7 @@
   <th>Sub Location</th>
   <th>City</th>
   <th>State / Province</th>
-  <th>Location Name</th>
+  <th style="width:200px;">Location Name</th>
   <th style="width:200px;">IPTC Data</th>
   <th style="width:200px;">EXIF Data</th>
   <th style="width: 80px;">Date</th>
@@ -41,18 +41,30 @@
     <td style="width:200px;word-wrap: break-word">
         <#assign test2 = "${(photo.IPTCObjectName)!}">
         <#if test2?has_content>
-            <b>ObjectName:</b> ${(photo.IPTCObjectName)!}<br>
+            <b>ObjectName:</b> ${(photo.IPTCObjectName)!}
         </#if>
         <#assign test3 = "${(photo.IPTCCaptionAbstract)!}">
         <#if test3?has_content>
-            <br><b>CaptionAbstract:</b> ${(photo.IPTCCaptionAbstract)!}<br>
+            <br><b>CaptionAbstract:</b> ${(photo.IPTCCaptionAbstract)!}
         </#if>
         <#assign test4 = "${(photo.IPTCKeywords)!}">
         <#if test4?has_content>
             <br><b>Keywords:</b> ${(photo.IPTCKeywords)!}
         </#if>
+        <#assign test8 = "${(photo.IPTCCopyright)!}">
+                <#if test8?has_content>
+                    <br><b>Copyright:</b> ${(photo.IPTCCopyright)!}
+        </#if>
+         <#assign test10 = "${(photo.IPTCCategory)!}">
+                        <#if test10?has_content>
+                        <br><b>Category:</b> ${(photo.IPTCCategory)!}
+                 </#if>
+         <#assign test11 = "${(photo.IPTCDateCreated)!}">
+                <#if test11?has_content>
+                <br><b>DateCreated:</b> ${(photo.IPTCDateCreated)!}
+         </#if>
     </td>
-<td>
+    <td>
         <#assign test5 = "${(photo.windowsTitle)!}">
         <#if test5?has_content>
             <b>Title:</b> ${(photo.windowsTitle)!}<br>
@@ -60,6 +72,10 @@
         <#assign test6 = "${(photo.windowsSubject)!}">
         <#if test6?has_content>
             <b>Subject:</b> ${(photo.windowsSubject)!}
+        </#if>
+        <#assign test7 = "${(photo.windowsKeywords)!}">
+        <#if test7?has_content>
+            <br><b>Keywords:</b> ${(photo.windowsKeywords)!}
         </#if>
     </td>
     <td style="width: 80px;">${(photo.bestDate.format('yyyy-MM-dd  HH:mm:ss'))!}</td>
