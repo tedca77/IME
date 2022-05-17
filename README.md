@@ -83,7 +83,13 @@ IME produces a number of HTML files that can be viewed with a browser.  Note tha
 * errors.html - lists all errors and warnings (e.g. for duplicate files)
 * events.html - lists all photos that have been matched with Events
 * duplicates.html - lists all duplicate photos.
+
+**Example of HTML Output - showing all Photos in Date Order:**
 ![Photos By Date](/Images/photosbydate.jpg)
+**Example of HTML Output - showing all Photos for each Place:**
+![Places Report](/Images/places.jpg)
+**Example of HTML Output - showing all Photos as Daily Tracks:**
+![Daily Tracks Report](/Images/tracks.jpg)
 ## JSON Output ##
 Information for every file processed is written out to a JSON file.  The JSON filename includes the date and time e.g. **config20220401120138.json**.  This can be used as input to other runs and provides a way of adding:   
 * Events
@@ -98,7 +104,9 @@ Two KML files are produced:
 * Points.kml - provides a point for every place found 
 * Track.kml - provides daily tracks.
 These are split into multiple parts, as Google has limits on the number of points in a kml file.  These can be be dragged onto a Google map and viewed.  Unfortunately, Google Map does not allow photos to be added via a KML file (although KML supports photos.) Other mapping providers may support, however.  
+**Example of KML output layered on a Google Map:**
 
+![KML Files layered on a Google Map](/Images/pointstracks.jpg)
 # Places
 Each longitude and latitude value found is represented as a **“Place”** in IME.  If two photos are taken at virtually the same place (i.e. they have very similar latitude and longitude), then this is identified as the same “Place” in IME and IME does not have to use the Open Street Map Service to carry out a second geocoding. (This is a good thing, because Open Street Map is a limited service, and condition of use is that it is not swamped with requests.)  The user can specify the distance that determines if the Place is the same (in metres).  Also, the geocoding may not identify the exact address e.g. house numbers may be slightly out.  IME can also be given a set of known Places in the JSON, before it runs, where the correct house address can be provided. e.g. if 86 Acacia Avenue is found, but the actual address is “85 Acacia Avenue”, then this can be modified in the JSON file and also given a user friendly name e.g. “Our first house”. (Each Place added is given a unique number which can be used to allocate images to this Place if they do not have longitude and latitude – see next section.)   
 
@@ -107,19 +115,20 @@ The IPTC metadata specification has 5 fields for location - the user can modify 
 * **City** - town, city, village
 * **State/Province** - county,state_district
 * **Country** - country
-* **ISO Country Code** - country_code 
-* 
+* **ISO Country Code** - country_code. 
+
 # Adding geolocation information to files without Latitude and Longitude
 For photos which do not have latitude and longitude information (e.g. scanned photos and photos from cameras without geolocation), geographical details can be added by adding an instruction to the metadata, in one of three ways, before processing:
 * Through adding the latitude and longitude – enter ```#latlon:50.2,-0.43218 (no spaces)```
 * Through adding a national Post Code – enter ```#postcode:SW1A1AA (no spaces)```
-* Through adding a Place Identifier – enter ```#place:1```.
+* Through adding a Place Identifier – enter ```#place:1```.   
+
 If you only use Windows for editing and managing your collection, put the above value somewhere in the Windows Comments Field (with a space after the values) – if you are using Adobe Lightroom or Adobe Bridge (or similar tool), you can put the value in the Instructions (IPTC) field. Note that Windows and tools such as Lightroom allow you to modify metadata on multiple fields at the same time so if you have a group of photos that are all taken at the same place you can add these instructions in one go.   
 Note that IME will never overwrite longitude and latitude information if it is already in the metadata. If you want to replace the longitude and latitude, you should clear out the old values first.
 # Adding Dates
 For scanned photos, the dates in the metadata are unlikely to be correct. An instruction can be added to the Windows Comment or Instructions (IPTC) fields to provide a correct date within the metadata. This is of the form:
 ```#date:YYYY``` or  ```#date:YYYY-MM```  or ```#date:YYYY-MM-DD```
-This updates the **EXIF Original Date** field which appears as **"Date Taken"** in Windows properties.   
+This updates the **EXIF Original Date** field which appears as **"Date Taken"** in Windows properties.     
 
 If a file has already been processed by IME, and then new information is added, then IME will re-process the file - this could including finding an Event or adding geolocation information. Adding a new date will overwrite the existing date, even if a previous date has been provided. 
 # Adding IPTC Metadata
