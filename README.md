@@ -83,7 +83,7 @@ IME produces a number of HTML files that can be viewed with a browser.  Note tha
 * errors.html - lists all errors and warnings (e.g. for duplicate files)
 * events.html - lists all photos that have been matched with Events
 * duplicates.html - lists all duplicate photos.
-
+![Photos By Date](/Images/photosbydate.jpg)
 ## JSON Output ##
 Information for every file processed is written out to a JSON file.  The JSON filename includes the date and time e.g. **config20220401120138.json**.  This can be used as input to other runs and provides a way of adding:   
 * Events
