@@ -41,7 +41,7 @@
         </style>
 </head>
 <body>
-  <h1>Places identified in Photos</h1>
+  <h1>Places identified in Photos ${parttext}</h1>
 
 <TABLE BORDER>
 <tr>

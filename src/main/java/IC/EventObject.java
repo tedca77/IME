@@ -50,4 +50,5 @@ public class EventObject {
     public LocalDateTime exactStartTime;
     @JsonSerialize(using = CustomLocalDateTimeSerializer.class)
     public LocalDateTime exactEndTime;
+    Integer countEvent=0;
 }

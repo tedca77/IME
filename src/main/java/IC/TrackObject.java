@@ -36,7 +36,7 @@ public class TrackObject {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate trackDate;
     private Integer trackKey;
-    private Integer placeCount=0;
+    private Integer countTrack =0;
     private ArrayList<Integer> points = new ArrayList<>();
     private String imageLinks;
     private String coordinates;

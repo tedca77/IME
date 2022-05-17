@@ -41,7 +41,7 @@
         </style>
 </head>
 <body>
-  <h1>Events for Photos</h1>
+  <h1>Events for Photos ${parttext}</h1>
 
 <TABLE BORDER>
 <tr>

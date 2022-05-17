@@ -3,17 +3,17 @@
   <title>Photos By Date</title>
 </head>
 <body>
-  <h1>Photos by Date</h1>
+  <h1>Photos by Date ${parttext}</h1>
 
 <TABLE  style="table-layout: fixed; width: 100%" BORDER>
 <tr>
   <th style="width: 60px;">File Key</th>
   <th style="width:200px;">Picture</th>
   <th style="width:100px;">Filename</th>
-  <th>Directory</th>
-  <th>Sub Location</th>
-  <th>City</th>
-  <th>State / Province</th>
+  <th style="width:100px;">Directory</th>
+  <th style="width:100px;">Sub Location</th>
+  <th style="width:100px;">City</th>
+  <th style="width:100px;">State / Province</th>
   <th style="width:200px;">Location Name</th>
   <th style="width:200px;">IPTC Data</th>
   <th style="width:200px;">EXIF Data</th>

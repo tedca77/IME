@@ -52,10 +52,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.GpsTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants;
-
-
 import javax.imageio.ImageIO;
-
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.math.BigDecimal;
@@ -125,6 +122,8 @@ public class ImageCatalogue {
     static ArrayList<FileObject> fileObjects = new ArrayList<>();
     static ArrayList<FileObject> duplicateObjects = new ArrayList<>();
     static ArrayList<ErrorObject> errorObjects = new ArrayList<>();
+    static ArrayList<ErrorObject> warningObjects = new ArrayList<>();
+
     static ArrayList<Place> places = new ArrayList<>();
     static ArrayList<EventObject> events = new ArrayList<>();
 
@@ -141,6 +140,8 @@ public class ImageCatalogue {
     static ArrayList<String> cityDefault=new ArrayList<>(Arrays.asList("town","city","village"));
     static ArrayList<String> sublocationDefault=new ArrayList<>(Arrays.asList("amenity","leisure","house_number","road","hamlet","suburb","city_district"));
     static int cacheDistanceDefault=75; // this is the distance from a point that determines this is the same place in Metres.
+    static int htmlLimitDefault =2000; // this is the limit to the number of images in an output file 2000
+    static int kmlLimitDefault =200; // this is the limit to the number of points in a kml output file 200
     static int pauseSecondsDefault=2; // this is the pause before a geocode (to not overload the server)
     //
     static Date startTime;
@@ -230,11 +231,12 @@ public class ImageCatalogue {
             }
             // runs report for console
             runReport();
-            message("Number of Errors/Warnings:"+errorObjects.size());
+            message("Number of Errors:"+errorObjects.size());
+            message("Number of Warnings:"+warningObjects.size());
             message("Number of Duplicates found:"+duplicateObjects.size());
             messageLine("*");
             //Exports reports for cameras, fileObjects etc...
-            if(!exportHTML(config.getTempdir()))
+            if(!exportHTML(config))
             {
                 message("Failed to export HTML");
             }
@@ -247,7 +249,7 @@ public class ImageCatalogue {
                 message("All Drives - " + "Photos to be processed             :" + countProcessed);
                 message("All Drives - " + "Photos already Processed           :" + countALREADYPROCESSED);
                 message("All Drives - " + "Photos Updated                     :" + countUPDATED);
-                message("All Drives - " + "Photos with Errors in processing   :" + countErrors);
+                message("All Drives - " + "Photos where metadata not read     :" + countErrors);
                 message("All Drives - " + "Photos which have been moved       :" + countMoved);
                 message("All Drives - " + "Photos which are duplicates        :" + countDuplicates);
                 message("All Drives - " + "------------------------------------" );
@@ -411,6 +413,8 @@ public class ImageCatalogue {
 
         if(config.getMinfilesize()==null){config.setMinfilesize(minFileSizeDefault);}
         if(config.getPauseSeconds()==null){config.setPauseSeconds(pauseSecondsDefault);}
+        if(config.getHtmlLimit()==null){config.setHtmlLimit(htmlLimitDefault);}
+        if(config.getKmlLimit()==null){config.setKmlLimit(kmlLimitDefault);}
         if(config.getPauseSeconds()<1){config.setPauseSeconds(pauseSecondsDefault);}
         if(config.getThumbsize()==null){config.setThumbsize(thumbSizeDefault);}
         // sets the defaults
@@ -444,11 +448,11 @@ public class ImageCatalogue {
     /**
      * Writes out HTML reports using freemarker for the main objects.  Freemarker templates are in the project.
      * Files are written to the tempDir
-     * @param tempDir - Output directory
      * @return - returns true or false
      */
-    public static Boolean exportHTML(String tempDir)
+    public static Boolean exportHTML(ConfigObject config)
     {
+        String tempDir=config.getTempdir();
         Configuration cfg = new Configuration(Configuration.VERSION_2_3_29);
         cfg.setObjectWrapper(new Java8ObjectWrapper(Configuration.VERSION_2_3_23));
         cfg.setClassForTemplateLoading(ImageCatalogue.class, "/Templates");
@@ -458,75 +462,89 @@ public class ImageCatalogue {
         cfg.setLogTemplateExceptions(false);
         cfg.setWrapUncheckedExceptions(true);
         cfg.setFallbackOnNullLoopVariable(false);
-        //
+
+            makeReport(config.getHtmlLimit(),cfg,tempDir,"cameras.ftl","cameras.html","cameras",cameras);
+            makeReportLimitCount(config.getHtmlLimit(),cfg,tempDir,"places.ftl","places.html","places",places);
+            makeReportLimitCount(config.getHtmlLimit(),cfg,tempDir,"tracks.ftl","tracks.html","tracks",tracks);
+            makeReportKML(config.getKmlLimit(),cfg,tempDir,"trackkml.ftl","pointkml.ftl","track.kml","point.kml","tracks","places");
+           // makeReportLimitCount(config.getKmlLimit(),cfg,tempDir,"pointkml.ftl","point.kml","places",places);
+            makeReport(config.getHtmlLimit(),cfg,tempDir,"photosbydate.ftl","photosbydate.html","photos",fileObjects);
+            makeReport(config.getHtmlLimit(),cfg,tempDir,"duplicates.ftl","duplicates.html","photos",duplicateObjects);
+            makeReportLimitCount(config.getHtmlLimit(),cfg,tempDir,"events.ftl","events.html","events",events);
+            makeReport(config.getHtmlLimit(),cfg,tempDir,"errors.ftl","errors.html","comments",errorObjects);
+            makeReport(config.getHtmlLimit(),cfg,tempDir,"warnings.ftl","warnings.html","comments",warningObjects);
+
+
+        return true;
+    }
+    public static ArrayList<Place> makePointsForTrack(List<TrackObject> tr)
+    {
+        ArrayList<Place> p = new ArrayList<>();
+        for(TrackObject t : tr)
+        {
+            for(int i : t.getPoints())
+            {
+                if(!p.contains(getPlace(i)))
+                {
+                    p.add(getPlace(i));
+                }
+
+            }
+        }
+        return p;
+
+    }
+    public static void makeReportKML(Integer limit,Configuration cfg,String tempDir,String trackTemplate,String pointTemplate,String trackOutputFile,String pointOutputFile,String trackObjectName,String pointObjectName)
+    {
         try {
-            Template ctemplate = cfg.getTemplate("cameras.ftl");
-            FileWriter writer = new FileWriter(tempDir+"/"+"cameras.html");
-            Map<String, Object> croot = new HashMap<>();
-            croot.put( "cameras", cameras );
-            ctemplate.process(croot, writer);
-            writer.close();
-            //
-            Template ptemplate = cfg.getTemplate("places.ftl");
-            FileWriter pwriter = new FileWriter(tempDir+"/"+"places.html");
-            Map<String, Object> proot = new HashMap<>();
-            proot.put( "places", places);
-            ptemplate.process(proot, pwriter);
-            pwriter.close();
-            //
-            Template ttemplate = cfg.getTemplate("tracks.ftl");
-            FileWriter twriter = new FileWriter(tempDir+"/"+"tracks.html");
-            Map<String, Object> troot = new HashMap<>();
-            troot.put( "tracks",tracks );
-            ttemplate.process(troot, twriter);
-            twriter.close();
-            //
-            //
-            Template tkmltemplate = cfg.getTemplate("trackkml.ftl");
-            FileWriter tkmlwriter = new FileWriter(tempDir+"/"+"track.kml");
-            Map<String, Object> tkmlroot = new HashMap<>();
-            tkmlroot.put( "tracks",tracks );
-            tkmltemplate.process(tkmlroot, tkmlwriter);
-            tkmlwriter.close();
-            //
-            Template pkmltemplate = cfg.getTemplate("pointkml.ftl");
-            FileWriter pkmlwriter = new FileWriter(tempDir+"/"+"point.kml");
-            Map<String, Object> pkmlroot = new HashMap<>();
-            pkmlroot.put( "places", places);
-            pkmltemplate.process(pkmlroot, pkmlwriter);
-            pkmlwriter.close();
-            //
-            Template ftemplate = cfg.getTemplate("photosbydate.ftl");
-            FileWriter fwriter = new FileWriter(tempDir+"/"+"photosbydate.html");
-            Map<String, Object> froot = new HashMap<>();
-            froot.put( "photos",fileObjects );
-            froot.put("root",tempDir);
-            ftemplate.process(froot, fwriter);
-            twriter.close();
-//
-            Template dtemplate = cfg.getTemplate("duplicates.ftl");
-            FileWriter dwriter = new FileWriter(tempDir+"/"+"duplicates.html");
-            Map<String, Object> droot = new HashMap<>();
-            droot.put( "photos",duplicateObjects );
-            droot.put("root",tempDir);
-            dtemplate.process(droot, dwriter);
-            dwriter.close();
-            //
-            Template etemplate = cfg.getTemplate("events.ftl");
-            FileWriter ewriter = new FileWriter(tempDir+"/"+"events.html");
-            Map<String, Object> eroot = new HashMap<>();
-            eroot.put( "events",events );
-            eroot.put("root",tempDir);
-            etemplate.process(eroot, ewriter);
-            ewriter.close();
-            //
-            Template rtemplate = cfg.getTemplate("errors.ftl");
-            FileWriter rwriter = new FileWriter(tempDir+"/"+"errors.html");
-            Map<String, Object> rroot = new HashMap<>();
-            rroot.put( "comments",errorObjects );
-            rroot.put("root",tempDir);
-            rtemplate.process(rroot, rwriter);
-            rwriter.close();
+            Template ftemplate = cfg.getTemplate(trackTemplate);
+            Template ptemplate = cfg.getTemplate(pointTemplate);
+            int counter=0;
+            for (int i = 0; i < tracks.size(); i ++) {
+                      counter=counter +  tracks.get(i).getCountTrack();
+              }
+            System.out.println("Counter total is:"+counter);
+            if(counter<=limit) {
+                runFreeMarker(tempDir + "/" + trackOutputFile,
+                        trackObjectName,tempDir," ",ftemplate,tracks);
+                runFreeMarker(tempDir + "/" + pointOutputFile,
+                        pointObjectName,tempDir," ",ptemplate,places);
+            }
+            else
+            {
+                counter=0;
+                int fileCounter=1;
+                int startObject=0;
+                for (int i = 0; i < tracks.size(); i ++) {
+
+                    counter=counter +  tracks.get(i).getCountTrack();
+
+                    if(counter>=limit) {
+                        ArrayList<TrackObject> t = new ArrayList<>(tracks.subList(startObject,i+1));
+                                runFreeMarker(tempDir + "/" + FilenameUtils.getBaseName(trackOutputFile) + (fileCounter) + "." + FilenameUtils.getExtension(trackOutputFile),
+                                trackObjectName,tempDir,"Part "+fileCounter,ftemplate,t);
+                        ArrayList<Place> p = makePointsForTrack(t) ;
+                        runFreeMarker(tempDir + "/" + FilenameUtils.getBaseName(pointOutputFile) + (fileCounter) + "." + FilenameUtils.getExtension(pointOutputFile),
+                                pointObjectName,tempDir,"Part "+fileCounter,ptemplate,p);
+
+                        counter=0;
+                        startObject=i+1;
+                        fileCounter++;
+                    }
+                }
+                if(counter>0) {
+                    ArrayList<TrackObject> t = new ArrayList<>(tracks.subList(startObject,tracks.size())) ;
+                    ArrayList<Place> p = makePointsForTrack(t) ;
+
+                    runFreeMarker(tempDir + "/" + FilenameUtils.getBaseName(trackOutputFile) + (fileCounter) + "." + FilenameUtils.getExtension(trackOutputFile),
+                            trackObjectName,tempDir,"Part "+fileCounter,ftemplate,t);
+
+                    runFreeMarker(tempDir + "/" + FilenameUtils.getBaseName(pointOutputFile) + (fileCounter) + "." + FilenameUtils.getExtension(pointOutputFile),
+                            pointObjectName,tempDir,"Part "+fileCounter,ptemplate,p);
+
+                }
+            }
+
         } catch (IOException e) {
             message("Cannot write output files to directory - please check the path exists:"+tempDir);
         }
@@ -534,12 +552,121 @@ public class ImageCatalogue {
         {
             message("Error writing output files :"+ee);
         }
-        return true;
     }
+    public static void makeReportLimitCount(Integer limit,Configuration cfg,String tempDir,String template,String outputFile,String objectName,ArrayList<?> objects)
+    {
+        try {
+            Template ftemplate = cfg.getTemplate(template);
+            int counter=0;
+            for (int i = 0; i < objects.size(); i ++) {
+                if(objects.get(i) instanceof Place)
+                {
+                    counter=counter + ((Place) objects.get(i)).getCountPlace();
+                }
+                if(objects.get(i) instanceof EventObject)
+                {
+                    counter=counter + ((EventObject) objects.get(i)).getCountEvent();
+                }
+                if(objects.get(i) instanceof TrackObject)
+                {
+                    counter=counter + ((TrackObject) objects.get(i)).getCountTrack();
+                }
+            }
+            System.out.println("Counter total Mke Report Limit  is:"+counter);
+            if(counter<=limit) {
+                runFreeMarker(tempDir + "/" + outputFile,
+                        objectName,tempDir," ",ftemplate,objects);
+            }
+            else
+            {
+                counter=0;
+                int fileCounter=1;
+                int startObject=0;
+                for (int i = 0; i < objects.size(); i ++) {
+                    if(objects.get(i) instanceof Place)
+                    {
+                        counter=counter + ((Place) objects.get(i)).getCountPlace();
+                    }
+                    if(objects.get(i) instanceof EventObject)
+                    {
+                        counter=counter + ((EventObject) objects.get(i)).getCountEvent();
+                    }
+                    if(objects.get(i) instanceof TrackObject)
+                    {
+                        counter=counter + ((TrackObject) objects.get(i)).getCountTrack();
+                    }
+                    if(counter>=limit) {
 
+                        runFreeMarker(tempDir + "/" + FilenameUtils.getBaseName(outputFile) + (fileCounter) + "." + FilenameUtils.getExtension(outputFile),
+                                objectName,tempDir,"Part "+fileCounter,ftemplate,objects.subList(startObject,i+1));
+                          counter=0;
+                        startObject=i+1;
+                        fileCounter++;
+                    }
+                }
+                if(counter>0) {
 
+                    runFreeMarker(tempDir + "/" + FilenameUtils.getBaseName(outputFile) + (fileCounter) + "." + FilenameUtils.getExtension(outputFile),
+                            objectName,tempDir,"Part "+fileCounter,ftemplate,objects.subList(startObject,objects.size()));
 
+                }
+            }
 
+        } catch (IOException e) {
+            message("Cannot write output files to directory - please check the path exists:"+tempDir);
+        }
+        catch(Exception ee)
+        {
+            message("Error writing output files :"+ee);
+        }
+    }
+    public static void runFreeMarker(String fileName,String objectName,String tempDir,String partText,Template template,List<?> objects)
+    {
+        try {
+            FileWriter fwriter = new FileWriter(fileName);
+            Map<String, Object> froot = new HashMap<>();
+            froot.put(objectName, objects);
+            froot.put("root", tempDir);
+            froot.put("parttext", partText);
+            template.process(froot, fwriter);
+            fwriter.close();
+
+    } catch (IOException e) {
+        message("Cannot write output files to directory - please check the path exists:"+tempDir);
+    }
+        catch(Exception ee)
+    {
+        message("Error writing output files :"+ee);
+    }
+    }
+    public static void makeReport(Integer limit,Configuration cfg,String tempDir,String template,String outputFile,String objectName,ArrayList<?> objects)
+    {
+        try {
+            Template ftemplate = cfg.getTemplate(template);
+
+            if(objects.size()<=limit) {
+                runFreeMarker(tempDir + "/" + outputFile,
+                        objectName,tempDir," ",ftemplate,objects);
+
+            }
+            else
+            {
+                int counter=1;
+                for (int i = 0; i < objects.size(); i += limit) {
+                    runFreeMarker(tempDir + "/" + FilenameUtils.getBaseName(outputFile) + (counter) + "." + FilenameUtils.getExtension(outputFile),
+                            objectName,tempDir,"Part "+counter,ftemplate,objects.subList(i, Math.min(i + limit, objects.size())));
+                    counter++;
+                }
+            }
+
+        } catch (IOException e) {
+            message("Cannot write output files to directory - please check the path exists:"+tempDir);
+        }
+        catch(Exception ee)
+        {
+            message("Error writing output files :"+ee);
+        }
+    }
     /**
      *  Displays the options have been selected on the console output
      * @param c - Configuration Object
@@ -679,7 +806,7 @@ public class ImageCatalogue {
         } catch (Exception e) {
             message("Error reading metadata:"+e);
             setFileObjectValues(fNew,null,file);
-            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Error reading metadata:"+e);
+            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Error reading metadata:"+e,false);
         }
     }
     /**
@@ -734,7 +861,7 @@ public class ImageCatalogue {
                                             countErrors++;
                                             countDriveErrors++;
                                             message("Could not process file:"+file.getCanonicalPath());
-                                            addError(file.getName(),fixSlash(FilenameUtils.getFullPath(file.getPath())),convertToLocalDateTimeViaInstant(getFileDate(file)),"Error - Could not process file");
+                                            addError(file.getName(),fixSlash(FilenameUtils.getFullPath(file.getPath())),convertToLocalDateTimeViaInstant(getFileDate(file)),"Error - Could not process file",false);
                                         }
                                         else {
                                             fileObjects.add(fNew);
@@ -976,7 +1103,7 @@ public class ImageCatalogue {
         int placeKey=getPlaceKeyFromIPTCComments(fNew.getComments());
         if(placeKey<1)
         {
-            message("Illegal place Key");
+          //  message("Could not find place key in Comments:");
             return false;
         }
         Place g = getPlace(placeKey);
@@ -997,7 +1124,7 @@ public class ImageCatalogue {
         }
         else
         {
-            message("Place key not found in JSON with a key of :"+placeKey);
+            message("Place key not found in JSON with a key of :"+placeKey +" geocoding lat and lon");
             return false;
         }
 
@@ -1134,7 +1261,7 @@ public class ImageCatalogue {
             t.setTrackKey(tracks.size() + 1);
             t.setStartDate( startDate);
             t.setEndDate( endDate);
-            t.setPlaceCount(points.size());
+            t.setCountTrack(points.size());
             t.setTrackDate(trackDay);
             t.setCoordinates(coordinates);
             t.setStartAndEndPlace(getStartAndEndString(t));
@@ -1167,14 +1294,21 @@ public class ImageCatalogue {
         places.add(g);
         return newKey;
     }
-    public static void addError(String fileName,String directory,LocalDateTime d,String message)
+    public static void addError(String fileName,String directory,LocalDateTime d,String message,Boolean warning)
     {
         ErrorObject error = new ErrorObject();
         error.setFileName(fileName);
         error.setFileDate(d);
         error.setMessage(message);
         error.setDirectory(directory);
-        errorObjects.add(error);
+        if(warning) {
+            warningObjects.add(error);
+        }
+        else
+        {
+            errorObjects.add(error);
+
+        }
     }
     public static String findJSONFile(File startDir)
     {
@@ -1297,7 +1431,11 @@ public class ImageCatalogue {
             }
         return renameFiles(new File(copyDir));
     }
-
+    public static ArrayList<String> clearBlanks(ArrayList<String> ss)
+    {
+        ss.removeIf(s-> s.trim().length()<1);
+        return ss;
+    }
     /**
      * this is used for clearing arraylists - required for testing only - where variables may not be cleared...
      */
@@ -1508,10 +1646,10 @@ public class ImageCatalogue {
                         countDuplicates++;
                         fNew.setDuplicate(true);
                         message("Duplicate file - also in:" + f.getDirectory());
-                        addError(fNew.getFileName(), fNew.getDirectory(),fNew.getBestDate(), "Warning - duplicate file - also in:" + f.getDirectory());
+                        addError(fNew.getFileName(), fNew.getDirectory(),fNew.getBestDate(), "Warning - duplicate file - also in:" + f.getDirectory(),true);
                     } else {
-                        addError(fNew.getFileName(), fNew.getDirectory(),fNew.getBestDate(), "Warning - duplicate file name, but files are not the same: other directory is: "+f.getDirectory());
-                        message("Duplicate filename but files are different"+fNew.getFileName()+":"+f.getFileName());
+                        addError(fNew.getFileName(), fNew.getDirectory(),fNew.getBestDate(), "Warning - duplicate file name, but files are not the same: other directory is: "+f.getDirectory(),true);
+                        message("Duplicate filename but files are different"+f.getDirectory()+":"+f.getFileName());
                     }
                 }
             } catch (Exception e) {
@@ -1533,7 +1671,7 @@ public class ImageCatalogue {
              }
              count++;
          }
-         addError(fileName,dirName,null,"Too many duplicates for:"+fileName);
+         addError(fileName,dirName,null,"Too many duplicates for:"+fileName,false);
          return null;
 
     }
@@ -1833,6 +1971,7 @@ public class ImageCatalogue {
             for(EventObject e : events)
             {
                 e.setImagelinks("No files found");
+                e.setCountEvent(0);
                 if(e.getKeywords()!=null)
                 {
                     e.setKeywordsArray(new ArrayList<>(Arrays.asList(e.getKeywords().split(";", -1))));
@@ -1876,7 +2015,7 @@ public class ImageCatalogue {
         File newFile = new File(newDirectory + "/" + newFileName);
         if(!checkDiskSpace(newDirectory)) {
             message("Could not move file from " + oldFile.getPath() + " to " + newFile.getPath() + " - Not enough space");
-            addError(f.getFileName(),f.getDirectory(),f.getBestDate(),"Could not move image file - not enough space");
+            addError(f.getFileName(),f.getDirectory(),f.getBestDate(),"Could not move image file - not enough space",false);
             return false;
         }
 
@@ -1884,7 +2023,7 @@ public class ImageCatalogue {
         boolean renameResult = oldFile.renameTo(newFile);
         if (!renameResult) {
             message("Could not move file from " + oldFile.getPath() + " to " + newFile.getPath());
-            addError(f.getFileName(),f.getDirectory(),f.getBestDate(),"Could not move image file");
+            addError(f.getFileName(),f.getDirectory(),f.getBestDate(),"Could not move image file",false);
             return false;
         }
         else {
@@ -1896,7 +2035,7 @@ public class ImageCatalogue {
             boolean renameResultthumb = oldThumb.renameTo(newThumb);
             if (!renameResultthumb) {
                 message("Could not move thumb file from " + oldThumb.getName() + " to " + newThumb.getName());
-                addError(f.getFileName(), f.getDirectory(),f.getBestDate(), "Could not move thumbnail file");
+                addError(f.getFileName(), f.getDirectory(),f.getBestDate(), "Could not move thumbnail file",false);
             }
             //if rename files - change the name and directory....
             f.setDirectory(newDirectory);
@@ -1937,7 +2076,6 @@ public class ImageCatalogue {
             return false;
         }
         for (DirectoryObject i : drive.getExcludespec().getDirectories()) {
-          // System.out.println("exclude"+fdir+ ",start:"+drive.getStartdir()+i.getName());
           //  System.out.println("exclude"+fixSlash(fdir)+ ",start:"+drive.getStartdir()+fixSlash(i.getName()));
             if(i.getName()!=null) {
                 if (fixSlash(fdir).equals(drive.getStartdir() + fixSlash(i.getName()))) {
@@ -2204,7 +2342,7 @@ public class ImageCatalogue {
 
                 } catch (Exception ee) {
                     message("******* error converting date:" + field.getValueDescription() + e);
-                    addError(file.getName(),fixSlash(FilenameUtils.getFullPath(file.getPath())),convertToLocalDateTimeViaInstant(getFileDate(file)),"error parsing date:"+field);
+                    addError(file.getName(),fixSlash(FilenameUtils.getFullPath(file.getPath())),convertToLocalDateTimeViaInstant(getFileDate(file)),"error parsing date:"+field,false);
                     return null;
                 }
 
@@ -2307,13 +2445,13 @@ public class ImageCatalogue {
         boolean alreadyProcessed = false;
         readSystemDates(fNew,file);
         IPTC iptc = new IPTC();
-
+        Metadata meta=null;
         JpegExif exif = new JpegExif();
         // reads existing values from metadata
         try {
             Map<MetadataType, Metadata> metadataMap = Metadata.readMetadata(file.getPath());
             for (Map.Entry<MetadataType, Metadata> entry : metadataMap.entrySet()) {
-                Metadata meta = entry.getValue();
+                meta = entry.getValue();
                 if (meta instanceof XMP) {
                     XMP.showXMP((XMP) meta);
                 } else if (meta instanceof Exif) {
@@ -2328,7 +2466,8 @@ public class ImageCatalogue {
                         }
                     }
                 } else if (meta instanceof Comments) {
-                    fNew.setComments(new ArrayList<>(((Comments) meta).getComments()));
+                    fNew.setComments(clearBlanks(new ArrayList<>(((Comments) meta).getComments())));
+
                     alreadyProcessed=checkIPTCComments(fNew.getComments(),"#"+Enums.statusValues.processed+Enums.doneValues.DONE+":");
                     if(alreadyProcessed)
                     {
@@ -2336,18 +2475,22 @@ public class ImageCatalogue {
                         countALREADYPROCESSED++;
                         countDriveALREADYPROCESSED++;
                     }
+                    else
+                    {
+                        message("File has not been processed:"+fNew.getComments());
+                    }
                     //set event keys based on values in comments.  This will prevent reprocessing the same events again
                     fNew.setEventKeys(getEventKeysFromIPTCComments(fNew.getComments(),Enums.processMode.event));
                 } else if (meta instanceof IPTC) {
                     iptc = (IPTC) meta;
                     if(!readIPTCdata(fNew,meta)){
                         message("Cannot read IPTC data");
-                        addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not read IPTC data");
+                        addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not read IPTC data",false);
                     }
                 }
             }
         } catch (Exception e) {
-            message("error reading metadata" + e);
+            message("error reading metadata section - file is probably corrupt");
             return null;
         }
         // read in JPEG metadata
@@ -2410,7 +2553,7 @@ public class ImageCatalogue {
             if(config.getRedo() || !alreadyProcessed) {
                 if(geocode(fNew, fNew.getLatitude(),fNew.getLongitude(),config,true)) {
                     updateCommentFields(fNew,fNew.getLatitude()+","+fNew.getLongitude()+":"+fNew.getPlaceKey(),Enums.processMode.geocode);
-                    message("Reverse Geocoding completed as part of updating file");
+                    message("Reverse Geocoding completed");
                     updateRequired = true;
                 }
             }
@@ -2506,7 +2649,7 @@ public class ImageCatalogue {
                 countDriveNOTGEOCODED++;
 
                 message("Could not geocode :Lat" + fNew.getLatitude() + ", Long:" + fNew.getLongitude());
-                addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"could not geocode:"+fNew.getLongitude()+","+fNew.getLatitude());
+                addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"could not geocode:"+fNew.getLongitude()+","+fNew.getLatitude(),false);
             }
         } else {
             message("Found Lat / Long in cache : [" + g.getPlaceid() + "]" + g.getDisplay_name());
@@ -2611,6 +2754,7 @@ public class ImageCatalogue {
         }
         fNew.setEventKeys(fNew.getEventKeys()+e.getEventid()+";");
         updateCommentFields(fNew,e.getEventid().toString(),Enums.processMode.event);
+        e.setCountEvent(e.getCountEvent()+1);
 
     }
     public static Boolean updateLatLon(Double lat, Double lon,FileObject fNew,ConfigObject config)
@@ -2736,11 +2880,11 @@ public class ImageCatalogue {
                             }
                         } catch (Exception e) {
                             message("could not convert provided values to lat long:" + param);
-                            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "could not convert provided values to lat, lon:" + param);
+                            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "could not convert provided values to lat, lon:" + param,false);
                         }
                     } else {
                         message("Incorrect number of parameters for lat long:" + param);
-                        addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Incorrect number of parameters for lat lon:" + param);
+                        addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Incorrect number of parameters for lat lon:" + param,false);
                     }
 
                 } else if (p.equals(Enums.processMode.event)) {
@@ -2749,7 +2893,7 @@ public class ImageCatalogue {
                         e = getEvent(Integer.valueOf(param));
                         if (e == null) {
                             message("This Event has not been found in the JSON - event:" + param);
-                            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Event not found for:" + param);
+                            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Event not found for:" + param,false);
                         } else {
                             updateEvent(config, fNew, e);
                             fNew.setBestDate(e.getExactStartTime());
@@ -2759,7 +2903,7 @@ public class ImageCatalogue {
                        }
                     } catch (Exception e) {
                         message("could not convert provided values to a place:" + param);
-                        addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Could not convert provided values to a place:" + param);
+                        addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Could not convert provided values to a place:" + param,false);
                     }
 
                 } else if (p.equals(Enums.processMode.place)) {
@@ -2769,7 +2913,7 @@ public class ImageCatalogue {
                         g = getPlace(Integer.valueOf(param));
                         if (g == null) {
                             message("This place has not been added in the JSON - place:" + param);
-                            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "This place does not exist in the JSON:" + param);
+                            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "This place does not exist in the JSON:" + param,false);
                         } else {
                             message("Place has been found - place:" + param);
                             if (updateLatLon(g.getLatAsDouble(), g.getLonAsDouble(), fNew, config)) {
@@ -2783,7 +2927,7 @@ public class ImageCatalogue {
                         }
                     } catch (Exception e) {
                         message("could not convert provided values to a place:" + param);
-                        addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Could not convert provided values to a place:" + param);
+                        addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Could not convert provided values to a place:" + param,false);
                     }
 
                 } else if (p.equals(Enums.processMode.postcode)) {
@@ -2814,17 +2958,17 @@ public class ImageCatalogue {
                                         }
 
                                     } else {
-                                        addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Could not find postcode:" + param);
+                                        addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Could not find postcode:" + param,false);
                                     }
                                 }
                             }
                             else
                             {
-                                addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Lat Lon is null:" + param);
+                                addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Lat Lon is null:" + param,false);
                             }
 
                         } else {
-                            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "API not available:" + param);
+                            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "API not available:" + param,false);
                         }
                     } catch (Exception e) {
                         message("could not convert provided values to a postcode:" + param);
@@ -2923,7 +3067,7 @@ public class ImageCatalogue {
             catch(Exception e)
             {
                 message("Error accessing exif metadata");
-                addError(file.getName(),fixSlash(FilenameUtils.getFullPath(file.getPath())),convertToLocalDateTimeViaInstant(getFileDate(file)),"Error accessing exif metadata"+e);
+                addError(file.getName(),fixSlash(FilenameUtils.getFullPath(file.getPath())),convertToLocalDateTimeViaInstant(getFileDate(file)),"Error accessing exif metadata"+e,false);
             }
         }
         fNew.setDuplicate(false);
@@ -2954,7 +3098,7 @@ public class ImageCatalogue {
         }
         catch(Exception e)
         {
-            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Error - Could not read width and height");
+            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Error - Could not read width and height",false);
             message("Could not read width and height for "+file.getName());
         }
         fNew.setCameraKey(addCamera(fNew.getCameraMaker(),fNew.getCameraModel(), fNew.getBestDate()));
@@ -2965,7 +3109,7 @@ public class ImageCatalogue {
         }
         catch(Exception e)
         {
-            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Error - Could not access Camera friendly name");
+            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Error - Could not access Camera friendly name",false);
             message("Error - Could not read width and height for "+file.getName());
         }
 
@@ -3194,7 +3338,7 @@ public class ImageCatalogue {
         catch(Exception e)
         {
             message("Could not move file"+e);
-            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Error - Could not move file"+e);
+            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Error - Could not move file"+e,false);
             return true;
         }
 
@@ -3246,7 +3390,7 @@ public class ImageCatalogue {
                           //  addComment(newCommentsString, "#"+Enums.statusValues.renamedfile+Enums.doneValues.DONE+":" + fixSlash(fNew.getFileName()));
                             fNew.setWindowsComments(fNew.getWindowsComments() + "#"+Enums.statusValues.renamedfile+Enums.doneValues.DONE+":" + fixSlash(fNew.getFileName()));
                             fNew.setIPTCInstructions(fNew.getIPTCInstructions() + "#"+Enums.statusValues.renamedfile+Enums.doneValues.DONE+":" + fixSlash(fNew.getFileName()));
-                            addError(fNew.getFileName(), fNew.getDirectory(),fNew.getBestDate(), "Warning - clash in filenames in new directory :" + fixSlash(newDirectory)+" renamed to:"+newFileName);
+                            addError(fNew.getFileName(), fNew.getDirectory(),fNew.getBestDate(), "Warning - clash in filenames in new directory :" + fixSlash(newDirectory)+" renamed to:"+newFileName,true);
                         }
                         fNew.getComments().add("#"+Enums.statusValues.movedfile+Enums.doneValues.DONE+":" + fixSlash(fNew.getDirectory()));
                     //    addComment(newCommentsString, "#"+Enums.statusValues.movedfile+Enums.doneValues.DONE+":" + fixSlash(fNew.getDirectory()));
@@ -3299,7 +3443,7 @@ public class ImageCatalogue {
                 //Now update the EXIF section using Apache Imaging
                 if (!updateExifMetadata(outFile3, file, fNew)) {
                     message("File size is:"+fNew.getFileSize());
-                    addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Error in updating Exif metadata - possible file corruption"+"File size:"+fNew.getFileSize());
+                    addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Error in updating Exif metadata - possible file corruption"+"File size:"+fNew.getFileSize(),false);
                     message("Error in updating Exif metadata");
                     try {
                         message("Trying to copy file");
@@ -3309,7 +3453,7 @@ public class ImageCatalogue {
                     {
                         message("trying to move...");
                         Files.move(outFile3.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                        addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Trying to move file3"+e);
+                        addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Trying to move file3"+e,false);
                     }
 
                 }
@@ -3326,7 +3470,7 @@ public class ImageCatalogue {
                             countMoved++;
                         } else {
                             message("Did not move file" + fNew.getFileName());
-                            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Error moving file");
+                            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Error moving Final file",false);
                         }
                     }
 
@@ -3356,15 +3500,15 @@ public class ImageCatalogue {
         String fout_name = FilenameUtils.getFullPath(file.getPath()) +  Enums.prog.temp+"1" + FilenameUtils.getName(file.getPath());
         File outFile = new File(fout_name);
         if (!outFile.delete()) {
-            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not delete temporary file "+Enums.prog.temp+"1:"+ outFile.getName());
+            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not delete temporary file "+Enums.prog.temp+"1:"+ outFile.getName(),false);
             message("Cannot delete temp file 1:" + outFile.getPath());
         }
         if (!outFile2.delete()) {
-            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not delete temporary file "+Enums.prog.temp+"2:"+ outFile2.getName());
+            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not delete temporary file "+Enums.prog.temp+"2:"+ outFile2.getName(),false);
             message("Cannot delete temp file 2:" + outFile2.getPath());
         }
         if (!outFile3.delete()) {
-            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not delete temporary file "+Enums.prog.temp+"3:"+ outFile3.getName());
+            addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Could not delete temporary file "+Enums.prog.temp+"3:"+ outFile3.getName(),false);
             message("Cannot delete temp file 3:" + outFile3.getPath());
         }
     }
@@ -3556,12 +3700,12 @@ public class ImageCatalogue {
             e = i.next();
             if (e.getEventdate() == null && e.getEventcalendar() == null) {
                 message("Event calendar or event date must be specified - event :" + e.getEventid() + " " + e.getTitle());
-                addError("-", "-", null, "Error in Event ID: " + e.getEventid() + "- Calendar or Event date not specified");
+                addError("-", "-", null, "Error in Event ID: " + e.getEventid() + "- Calendar or Event date not specified",false);
                 i.remove();
             }
              else if (e.getEventdate() != null && e.getEventcalendar() != null) {
                     message("You cannot specify both an Event calendar and an event date - event :" + e.getEventid() + " " + e.getTitle());
-                    addError("-", "-", null, "Error in Event ID: " + e.getEventid() + "- Calendar and Event date both specified");
+                    addError("-", "-", null, "Error in Event ID: " + e.getEventid() + "- Calendar and Event date both specified",false);
                     i.remove();
             } else {
                 if (e.getEventcalendar() != null) {
@@ -3584,11 +3728,11 @@ public class ImageCatalogue {
                         }
                         if(e.getLocation()!=null)
                         {
-                            addError("-", "-", null, "Cannot add location to a Calendar Event : " + e.getEventid() );
+                            addError("-", "-", null, "Cannot add location to a Calendar Event : " + e.getEventid() ,false);
                             message("Cannot add location to a Calendar Event - " + e.getEventid());
                         }
                     } else {
-                        addError("-", "-", null, "Error in Event ID: " + e.getEventid() + "-cannot parse event");
+                        addError("-", "-", null, "Error in Event ID: " + e.getEventid() + "-cannot parse event",false);
                         message("cannot parse date for event" + e.getEventid());
                         i.remove();
                     }
@@ -3733,7 +3877,7 @@ public class ImageCatalogue {
             message("Photos to be processed             "+ex + countDriveProcessed);
             message("Photos already Processed           "+ex + countDriveALREADYPROCESSED);
             message("Photos updated                     "+ex + countDriveUPDATED);
-            message("Photos with Errors in processing   "+ex + countDriveErrors);
+            message("Photos where metadata not read     "+ex + countDriveErrors);
             message("Photos which have been moved       "+ex + countDriveMoved);
             message("Photos which are duplicates        "+ex + countDriveDuplicates);
             message("-----------------------------------");

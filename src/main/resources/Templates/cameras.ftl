@@ -3,7 +3,7 @@
   <title>Cameras and Scanners</title>
 </head>
 <body>
-  <h1>Cameras and Scanners identified in metadata</h1>
+  <h1>Cameras and Scanners identified in metadata ${parttext}</h1>
 <TABLE BORDER>
 <tr>
     <th>Camera Name</th>

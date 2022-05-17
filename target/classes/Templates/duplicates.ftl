@@ -3,7 +3,7 @@
   <title>Duplicates</title>
 </head>
 <body>
-  <h1>Duplicates</h1>
+  <h1>Duplicates ${parttext}</h1>
 
 <TABLE BORDER>
 <tr>

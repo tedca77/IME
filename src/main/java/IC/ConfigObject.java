@@ -38,6 +38,8 @@ public class ConfigObject {
     private String thumbsize;
     private Integer cacheDistance;
     private Integer pauseSeconds;
+    private Integer htmlLimit;
+    private Integer kmlLimit;
     private String timeZone;
     private ArrayList<DriveObject> drives;
     private ArrayList<CameraObject> cameras;

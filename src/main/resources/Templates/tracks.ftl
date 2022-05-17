@@ -41,7 +41,7 @@
     </style>
 </head>
 <body>
-  <h1>Tracks</h1>
+  <h1>Tracks ${parttext}</h1>
 <TABLE BORDER >
 <tr>
     <th>Track No</th>
@@ -52,7 +52,7 @@
 <#list tracks as track>
 <tr>
     <td>${(track.trackKey)!}</td>
-    <td>${(track.placeCount)!}</td>
+    <td>${(track.countTrack)!}</td>
     <td>${(track.startDate.format('yyyy-MM-dd HH:mm:ss'))!}</td>
     <td>${(track.endDate.format('yyyy-MM-dd HH:mm:ss'))!}</td>
 </tr>

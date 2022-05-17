@@ -1,9 +1,9 @@
 <html>
 <head>
-  <title>Errors</title>
+  <title>Warnings</title>
 </head>
 <body>
-  <h1>Errors ${parttext}</h1>
+  <h1>Warnings ${parttext}</h1>
 
 <TABLE BORDER>
 <tr>

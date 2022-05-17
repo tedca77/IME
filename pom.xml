@@ -119,8 +119,6 @@
             <artifactId>httpclient</artifactId>
             <version>4.5.13</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.apache.nifi/nifi-web-utils -->
-        <!-- https://mvnrepository.com/artifact/commons-httpclient/commons-httpclient -->
         <dependency>
             <groupId>commons-httpclient</groupId>
             <artifactId>commons-httpclient</artifactId>
