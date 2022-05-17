@@ -75,7 +75,7 @@ In addition, further "run time" parameters can be added to the command. These ar
 
 # Outputs
 ## HTML Outputs ##
-IME produces a number of HTML files that can be viewed with a browser.  Note that if there are more than 20,000 photos, then the files are split up into multiple parts and are named places1.html, places2.html etc, as your browser may not be able to open a file with too many thumbnails.  
+IME produces a number of HTML files that can be viewed with a browser.  Note that if there are more than 2,000 items, then the files are split up into multiple parts and are named places1.html, places2.html etc, as your browser may not be able to open a file with too many thumbnails.  
 * cameras.html - lists all cameras and the number of photos taken with each camera (or phone)
 * photosbydate.html - lists all photos in date order with a summary of metadata
 * tracks.html - links all photos as daily tracks
@@ -97,7 +97,7 @@ The structure of this file is explained later in this document.
 Two KML files are produced:
 * Points.kml - provides a point for every place found 
 * Track.kml - provides daily tracks.
-These can be be dragged onto a Google map and viewed.  Unfortunately, Google Map does not allow photos to be added via a KML file (although KML supports photos.) Other mapping providers may support, however.  
+These are split into multiple parts, as Google has limits on the number of points in a kml file.  These can be be dragged onto a Google map and viewed.  Unfortunately, Google Map does not allow photos to be added via a KML file (although KML supports photos.) Other mapping providers may support, however.  
 
 # Places
 Each longitude and latitude value found is represented as a **“Place”** in IME.  If two photos are taken at virtually the same place (i.e. they have very similar latitude and longitude), then this is identified as the same “Place” in IME and IME does not have to use the Open Street Map Service to carry out a second geocoding. (This is a good thing, because Open Street Map is a limited service, and condition of use is that it is not swamped with requests.)  The user can specify the distance that determines if the Place is the same (in metres).  Also, the geocoding may not identify the exact address e.g. house numbers may be slightly out.  IME can also be given a set of known Places in the JSON, before it runs, where the correct house address can be provided. e.g. if 86 Acacia Avenue is found, but the actual address is “85 Acacia Avenue”, then this can be modified in the JSON file and also given a user friendly name e.g. “Our first house”. (Each Place added is given a unique number which can be used to allocate images to this Place if they do not have longitude and latitude – see next section.)   
@@ -239,8 +239,8 @@ The following sections outline the various sections of the JSON file - ytou can 
 * **clear**: if true, does not do any processing, but clears out the JPG Comments fields (default false)
 * **tempdir**: - directory to hold results, including thumbnails 
 * **newdir**: - directory to move files to 
-* **htmllimit**: maximum number of photos referenced in a single html file (if more than this, the file is split up). 
-* **kmllimit**: maximum number of photos referenced in a single kml file (if more than this, the file is split up).
+* **htmllimit**: maximum number of photos referenced in a single html file (if more than this, the file is split up - default is 2,000). 
+* **kmllimit**: maximum number of Places referenced in a single kml file (if more than this, the file is split up - default is 200).
 * **minfilesize**: minimum size of the file to process  - in bytes - default is 4000 bytes
 * **thumbsize**: size of the thumbnail - recommended is 360x270 
 * **cachedistance**: distance in metres between points that determine if photos are the same place (default 75 metres)
