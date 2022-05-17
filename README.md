@@ -440,11 +440,11 @@ Details of each photo is written out to the JSON file.  This information does no
 	
 |Field|Metadata Section|Windows Properties|Lightroom|IrfanView|
 |-----|----------|---------------------|-----------------|------------------|
-|Title|EXIF|Title|?|Information/EXIF/XPTitle (and ImageDescription)|
-|Object Name|IPTC|Not visible|?|Information/IPTC/Document Title|
-|Keywords|EXIF|Shown in Tags|Keywords|Information/EXIF/XPKeywords|
-|IPTC Keywords|IPTC|Shown in Tags|??|Information/IPTC/Keywords|
-|Subject (Caption)|EXIF|Subject|Available in Lightroom as Caption|Information/EXIF/XPSubject & IPTC/Caption|
+|Title|EXIF|Not visible|Title|Information/EXIF/XPTitle (and ImageDescription)|
+|Object Name|IPTC|Not visible|Title|Information/IPTC/Document Title|
+|Keywords|EXIF|Shown in Tags|In Keyword List|Information/EXIF/XPKeywords|
+|IPTC Keywords|IPTC|Shown in Tags|In Keyword List|Information/IPTC/Keywords|
+|Subject (Caption)|EXIF|Subject|Caption|Information/EXIF/XPSubject & IPTC/Caption|
 |Original Date Time|EXIF|Date Taken|EXIF - Date Time Original|Information/EXIF/DateTimeOriginal |
 |IPTC Date Created|IPTC|Not visible|Not used if other dates are visible|Information/IPTC/Credits-Origin/Date |
 |Instructions|IPTC|Not visible|IPTC/Workflow/Instructions|Information/IPTC/Description/Special Instructions|
