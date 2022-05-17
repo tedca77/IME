@@ -445,19 +445,19 @@ Details of each photo is written out to the JSON file.  This information does no
 |Keywords|EXIF|Shown in Tags|Keywords|Information/EXIF/XPKeywords|
 |IPTC Keywords|IPTC|Shown in Tags|??|Information/IPTC/Keywords|
 |Subject (Caption)|EXIF|Subject|Available in Lightroom as Caption|Information/EXIF/XPSubject & IPTC/Caption|
-|Original Date Time|EXIF|Date Taken|?|Information/EXIF/DateTimeOriginal |
+|Original Date Time|EXIF|Date Taken|EXIF - Date Time Original|Information/EXIF/DateTimeOriginal |
 |IPTC Date Created|IPTC|Not visible|Not used if other dates are visible|Information/IPTC/Credits-Origin/Date |
 |Instructions|IPTC|Not visible|IPTC/Workflow/Instructions|Information/IPTC/Description/Special Instructions|
-|Comments (Windows)|EXIF|Details/Description/Comments|.|Information/EXIF/XP Comment|
-|Category|IPTC|Not visible|??|Information/IPTC/Keywords/Category|
+|Comments (Windows)|EXIF|Details/Description/Comments|Not visible|Information/EXIF/XP Comment|
+|Category|IPTC|Not visible|IPTC Category|Information/IPTC/Keywords/Category|
 |ISO Country Code|IPTC|Not visible|IPTC – ISO Country Code|Not visible|
 |Country|IPTC|Not visible|IPTC – Country|Information/Credits Origin/Credits Origin|
 |Stateprovince|IPTC|Not visible|IPTC – State/Province|Information/IPTC/Credits Origin|
 |city|IPTC|Not visible|IPTC – City|Information/IPTC/Credits Origin|
 |sublocation|IPTC|Not visible|IPTC - Sublocation|Information/IPTC/Credits Origin|
 |JPG Comments|Comments|Not visible|Not visible in Lightroom Classic|Information/Comments|
-|Latitude|EXIF|Not visible|Not visible in Lightroom Classic|Information/EXIF/GPSLatitude|
-|Longitude|EXIF|Not visible|Not visible in Lightroom Classic|Information/EXIF/GPSLongitude|
+|Latitude|EXIF|GPS - shown as Degrees, Minutes, Seconds|Shown as Degrees, Minutes, Seconds|Information/EXIF/GPSLatitude - shows both formats|
+|Longitude|EXIF|GPS - shown as Degrees, Minutes, Seconds|Shown as Degrees, Minutes, Seconds|Information/EXIF/GPSLongitude - shows both formats|
 
 ##Notes on Processing
 
