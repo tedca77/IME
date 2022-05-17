@@ -75,7 +75,7 @@ In addition, further "run time" parameters can be added to the command. These ar
 
 # Outputs
 ## HTML Outputs ##
-IME produces a number of HTML files that can be viewed with a browser.  Note that if there are more than 20,000 photos, then the files are split up into multiple parts and are named places1.html, places2.html etc, as your browser may not be able to open a file with too many thumbnails.  
+IME produces a number of HTML files that can be viewed with a browser.  Note that if there are more than 2,000 items, then the files are split up into multiple parts and are named places1.html, places2.html etc, as your browser may not be able to open a file with too many thumbnails.  
 * cameras.html - lists all cameras and the number of photos taken with each camera (or phone)
 * photosbydate.html - lists all photos in date order with a summary of metadata
 * tracks.html - links all photos as daily tracks
@@ -83,7 +83,7 @@ IME produces a number of HTML files that can be viewed with a browser.  Note tha
 * errors.html - lists all errors and warnings (e.g. for duplicate files)
 * events.html - lists all photos that have been matched with Events
 * duplicates.html - lists all duplicate photos.
-
+![Photos By Date](/Images/photosbydate.jpg)
 ## JSON Output ##
 Information for every file processed is written out to a JSON file.  The JSON filename includes the date and time e.g. **config20220401120138.json**.  This can be used as input to other runs and provides a way of adding:   
 * Events
@@ -97,7 +97,7 @@ The structure of this file is explained later in this document.
 Two KML files are produced:
 * Points.kml - provides a point for every place found 
 * Track.kml - provides daily tracks.
-These can be be dragged onto a Google map and viewed.  Unfortunately, Google Map does not allow photos to be added via a KML file (although KML supports photos.) Other mapping providers may support, however.  
+These are split into multiple parts, as Google has limits on the number of points in a kml file.  These can be be dragged onto a Google map and viewed.  Unfortunately, Google Map does not allow photos to be added via a KML file (although KML supports photos.) Other mapping providers may support, however.  
 
 # Places
 Each longitude and latitude value found is represented as a **“Place”** in IME.  If two photos are taken at virtually the same place (i.e. they have very similar latitude and longitude), then this is identified as the same “Place” in IME and IME does not have to use the Open Street Map Service to carry out a second geocoding. (This is a good thing, because Open Street Map is a limited service, and condition of use is that it is not swamped with requests.)  The user can specify the distance that determines if the Place is the same (in metres).  Also, the geocoding may not identify the exact address e.g. house numbers may be slightly out.  IME can also be given a set of known Places in the JSON, before it runs, where the correct house address can be provided. e.g. if 86 Acacia Avenue is found, but the actual address is “85 Acacia Avenue”, then this can be modified in the JSON file and also given a user friendly name e.g. “Our first house”. (Each Place added is given a unique number which can be used to allocate images to this Place if they do not have longitude and latitude – see next section.)   
@@ -239,8 +239,8 @@ The following sections outline the various sections of the JSON file - ytou can 
 * **clear**: if true, does not do any processing, but clears out the JPG Comments fields (default false)
 * **tempdir**: - directory to hold results, including thumbnails 
 * **newdir**: - directory to move files to 
-* **htmllimit**: maximum number of photos referenced in a single html file (if more than this, the file is split up). 
-* **kmllimit**: maximum number of photos referenced in a single kml file (if more than this, the file is split up).
+* **htmllimit**: maximum number of photos referenced in a single html file (if more than this, the file is split up - default is 2,000). 
+* **kmllimit**: maximum number of Places referenced in a single kml file (if more than this, the file is split up - default is 200).
 * **minfilesize**: minimum size of the file to process  - in bytes - default is 4000 bytes
 * **thumbsize**: size of the thumbnail - recommended is 360x270 
 * **cachedistance**: distance in metres between points that determine if photos are the same place (default 75 metres)
@@ -440,24 +440,24 @@ Details of each photo is written out to the JSON file.  This information does no
 	
 |Field|Metadata Section|Windows Properties|Lightroom|IrfanView|
 |-----|----------|---------------------|-----------------|------------------|
-|Title|EXIF|Title|?|Information/EXIF/XPTitle (and ImageDescription)|
-|Object Name|IPTC|Not visible|?|Information/IPTC/Document Title|
-|Keywords|EXIF|Shown in Tags|Keywords|Information/EXIF/XPKeywords|
-|IPTC Keywords|IPTC|Shown in Tags|??|Information/IPTC/Keywords|
-|Subject (Caption)|EXIF|Subject|Available in Lightroom as Caption|Information/EXIF/XPSubject & IPTC/Caption|
-|Original Date Time|EXIF|Date Taken|?|Information/EXIF/DateTimeOriginal |
+|Title|EXIF|Not visible|Title|Information/EXIF/XPTitle (and ImageDescription)|
+|Object Name|IPTC|Not visible|Title|Information/IPTC/Document Title|
+|Keywords|EXIF|Shown in Tags|In Keyword List|Information/EXIF/XPKeywords|
+|IPTC Keywords|IPTC|Shown in Tags|In Keyword List|Information/IPTC/Keywords|
+|Subject (Caption)|EXIF|Subject|Caption|Information/EXIF/XPSubject & IPTC/Caption|
+|Original Date Time|EXIF|Date Taken|EXIF - Date Time Original|Information/EXIF/DateTimeOriginal |
 |IPTC Date Created|IPTC|Not visible|Not used if other dates are visible|Information/IPTC/Credits-Origin/Date |
 |Instructions|IPTC|Not visible|IPTC/Workflow/Instructions|Information/IPTC/Description/Special Instructions|
-|Comments (Windows)|EXIF|Details/Description/Comments|.|Information/EXIF/XP Comment|
-|Category|IPTC|Not visible|??|Information/IPTC/Keywords/Category|
+|Comments (Windows)|EXIF|Details/Description/Comments|Not visible|Information/EXIF/XP Comment|
+|Category|IPTC|Not visible|IPTC Category|Information/IPTC/Keywords/Category|
 |ISO Country Code|IPTC|Not visible|IPTC – ISO Country Code|Not visible|
 |Country|IPTC|Not visible|IPTC – Country|Information/Credits Origin/Credits Origin|
 |Stateprovince|IPTC|Not visible|IPTC – State/Province|Information/IPTC/Credits Origin|
 |city|IPTC|Not visible|IPTC – City|Information/IPTC/Credits Origin|
 |sublocation|IPTC|Not visible|IPTC - Sublocation|Information/IPTC/Credits Origin|
 |JPG Comments|Comments|Not visible|Not visible in Lightroom Classic|Information/Comments|
-|Latitude|EXIF|Not visible|Not visible in Lightroom Classic|Information/EXIF/GPSLatitude|
-|Longitude|EXIF|Not visible|Not visible in Lightroom Classic|Information/EXIF/GPSLongitude|
+|Latitude|EXIF|GPS - shown as Degrees, Minutes, Seconds|Shown as Degrees, Minutes, Seconds|Information/EXIF/GPSLatitude - shows both formats|
+|Longitude|EXIF|GPS - shown as Degrees, Minutes, Seconds|Shown as Degrees, Minutes, Seconds|Information/EXIF/GPSLongitude - shows both formats|
 
 ##Notes on Processing
 
