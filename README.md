@@ -75,7 +75,7 @@ In addition, further "run time" parameters can be added to the command. These ar
 
 # Outputs
 ## HTML Outputs ##
-IME produces a number of HTML files that can be viewed with a browser.  Note that if you have too many files (and not enough memory on your desktop) you might not be able to open these files.
+IME produces a number of HTML files that can be viewed with a browser.  Note that if there are more than 20,000 photos, then the files are split up into multiple parts and are named places1.html, places2.html etc, as your browser may not be able to open a file with too many thumbnails.  
 * cameras.html - lists all cameras and the number of photos taken with each camera (or phone)
 * photosbydate.html - lists all photos in date order with a summary of metadata
 * tracks.html - links all photos as daily tracks
@@ -239,7 +239,9 @@ The following sections outline the various sections of the JSON file - ytou can 
 * **clear**: if true, does not do any processing, but clears out the JPG Comments fields (default false)
 * **tempdir**: - directory to hold results, including thumbnails 
 * **newdir**: - directory to move files to 
-* **minfilesize**: minimum size of the file to process  - in bytes - default is 4000 bytes 
+* **htmllimit**: maximum number of photos referenced in a single html file (if more than this, the file is split up). 
+* **kmllimit**: maximum number of photos referenced in a single kml file (if more than this, the file is split up).
+* **minfilesize**: minimum size of the file to process  - in bytes - default is 4000 bytes
 * **thumbsize**: size of the thumbnail - recommended is 360x270 
 * **cachedistance**: distance in metres between points that determine if photos are the same place (default 75 metres)
 * **pauseseconds**: pause time before making a call to OpenStreetMaps (default is 2 seconds, minimum is 1 second)
