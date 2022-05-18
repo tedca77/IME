@@ -38,7 +38,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Testing Longitude / latitude distance calculation")
-    @Disabled
+    //@Disabled
     void distance_Between_LatLongTest() {
         //choose two points separated by 58742 metres
         // George V Way,WD3 6 Rickmansworth,United Kingdom 51.68250194,-0.49026778
@@ -48,7 +48,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 1 - Geocoding with update")
-    @Disabled
+    //@Disabled
     void update1Test() {
         // Test: 1 - SIMPLE GEOCODING
         // Uses TestSource1
@@ -98,7 +98,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 2 - Geocoding with no overwriting of existing values")
-    @Disabled
+    //@Disabled
     void update2Test() {
         //Test 2 - SIMPLE GEOCODING _ NO OVERWRITING
         // Uses TestSource2
@@ -136,7 +136,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 3 - Geocoding with overwrite")
-    @Disabled
+    //@Disabled
     void update3Test() {
         //Test: 3 - SIMPLE GEOCODING - WITH OVERWRITING
         // Uses TestSource2
@@ -176,7 +176,7 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @Disabled
+    //@Disabled
     @DisplayName("Test 4 -  image - rotated  thumbnail           ")
     void update4Test() {
         //Test: 4 - ROTATING THUMBNAIL
@@ -205,7 +205,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 5 - geocode - checks JSON has geocode information - read only" )
-    @Disabled
+    //@Disabled
     void update5Test() {
         //Test: 5 - READ ONLY -  CHECKS JSON HAS GEOCODE INFORMATION
         // Uses TestSource1
@@ -243,7 +243,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 6 - geocode - checks JSON has geocode information - update")
-    @Disabled
+    //@Disabled
     void update6Test() {
         //Test: 6 UPDATE GEOCODE -  CHECKS JSON HAS GEOCODE INFORMATION
         // Uses TestSource1
@@ -278,7 +278,7 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @Disabled
+    //@Disabled
     @DisplayName("Test 7")
     void update7Test() {
         //Test: 7 - HARD CODE YEAR CHECKS IPTC DATE CREATED AND KEYWORDS
@@ -312,7 +312,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 8 - Hard coded Year from Windows Comments")
-    @Disabled
+    //@Disabled
     void update8Test() {
         //Test: 8 - HARD CODE YEAR - CHECK FILE DATES
         // Uses TestSource4
@@ -351,7 +351,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 9")
-    @Disabled
+    //@Disabled
     void update9Test() {
         //Test: 9 - HARD CODE YEAR AND MONTH
         // Uses TestSource4
@@ -383,7 +383,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 10 - Add Year Month Day via Windows Comment")
-    @Disabled
+    //@Disabled
     void update10Test() {
         //Test: 10 - HARD CODE YEAR MONTH DAY
         // Uses TestSource4
@@ -417,7 +417,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 11 - Add Year via IPTC Instruction")
-    @Disabled
+    //@Disabled
     void update11Test() {
         //Test: 11 - HARD CODE DATE USING IPTC INSTRUCTIONS FIELD
         // Uses TestSource4
@@ -450,7 +450,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 12")
-    @Disabled
+    //@Disabled
     void update12Test() {
         //Test: 7 - HARD CODE DATE USING IPTC INSTRUCTIONS FIELD YEAR AND MONTH
         // Uses TestSource4
@@ -483,7 +483,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 13")
-    @Disabled
+    //@Disabled
     void update13Test() {
         //Test: 13 - HARD CODE DATE USING IPTC INSTRUCTIONS FIELD YEAR AND MONTH
         // Uses TestSource4
@@ -516,7 +516,7 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @Disabled
+    //@Disabled
     @DisplayName("Test 14")
     void update14Test() {
         // Test 14 :  HARD CODE EVENT WITH A POSTCODE
@@ -549,7 +549,7 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @Disabled
+    //@Disabled
     @DisplayName("Test 15")
     void update15Test() {
         // Test 15 - HARD CODE EVENT WITH PLACE
@@ -582,7 +582,7 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @Disabled
+    //@Disabled
     @DisplayName("Test 16")
     void update16Test() {
         // Test 16 - FIND EVENT WITH PLACE
@@ -615,7 +615,7 @@ class IMEMethodsTest {
         }
     }
     @Test
-     @Disabled
+     //@Disabled
     @DisplayName("Test 17")
     void update17Test() {
         // Test 17 - FIND EVENT WITH NO PLACE
@@ -645,7 +645,7 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @Disabled
+    //@Disabled
     @DisplayName("Test 18")
     void update18Test() {
         // Test 18 - FIND EVENT WITH POSTCODE
@@ -678,7 +678,7 @@ class IMEMethodsTest {
         }
     }
     @Test
-     @Disabled
+     //@Disabled
     @DisplayName("Test 19")
     void update19Test() {
         // Test 19 - ADD EVENT WITH LAT, LON
@@ -709,7 +709,7 @@ class IMEMethodsTest {
         }
     }
     @Test
-     @Disabled
+     //@Disabled
     @DisplayName("Test 20")
     void update20Test() {
         // Test 20 - FIND EVENT WITH LAT, LON
@@ -740,7 +740,7 @@ class IMEMethodsTest {
         }
     }
     @Test
-     @Disabled
+     //@Disabled
     @DisplayName("Test 21")
     void update21Test() {
         // Test 21 - FIND EVENT CALENDAR - NO PLACE
@@ -770,7 +770,7 @@ class IMEMethodsTest {
         }
     }
     @Test
-     @Disabled
+     //@Disabled
     @DisplayName("Test 22")
     void update22Test() {
         // Test 22 -HARD CODE LAT,LON
@@ -801,7 +801,7 @@ class IMEMethodsTest {
         }
     }
     @Test
-     @Disabled
+     //@Disabled
     @DisplayName("Test 23")
     void update23Test() {
         // Test 23 -HARD CODE PLACE
@@ -832,7 +832,7 @@ class IMEMethodsTest {
         }
     }
     @Test
-     @Disabled
+     //@Disabled
     @DisplayName("Test 24")
     void update24Test() {
         // Test 24 -HARD CODE POST CODE
@@ -862,7 +862,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 25")
-    @Disabled
+    //@Disabled
     void update25Test() {
         // Test: 25 - MOVING DUPLICATE FILES AND RENAMING
         // Uses TestSource6
@@ -891,7 +891,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 26 - Checks that metadata written to Config Output file")
-    @Disabled
+    //@Disabled
     void update26Test() {
         //Test: 26 - CHECKS THAT METADATA FIELDS ARE ALL READ
         // Uses TestSource4
@@ -926,7 +926,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 27 - Checks all metadata fields are read")
-    @Disabled
+    //@Disabled
     void update27Test() {
         //Test: 26 - CHECKS THAT METADATA FIELDS ARE ALL READ
         // Uses TestSource4
@@ -954,7 +954,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 28 - Checks that XP Keywords and IPTC Keywords are written")
-    @Disabled
+    //@Disabled
     void update28Test() {
         // Test: 1 - SIMPLE GEOCODING
         // Uses TestSource1
@@ -987,7 +987,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 29 - Checks that Processed file not reprocessed - geocoded")
-    @Disabled
+    //@Disabled
     void update29Test() {
         // Test: 1 - SIMPLE GEOCODING
         // Uses TestSource1
@@ -1018,7 +1018,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 30 - Checks that Processed file not reprocessed - Date")
-    @Disabled
+    //@Disabled
     void update30Test() {
         // Test: 1 - SIMPLE GEOCODING
         // Uses TestSource1
@@ -1049,7 +1049,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 31 - Checks that Processed file reprocessed with REDO - geocoded")
-    @Disabled
+    //@Disabled
     void update31Test() {
         // Test: 1 - SIMPLE GEOCODING
         // Uses TestSource1
@@ -1079,7 +1079,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 32 - Checks CLEAR option")
-     @Disabled
+     //@Disabled
     void update32Test() {
         // Test: 1 - CLEAR option
         // Uses TestSource1
@@ -1109,7 +1109,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 33 - Check files are created")
-        //@Disabled
+        ////@Disabled
     void update33Test() {
         // Test: 33 - SIMPLE GEOCODING - CHECKS FILES ARE created
         // Uses TestSource1

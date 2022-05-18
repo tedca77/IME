@@ -293,6 +293,12 @@ public class IMEMethods {
               message("Error pausing"+e);
         }
     }
+
+    /**
+     * Reads a String and converts to a Config Object
+     * @param s - string to read
+     * @return - ConfigObject
+     */
     public static ConfigObject readConfigFromString(String s)
     {
         ObjectMapper mapper = new ObjectMapper();
@@ -334,6 +340,12 @@ public class IMEMethods {
             return null;
         }
     }
+
+    /**
+     * Reads Command line arguments and updates the ConfigObject
+     * @param config - ConfigObject
+     * @param args - list of arguments
+     */
     public static void readRestOfArgs(ConfigObject config,String[] args)
     {
         //checks args - first 3 may not be
@@ -386,6 +398,12 @@ public class IMEMethods {
 
 
     }
+
+    /**
+     * Hard codes Windows dates (used for Test only)
+     * @param fileName - File to modify
+     * @param dateParam - date , as String - used to modify values
+     */
     public static void setFileAttributesForTest(String fileName,String dateParam)
     {
         File file = new File(fileName);
@@ -477,6 +495,12 @@ public class IMEMethods {
 
         return true;
     }
+
+    /**
+     * We want a lost of Points that corresponds to a list of Tracks, so both files can be added as Layers on a Google Map
+     * @param tr - List of Trackss
+     * @return - ArrayList of Places (Points)
+     */
     public static ArrayList<Place> makePointsForTrack(List<TrackObject> tr)
     {
         ArrayList<Place> p = new ArrayList<>();
@@ -494,6 +518,19 @@ public class IMEMethods {
         return p;
 
     }
+
+    /**
+     * Makes KML Report, using Freemarker
+     * @param limit - maximum number of points (Places)in the KML file
+     * @param cfg - FreeMarker Configuration file
+     * @param tempDir - temporary directory
+     * @param trackTemplate - Track Freemarker Template
+     * @param pointTemplate - Point Freemarker Template
+     * @param trackOutputFile - Track Output File
+     * @param pointOutputFile - Point output file
+     * @param trackObjectName - Track Object Name (passed to Freemarker)
+     * @param pointObjectName - POint Object Name (passed to Freemarker)
+     */
     public static void makeReportKML(Integer limit,Configuration cfg,String tempDir,String trackTemplate,String pointTemplate,String trackOutputFile,String pointOutputFile,String trackObjectName,String pointObjectName)
     {
         try {
@@ -553,6 +590,17 @@ public class IMEMethods {
             message("Error writing output files :"+ee);
         }
     }
+
+    /**
+     *  Produces report but limits the size, based on limit, into separate files - used for reports where we could the number of photos from the Object
+     * @param limit - maximum number of files
+     * @param cfg - Freemarker configuration object
+     * @param tempDir - output directory
+     * @param template - template file name
+     * @param outputFile - output filename
+     * @param objectName - object name (passed to Freemarker)
+     * @param objects - Array of objects,used by the report
+     */
     public static void makeReportLimitCount(Integer limit,Configuration cfg,String tempDir,String template,String outputFile,String objectName,ArrayList<?> objects)
     {
         try {
@@ -620,6 +668,16 @@ public class IMEMethods {
             message("Error writing output files :"+ee);
         }
     }
+
+    /**
+     * Runs freemarker
+     * @param fileName - file name to produce
+     * @param objectName - name of objects used by the report
+     * @param tempDir - output directory
+     * @param partText - text to add to the report when it is split e.g. "Part 3"
+     * @param template - name of template
+     * @param objects - Array of objects for report
+     */
     public static void runFreeMarker(String fileName,String objectName,String tempDir,String partText,Template template,List<?> objects)
     {
         try {
@@ -639,6 +697,17 @@ public class IMEMethods {
         message("Error writing output files :"+ee);
     }
     }
+
+    /**
+     *  Produce reports - used for simple reports where there is one thumbnail per file - splits up if too many files
+     * @param limit - maximum bnumber of files in a file
+     * @param cfg - Freemarker config object
+     * @param tempDir - output directory
+     * @param template - template file
+     * @param outputFile - output file name
+     * @param objectName -object name , passed to Freemarker
+     * @param objects - Array of Objects
+     */
     public static void makeReport(Integer limit,Configuration cfg,String tempDir,String template,String outputFile,String objectName,ArrayList<?> objects)
     {
         try {
@@ -893,6 +962,12 @@ public class IMEMethods {
             message("Error reading directory:" + drive.getStartdir()+", Error:"+e);
         }
     }
+
+    /**
+     * Converts Address into an Array of Keywords
+     * @param g - Place Object
+     * @return - keyword array
+     */
     public static ArrayList<String> assembleKeywords(Place g)
     {
         ArrayList<String> s = new ArrayList<>();
@@ -1061,6 +1136,11 @@ public class IMEMethods {
         }
         return s;
     }
+
+    /**
+     * Iterates through events and adds HTML links for each file matching the event, which are added to the HTML reports
+     * @param root - file root, used to create the full link
+     */
     public static void addLinksToEvents( String root)
     {
         for(EventObject r : events)
@@ -1195,6 +1275,13 @@ public class IMEMethods {
             r.setImagelinks(s.toString());
         }
     }
+
+    /**
+     *  Creates an HTML link for adding to a report (to show a thumbnail)
+     * @param root - directory root for output file
+     * @param f - fileObject
+     * @return - html link String
+     */
     public static String getLink(String root,FileObject f)
     {
         StringBuilder s= new StringBuilder();
@@ -1294,6 +1381,15 @@ public class IMEMethods {
         places.add(g);
         return newKey;
     }
+
+    /**
+     *  Adds an error to list of Error objects - provides a report at the end - either error or warnings file
+     * @param fileName - file being processed
+     * @param directory - directory location of file
+     * @param d - date time
+     * @param message - warning or error message
+     * @param warning - flag to specify if an error or a warning
+     */
     public static void addError(String fileName,String directory,LocalDateTime d,String message,Boolean warning)
     {
         ErrorObject error = new ErrorObject();
@@ -1310,6 +1406,12 @@ public class IMEMethods {
 
         }
     }
+
+    /**
+     * Looks for the latest JSON file (only used for JUNIT testing) - because the date is always added to the JSON output file
+     * @param startDir - directory to look for JSON file
+     * @return - filename found
+     */
     public static String findJSONFile(File startDir)
     {
         LocalDateTime d=LocalDateTime.now();
@@ -1431,6 +1533,12 @@ public class IMEMethods {
             }
         return renameFiles(new File(copyDir));
     }
+
+    /**
+     * Clears blank strings from Array of Strings
+     * @param ss - Arrayllist of Strings
+     * @return - returned ArrayList
+     */
     public static ArrayList<String> clearBlanks(ArrayList<String> ss)
     {
         ss.removeIf(s-> s.trim().length()<1);
@@ -1657,6 +1765,13 @@ public class IMEMethods {
             }
         }
     }
+
+    /**
+     * Provides a unique file name when the file name is duplicated, but file is different
+     * @param dirName - target directory name
+     * @param fileName - target file name (to create a new unique name)
+     * @return - new file name
+     */
     public static String getUniqueFileName(String dirName,String fileName)
     {
          String root= FilenameUtils.getBaseName(fileName);
@@ -1786,6 +1901,7 @@ public class IMEMethods {
         boolean result=true;
         try {
           result = new File(temp).mkdir();
+
 
         } catch (Exception e) {
            if(e.getMessage().equals("OK"))
@@ -2063,7 +2179,7 @@ public class IMEMethods {
     /**
      * Checks if a file directory should be excluded from the processing
      * @param fdir - directory name to check
-        * @return - either true (excluded) or false(not excluded)
+     * @return - either true (excluded) or false(not excluded)
      */
     public static Boolean isExcluded(String fdir, DriveObject drive) {
 
@@ -2113,7 +2229,6 @@ public class IMEMethods {
         //  message("Not Excluded:"+fname);
         return false;
     }
-
     /**
      * Replaces backslashes with forward slashes for consistency of file names on all platforms
      * @param s - string to change
@@ -2145,6 +2260,11 @@ public class IMEMethods {
         }
         return current;
     }
+
+    /**
+     * Creates a FileObject and sets default fields
+     * @return - FileObject
+     */
     public static FileObject initialiseFileObject()
     {
         FileObject f = new FileObject();
@@ -2391,7 +2511,6 @@ public class IMEMethods {
         }
         return 0;
     }
-
     /**
      * Processes all events for a FileObject
      * @param config - Config Object
@@ -2445,7 +2564,7 @@ public class IMEMethods {
         boolean alreadyProcessed = false;
         readSystemDates(fNew,file);
         IPTC iptc = new IPTC();
-        Metadata meta=null;
+        Metadata meta;
         JpegExif exif = new JpegExif();
         // reads existing values from metadata
         try {
@@ -2500,10 +2619,10 @@ public class IMEMethods {
         if(!readOnly) {
             if(config.getClear())
             {
-                clearFile(fNew, config, file,   drive,  iptc, exif);
+                clearFile(fNew, config, file,   drive);
             }
             else {
-                processFile(fNew, config, file, thumbName, alreadyProcessed, drive, iptc, exif);
+                processFile(fNew, config, file, thumbName, alreadyProcessed, drive);
             }
         }
         return fNew;
@@ -2517,10 +2636,8 @@ public class IMEMethods {
      * @param thumbName - name of thumbnail
      * @param alreadyProcessed - flag to identify if the file has already been processed
      * @param drive - Drive object
-     * @param iptc - IPTC Object
-     * @param exif - Exif object
      */
-    public static void processFile(FileObject fNew,ConfigObject config,File file, String thumbName,Boolean alreadyProcessed,DriveObject drive,IPTC iptc,JpegExif exif)
+    public static void processFile(FileObject fNew,ConfigObject config,File file, String thumbName,Boolean alreadyProcessed,DriveObject drive)
     {
         boolean updateRequired=false;
         //always check for duplicates
@@ -2600,7 +2717,7 @@ public class IMEMethods {
             fNew.setWindowsComments(appendComment(fNew.getWindowsComments(),"#"+Enums.statusValues.processed+Enums.doneValues.DONE ));
             fNew.setIPTCInstructions(appendComment(fNew.getIPTCInstructions(),"#"+Enums.statusValues.processed+Enums.doneValues.DONE));
             message("Processing with update");
-            updateFile(config, drive, file, iptc, exif, fNew);
+            updateFile(config, drive, file, fNew);
         }
     }
     /**
@@ -2609,10 +2726,8 @@ public class IMEMethods {
      * @param config - Config Object
      * @param file - File being processed
      * @param drive - Drive object
-     * @param iptc - IPTC Object
-     * @param exif - Exif object
      */
-    public static void clearFile(FileObject fNew,ConfigObject config,File file, DriveObject drive,IPTC iptc,JpegExif exif)
+    public static void clearFile(FileObject fNew,ConfigObject config,File file, DriveObject drive)
     {
         for(Enums.processMode p :Enums.processMode.values()) {
             fNew.setComments(removeIPTCComments(fNew.getComments(),"#"+p+Enums.doneValues.DONE+":"));
@@ -2621,7 +2736,7 @@ public class IMEMethods {
             fNew.setComments(removeIPTCComments(fNew.getComments(),"#"+s+Enums.doneValues.DONE+":"));
         }
         message("Clearing JPG Comments update");
-        updateFile(config, drive, file, iptc, exif, fNew);
+        updateFile(config, drive, file, fNew);
 
     }
     /**
@@ -2666,6 +2781,12 @@ public class IMEMethods {
         }
         return false;
      }
+    /**
+     * Converts a file path to an ArrayList of Keywords - when moving a file, it is useful to keep the old directory name and use as keywords
+     * @param dir - path as a string - this is used
+     * @param root - root as a string - this is ignored
+     * @return - ArrayList of keywords
+     */
     public static ArrayList<String> convertPathToKeywords(String dir,String root)
     {
         // change all slashes to forward
@@ -2681,7 +2802,14 @@ public class IMEMethods {
         Collections.addAll(keys, ss);
         return keys;
     }
+
+    /**
+     * Converts string to a year allowing for two digit and 4 digit years
+     * @param s - string to convert
+     * @return - returns integer or 0 if it can't convert
+     */
     public static int convertYear(String s)
+
     {
         int year=0;
         try {
@@ -2696,6 +2824,12 @@ public class IMEMethods {
         }
         return year;
     }
+
+    /**
+     *  Converts string to a month integer
+     * @param s - string to convert
+     * @return - returns integer or 0 if it can't convert
+     */
     public static int convertMonth(String s)
     {
         int month=0;
@@ -2711,6 +2845,12 @@ public class IMEMethods {
         }
         return month;
     }
+
+    /**
+     * Converts string to a day - between 1 and 31 or 0 if String can't be converted
+     * @param s - string to convert
+     * @return - returns integer or 0
+     */
     public static int convertDay(String s)
     {
         int day=0;
@@ -2757,9 +2897,16 @@ public class IMEMethods {
         e.setCountEvent(e.getCountEvent()+1);
 
     }
-    public static Boolean updateLatLon(Double lat, Double lon,FileObject fNew,ConfigObject config)
+    /**
+     * Updates FileObject with new values
+     * @param lat -latitude (decimal)
+     * @param lon - longitude (decimal)
+     * @param fNew - FileObject updated
+      * @return - returns true if fields updated
+     */
+    public static Boolean updateLatLon(Double lat, Double lon,FileObject fNew)
     {
-        if((fNew.getLatitude()==null && fNew.getLongitude()==null) || config.getOverwrite())
+        if((fNew.getLatitude()==null && fNew.getLongitude()==null))
         {
             fNew.setLatitude(lat);
             fNew.setLongitude(lon);
@@ -2785,7 +2932,6 @@ public class IMEMethods {
         }
         return "";
     }
-
     /**
      * When a Date is provided, will update the EXIFOriginal and Best Date
      * Will update the IPTC date with a partial date either YYYY, YYYYMM or YYYYMMDD
@@ -2809,7 +2955,6 @@ public class IMEMethods {
         }
         return null;
     }
-
     /**
      * converts from a Date to LocalDateTime
      * @param dateToConvert - Date object
@@ -2824,7 +2969,6 @@ public class IMEMethods {
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();
     }
-
     /**
      * Converts LocalTimeDate to an Instant - used for date conversion
      * @param dateToConvert LocalDateTime date
@@ -2835,7 +2979,6 @@ public class IMEMethods {
                 .from(dateToConvert.atZone(ZoneId.systemDefault())
                         .toInstant());
     }
-
     /**
      * Processes any Location in comments field - note it will only do this if lon and lat are not present on the file.
      * @param config - ConfigObject
@@ -2844,7 +2987,6 @@ public class IMEMethods {
      * @return - returns either true of false depending on whether it has processed
      */
     public static Boolean forwardCode(ConfigObject config, FileObject fNew,String eventLocation) {
-
          String param ;
          boolean paramFound=false;
          for(Enums.processMode p :Enums.processMode.values()) {
@@ -2869,7 +3011,7 @@ public class IMEMethods {
                             geocode(fNew, lat, lon, config,true);
                             // we should also set lat and lon if it is correct
                             if (fNew.getPlaceKey() != null) {
-                                if (updateLatLon(lat, lon, fNew, config)) {
+                                if (updateLatLon(lat, lon, fNew)) {
                                     countAddedLATLONG++;
                                     countDriveAddedLATLONG++;
                                     updateCommentFields(fNew,lat+","+lon,p);
@@ -2916,7 +3058,7 @@ public class IMEMethods {
                             addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "This place does not exist in the JSON:" + param,false);
                         } else {
                             message("Place has been found - place:" + param);
-                            if (updateLatLon(g.getLatAsDouble(), g.getLonAsDouble(), fNew, config)) {
+                            if (updateLatLon(g.getLatAsDouble(), g.getLonAsDouble(), fNew)) {
                                 fNew.setPlaceKey(g.getPlaceid());
                                 setFileObjectGEOValues(fNew, g,  config);
                                 countAddedPlace++;
@@ -2951,7 +3093,7 @@ public class IMEMethods {
                                     geocode(fNew, lat, lon, config,true);
                                     // we should also set lat and lon if it is correct
                                     if (fNew.getPlaceKey() != null) {
-                                        if (updateLatLon(lat, lon, fNew, config)) {
+                                        if (updateLatLon(lat, lon, fNew)) {
                                             countAddedPostcode++;
                                             countDriveAddedPostcode++;
                                             updateCommentFields(fNew, param, p);
@@ -2977,9 +3119,7 @@ public class IMEMethods {
             }
         }
          return paramFound;
-
     }
-
     /**
      * Sets Geographic fields on the fileObject from a Place object 0 6 fields and then optionally a set of keywords to be added to Windows Keywords (not IPTC keywords)
      * @param fNew - fileObject
@@ -2987,7 +3127,6 @@ public class IMEMethods {
      * @param config - config object
      */
     public static void setFileObjectGEOValues(FileObject fNew,Place g, ConfigObject config)
-
     {
         fNew.setDisplayName(conditionallyUpdateGeoField(fNew.getDisplayName(),g.getDisplay_name(),"Display Name,",config));
         fNew.setCity(conditionallyUpdateGeoField(fNew.getCity(),g.getIPTCCity(),"City",config));
@@ -3112,9 +3251,7 @@ public class IMEMethods {
             addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Error - Could not access Camera friendly name",false);
             message("Error - Could not read width and height for "+file.getName());
         }
-
     }
-
     /**
      * Reads three system date properties using windows attributes Modified, Accessed and Created
      * @param f - fileObject (this is updated)
@@ -3134,9 +3271,7 @@ public class IMEMethods {
         } catch (Exception e) {
             message("Could not read File Basic Attributes: " + e);
         }
-
     }
-
     /**
      *  Reads all IPTC data fields using the ICAFE library
      * @param f - fileObject
@@ -3180,7 +3315,7 @@ public class IMEMethods {
                     }
                 } else if (item.getKey().equals(IPTCApplicationTag.KEY_WORDS.getName())) {
                     if (item.getValue().length() > 0) {
-                        // this is a single String separated by a semicolon.. we store as an Array to simplify processing
+                        // this is a single String separated by a semicolon. we store as an Array to simplify processing
                         f.setIPTCKeywords(item.getValue());
                         f.setIPTCKeywordsArray(new ArrayList<>(Arrays.asList(item.getValue().split(";", -1))));
 
@@ -3217,7 +3352,6 @@ public class IMEMethods {
             return false;
         }
     }
-
     /**
      * Update an IPTC field - we want to show the value of the field even for read only mode, so we decide whether to update the field, even if we are
      * not in update mode....
@@ -3261,13 +3395,15 @@ public class IMEMethods {
         fNew.setIPTCInstructions(updateInstructions(fNew.getIPTCInstructions(),p,param));
         DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
         fNew.getComments().add("#"+p.toString()+Enums.doneValues.DONE+":"+param+":" + formatter.format(new Date()));
-      //  ArrayList comments = fNew.getComments();
-      //  comments.add("#"+p.toString()+Enums.doneValues.DONE+":"+param+":" + formatter.format(new Date()));
-
-      //fNew.setComments(comments);
-        //addComment(newCommentsString,"#"+p.toString()+Enums.doneValues.DONE+":"+param);
     }
 
+    /**
+     * UPdates the IPTC fields - these will be merged with existing fields later
+     * @param iptcs - IPTC structure
+     * @param fNew - FileObject
+     * @param config - Config Object
+     * @param drive - Drive
+     */
     public static void updateIPTCFields(List<IPTCDataSet> iptcs, FileObject fNew, ConfigObject config, DriveObject drive) {
         ArrayList<String> newKeys = new ArrayList<>();
         // add drive keywords
@@ -3364,15 +3500,13 @@ public class IMEMethods {
      * @param config - config object
      * @param drive - drive
      * @param file - filepath
-     * @param iptc - IPTC metadata block
-     * @param exif - EXIF metadata block
      * @param fNew - fileObject (with metadata values)
      */
-    public static void updateFile(ConfigObject config,DriveObject drive, File file,IPTC iptc,JpegExif exif,FileObject fNew)
+    public static void updateFile(ConfigObject config,DriveObject drive, File file,FileObject fNew)
     {
             try {
                List<IPTCDataSet> iptcs = new ArrayList<>();
-               updateIPTCFields(iptcs,fNew,config,drive);
+                updateIPTCFields(iptcs,fNew,config,drive);
                 FileInputStream fin1 = new FileInputStream(file.getPath());
                 String fout_name1 = FilenameUtils.getFullPath(file.getPath()) + Enums.prog.temp+"1" + FilenameUtils.getName(file.getPath());
                 File outFile = new File(fout_name1);
@@ -3402,15 +3536,11 @@ public class IMEMethods {
                 if (!StringUtils.isNullOrEmpty(fNew.getIPTCInstructions())) {
                     iptcs.add(new IPTCDataSet(IPTCApplicationTag.SPECIAL_INSTRUCTIONS, fNew.getIPTCInstructions()));
                 }
-              //  metaList.add(exif);
-             //   iptc.addDataSets(iptcs);
-              //  metaList.add(iptc);
-              //  metaList.add(new Comments(fNew.getComments()));
+                //update the IPTC section (last parameters ensures original values kept)
                 Metadata.insertIPTC(fin1, fout1,iptcs,true);
-               // Metadata.insertMetadata(metaList, fin, fout);
                 fin1.close();
                 fout1.close();
-                // now remove the comments
+                // now remove the JPEG Comments
                 FileInputStream fin2 = new FileInputStream(fout_name1);
                 String fout_name2 = FilenameUtils.getFullPath(file.getPath()) + Enums.prog.temp+"2" + FilenameUtils.getName(file.getPath());
                 File outFile2 = new File(fout_name2);
@@ -3418,7 +3548,7 @@ public class IMEMethods {
                 Metadata.removeMetadata(fin2,fout2,MetadataType.COMMENT);
                 fout2.close();
                 fin2.close();
-                // now add in the comments
+                // now add in the JPEG comments
                 FileInputStream fin3 = new FileInputStream(fout_name2);
                 String fout_name3 = FilenameUtils.getFullPath(file.getPath()) +  Enums.prog.temp+"3" + FilenameUtils.getName(file.getPath());
                 File outFile3 = new File(fout_name3);
@@ -3426,17 +3556,6 @@ public class IMEMethods {
                 Metadata.insertComments(fin3, fout3,fNew.getComments());
                 fout3.close();
                 fin3.close();
-                // now add the exif section back in...
-                /*
-                FileInputStream fin4 = new FileInputStream(fout_name3);
-                String fout_name4 = FilenameUtils.getFullPath(file.getPath()) + "out4" + FilenameUtils.getName(file.getPath());
-                File outFile4 = new File(fout_name4);
-                FileOutputStream fout4 = new FileOutputStream(outFile4, false);
-                Metadata.insertExif(fin4, fout4,exif);
-                fin4.close();
-                fout4.close();
-
-                 */
                 if (!file.delete()) {
                     message("Cannot delete file:" + file.getPath());
                 }
@@ -3455,7 +3574,6 @@ public class IMEMethods {
                         Files.move(outFile3.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
                         addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"Trying to move file3"+e,false);
                     }
-
                 }
                 File finalFile = file;
                 // if we are moving the file
@@ -3473,23 +3591,24 @@ public class IMEMethods {
                             addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Error moving Final file",false);
                         }
                     }
-
-
-
                 }
                 Files.setAttribute(finalFile.toPath(), "creationTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileCreated()).getTime()));
                 Files.setAttribute(finalFile.toPath(), "lastAccessTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileAccessed()).getTime()));
                 Files.setAttribute(finalFile.toPath(), "lastModifiedTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileModified()).getTime()));
                 cleanUpTempFiles(file,fNew);
-
                 countUPDATED++;
                 countDriveUPDATED++;
             } catch (Exception e) {
                 message("Cannot update File - it will not be moved"+e);
                 cleanUpTempFiles(file,fNew);
             }
-
     }
+
+    /**
+     * Cleans up the temporary files used to update metadaya
+     * @param file - the file being processed
+     * @param fNew - the FileObject for the file
+     */
     public static void cleanUpTempFiles(File file,FileObject fNew)
     {
 
@@ -3673,6 +3792,12 @@ public class IMEMethods {
         }
     }
 
+    /**
+     *  Checks if specific event key exists in the field - this is a fied of numbers separated by semi colon
+     * @param keyString - string to search
+     * @param keyValue - event key value
+     * @return - retusn true if found
+     */
     public static boolean checkEventKey(String keyString,int keyValue)
     {
         String[] splits=keyString.split(";",-1);
@@ -3895,7 +4020,15 @@ public class IMEMethods {
 
         }
     }
+
+    /**
+     *  Prints out metadata
+     * @param entry - entry
+     * @param indent - indent (for displaying)
+     * @param increment - increment
+     */
     private static void printMetadata(MetadataEntry entry, String indent, String increment) {
+
         message(indent + entry.getKey() + (StringUtils.isNullOrEmpty(entry.getValue()) ? "" : ": " + entry.getValue()));
         if (entry.isMetadataEntryGroup()) {
             indent += increment;
