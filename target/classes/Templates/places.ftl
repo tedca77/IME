@@ -1,6 +1,7 @@
 <html>
 <head>
   <title>Places identified by Grid Reference</title>
+  <meta charset="UTF-8">
     <style type="text/css">
     .myGallery {
       display: grid;
@@ -70,6 +71,7 @@
     <td>${(place.countPlace)!}</td>
     <td>${(place.startDate.format('yyyy-MM-dd  HH:mm:ss'))!}</td>
     <td>${(place.endDate.format('yyyy-MM-dd  HH:mm:ss'))!}</td>
+
 </tr>
 <tr>
 <td COLSPAN=11 WIDTH=1000>

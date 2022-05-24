@@ -1,6 +1,7 @@
 <html>
 <head>
   <title>Photos By Date</title>
+  <meta charset="UTF-8">
 </head>
 <body>
   <h1>Photos by Date ${parttext}</h1>

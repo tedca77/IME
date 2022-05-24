@@ -1,6 +1,7 @@
 <html>
 <head>
   <title>Cameras and Scanners</title>
+  <meta charset="UTF-8">
 </head>
 <body>
   <h1>Cameras and Scanners identified in metadata ${parttext}</h1>

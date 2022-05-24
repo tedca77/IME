@@ -209,6 +209,8 @@ public class IMEMethods {
             }
             // sort any ArrayLists....
             fileObjects.sort(Comparator.comparing(FileObject::getBestDate));
+            //sort Places
+            Collections.sort(places,new PlaceComparator());
 
             addLinksToPlaces(config.getTempdir());
             addLinksToEvents(config.getTempdir());
@@ -271,7 +273,7 @@ public class IMEMethods {
         String durationString= String.format("%02d hrs, %02d min, %02d sec",
                TimeUnit.MILLISECONDS.toHours(duration),
                 (TimeUnit.MILLISECONDS.toMinutes(duration) % 60),
-                (TimeUnit.MILLISECONDS.toSeconds(duration) % 3600));
+                (TimeUnit.MILLISECONDS.toSeconds(duration) % 60));
         message("End Time:" + endTime);
         message("Duration:" + durationString);
 
@@ -540,7 +542,7 @@ public class IMEMethods {
             for (int i = 0; i < tracks.size(); i ++) {
                       counter=counter +  tracks.get(i).getCountTrack();
               }
-            System.out.println("Counter total is:"+counter);
+         //   System.out.println("Counter total is:"+counter);
             if(counter<=limit) {
                 runFreeMarker(tempDir + "/" + trackOutputFile,
                         trackObjectName,tempDir," ",ftemplate,tracks);
@@ -620,7 +622,7 @@ public class IMEMethods {
                     counter=counter + ((TrackObject) objects.get(i)).getCountTrack();
                 }
             }
-            System.out.println("Counter total Mke Report Limit  is:"+counter);
+         //   System.out.println("Counter total Mke Report Limit  is:"+counter);
             if(counter<=limit) {
                 runFreeMarker(tempDir + "/" + outputFile,
                         objectName,tempDir," ",ftemplate,objects);
@@ -1194,6 +1196,8 @@ public class IMEMethods {
             double distance=distance_Between_LatLong(fNew.getLatitude(),fNew.getLongitude(),glat,glon);
             if ( distance< Double.valueOf(config.getCacheDistance())) {
                 fNew.setPlaceKey(placeKey);
+                int posG = places.indexOf(g);
+                places.get(posG).setCountPlace(places.get(posG).getCountPlace()+1);
                 return true;
             }
             else
@@ -1258,12 +1262,20 @@ public class IMEMethods {
         for(Place r : places)
         {
             StringBuilder s= new StringBuilder();
+            int count=0;
+            LocalDateTime firstDate=null;
+            LocalDateTime lastDate=null;
             for(FileObject f: fileObjects)
             {
                 try {
                     if(f.getPlaceKey()!=null) {
                         if (f.getPlaceKey().equals(r.getPlaceid())) {
                           s.append(getLink(root,f));
+                          lastDate= f.getBestDate();
+                          if(count==0) {
+                              firstDate = f.getBestDate();
+                          }
+                          count++;
                         }
                     }
                 }
@@ -1273,6 +1285,10 @@ public class IMEMethods {
                 }
             }
             r.setImagelinks(s.toString());
+            if(count>0) {
+                r.setStartDate(firstDate);
+                r.setEndDate(lastDate);
+            }
         }
     }
 
@@ -1749,12 +1765,15 @@ public class IMEMethods {
                         if (!duplicateObjects.contains(f)) {
                             duplicateObjects.add(f);
                         }
-                        duplicateObjects.add(fNew);
-                        countDriveDuplicates++;
-                        countDuplicates++;
-                        fNew.setDuplicate(true);
-                        message("Duplicate file - also in:" + f.getDirectory());
-                        addError(fNew.getFileName(), fNew.getDirectory(),fNew.getBestDate(), "Warning - duplicate file - also in:" + f.getDirectory(),true);
+                        // if there is more than one duplicate, we don't want to duplicate the fNew, so if it is already in the list, it does not need to go in again
+                        if(!duplicateObjects.contains(fNew)) {
+                            duplicateObjects.add(fNew);
+                            countDriveDuplicates++;
+                            countDuplicates++;
+                            fNew.setDuplicate(true);
+                            message("Duplicate file - also in:" + f.getDirectory());
+                            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Warning - duplicate file - also in:" + f.getDirectory(), true);
+                        }
                     } else {
                         addError(fNew.getFileName(), fNew.getDirectory(),fNew.getBestDate(), "Warning - duplicate file name, but files are not the same: other directory is: "+f.getDirectory(),true);
                         message("Duplicate filename but files are different"+f.getDirectory()+":"+f.getFileName());
@@ -2769,6 +2788,11 @@ public class IMEMethods {
         } else {
             message("Found Lat / Long in cache : [" + g.getPlaceid() + "]" + g.getDisplay_name());
             fNew.setPlaceKey(g.getPlaceid());
+            //add to the counter for the cached object
+            int posG = places.indexOf(g);
+            places.get(posG).setCountPlace(places.get(posG).getCountPlace()+1);
+
+
         }
         if (g != null) {
             if(doUpdate) {
@@ -2934,26 +2958,46 @@ public class IMEMethods {
     }
     /**
      * When a Date is provided, will update the EXIFOriginal and Best Date
-     * Will update the IPTC date with a partial date either YYYY, YYYYMM or YYYYMMDD
+     * Will update the IPTC date with a partial date either YYYY, YYYYMM or YYYYMMDD (or +1Y or -1Y)
      * @param param - parameter provided with the Date tag
      * @param fNew - fileObject being processed
      * @return - returns a string of the value
      */
     public static String updateDate(String param, FileObject fNew, ConfigObject config) {
-
-        LocalDateTime c =createLocalDate(param);
-        if(c!=null) {
-            fNew.setExifOriginal(c);
+        if(param.equalsIgnoreCase("+1Y") ||param.equalsIgnoreCase("-1Y")  )
+        {
+            if(param.equalsIgnoreCase("+1Y")) {
+                fNew.setExifOriginal(fNew.getBestDate().plusYears(1L));
+            }
+            else
+            {
+                fNew.setExifOriginal(fNew.getBestDate().minusYears(1L));
+            }
             fNew.setBestDate(fNew.getExifOriginal());
             countDriveDateUpdate++;
             countDateUpdate++;
             if (StringUtils.isNullOrEmpty(fNew.getIPTCDateCreated()) || config.getOverwrite()) {
-               fNew.setIPTCDateCreated(param.replace("-",""));
-               return param;
+                DateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+
+                fNew.setIPTCDateCreated(formatter.format(convertToDateViaInstant(fNew.getBestDate())));
             }
-            return c.toString();
+            return param;
         }
-        return null;
+        else {
+            LocalDateTime c = createLocalDate(param);
+            if (c != null) {
+                fNew.setExifOriginal(c);
+                fNew.setBestDate(fNew.getExifOriginal());
+                countDriveDateUpdate++;
+                countDateUpdate++;
+                if (StringUtils.isNullOrEmpty(fNew.getIPTCDateCreated()) || config.getOverwrite()) {
+                    fNew.setIPTCDateCreated(param.replace("-", ""));
+                    return param;
+                }
+                return c.toString();
+            }
+            return null;
+        }
     }
     /**
      * converts from a Date to LocalDateTime

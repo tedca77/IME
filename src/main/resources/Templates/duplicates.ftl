@@ -1,6 +1,7 @@
 <html>
 <head>
   <title>Duplicates</title>
+  <meta charset="UTF-8">
 </head>
 <body>
   <h1>Duplicates ${parttext}</h1>

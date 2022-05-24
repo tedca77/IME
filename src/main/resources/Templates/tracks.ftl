@@ -1,6 +1,7 @@
 <html>
 <head>
   <title>Tracks</title>
+  <meta charset="UTF-8">
  <style type="text/css">
     .myGallery {
           display: grid;

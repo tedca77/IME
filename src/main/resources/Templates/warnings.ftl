@@ -1,6 +1,7 @@
 <html>
 <head>
   <title>Warnings</title>
+  <meta charset="UTF-8">
 </head>
 <body>
   <h1>Warnings ${parttext}</h1>

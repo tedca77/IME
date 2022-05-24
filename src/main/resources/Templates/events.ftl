@@ -1,6 +1,7 @@
 <html>
 <head>
   <title>Events identified by date</title>
+  <meta charset="UTF-8">
     <style type="text/css">
        .myGallery {
              display: grid;

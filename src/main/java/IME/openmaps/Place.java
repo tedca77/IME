@@ -24,7 +24,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 @Data
-@JsonIgnoreProperties(ignoreUnknown=true,value={"imagelinks", "osm_type","cdata","lonAsDouble","latAsDouble","trackKey","startDate","endDate","countPlace","osm_id","licence","place_id"})
+@JsonIgnoreProperties(ignoreUnknown=true,value={"imagelinks", "osm_type","cdata","lonAsDouble","latAsDouble","trackKey","startDate","endDate","osm_id","licence","place_id"})
 
 public class Place {
     private String display_name;
