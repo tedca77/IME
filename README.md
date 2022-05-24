@@ -55,7 +55,15 @@ As an example:
 * The results will be sent to : ```d:/Results```     
 
 ** Please note that for consistency, all file directories should be specified with a forward slash "/".**
+It is recommended to follow the following process:
+1. Run in "read mode" - as above ```ImageMetadataEnhancer.exe “d:/Photos” “d:/Results”```
+2. Check for duplicates, and delete from file system
+3. Rename configYYYYMMDDhhMMss.json to config.json and provide this as an input file (this saves having to look up Open Street Map places again) - ```ImageMetadataEnhancer.exe “d:/config.json”```
+4. Check that all duplicates are removed (if not, then run again)
+5. Run with an update parameter  ```ImageMetadataEnhancer.exe “d:/config.json” update```. If you don't have Lightroom or Bridge, then add the geocoding information to Windows Tags  ```ImageMetadataEnhancer.exe “d:/config.json” update addxpkeywords```
+6. You should not be able to search for photos using Country, State/Province, City and Sub Location IPTC values.
 
+# Additional Paramaters
 **Third parameter** (new directory structure) – is the new directory which files are to be copied to.  The new directory structure will be /Year/Month/Photo1 etc.  This should be a different area than the directory to search and the output directory.  Files will be be copied to the new directory structure using the "Original Date" to put in the correct place.
 
 As an example:
@@ -129,7 +137,7 @@ Note that IME will never overwrite longitude and latitude information if it is a
 For scanned photos, the dates in the metadata are unlikely to be correct. An instruction can be added to the Windows Comment or Instructions (IPTC) fields to provide a correct date within the metadata. This is of the form:
 ```#date:YYYY``` or  ```#date:YYYY-MM```  or ```#date:YYYY-MM-DD```
 This updates the **EXIF Original Date** field which appears as **"Date Taken"** in Windows properties.     
-
+If the camera date is out by a Year you can use the format ```#date:+1Y``` or ```#date:-1Y``` to change the date.
 If a file has already been processed by IME, and then new information is added, then IME will re-process the file - this could including finding an Event or adding geolocation information. Adding a new date will overwrite the existing date, even if a previous date has been provided. 
 # Adding IPTC Metadata
 It is also possible to add some IPTC metadata to every photo - this is specified at the Drive level (IME can operate across multiple drives or directories). The fields that can currently be updated are as follows:   
