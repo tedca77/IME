@@ -181,9 +181,6 @@ public class IMEMethods {
                     message("Parameter 1 - Root Directory: "+args[0]);
                     message("Output Config File: "+configFileName);
                     message("Parameter 2 - Output Directory: "+args[1]);
-
-
-
                 }
                 else
                 {
@@ -207,9 +204,11 @@ public class IMEMethods {
             catch(Exception e){
                 message("Error sorting file objects"+e);
             }
-            // sort any ArrayLists....
+            // sort any ArrayLists....File by date and DuplicateObjects by filename so we can see side by side
             fileObjects.sort(Comparator.comparing(FileObject::getBestDate));
-            //sort Places
+            duplicateObjects.sort(Comparator.comparing(FileObject::getFileName));
+            cameras.sort(Comparator.comparing(CameraObject::getStartdate));
+            //sort Places by area and longitude
             Collections.sort(places,new PlaceComparator());
 
             addLinksToPlaces(config.getTempdir());
