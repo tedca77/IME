@@ -35,9 +35,10 @@ IME will leave the standard Windows date fields (Date Modified, Date Accessed an
 **BEFORE RUNNING ENSURE YOU HAVE A VALID BACKUP OF YOUR PHOTO FILES.  IF YOU DON'T HAVE A BACKUP - THEN CREATE ONE BEFORE YOU START !**
 Image Metadata Enhancer is distributed in the hope that it will be useful,  but WITHOUT ANY WARRANTY, under the GNU General Public Licence.  While it has been tested extensively, the range of formats possible are large and the program may not operate correctly with all files, so if you have a backup, you should not lose any photos. 
 
-1. Copy the ImageMetadataEnhancer.exe to your drive e.g. D:/IME/ImageMetadataEnhancer.exe 
-2. Run as a Windows command  
-```ImageMetadataEnhancer.exe  <directory to search> <output directory> <new directory structure> <parameters>```  
+1. Copy the ImageMetadataEnhancer.jar to your drive e.g. D:/IME/ImageMetadataEnhancer.jar 
+2. Ensure that version 17 or 18 of Java is installed.
+3. Run as a Windows command  
+```java -jar ImageMetadataEnhancer.jar  <directory to search> <output directory> <new directory structure> <parameters>```  
 
 If there are spaces in the directory names, you should enclose in double quotes.
 
@@ -50,17 +51,17 @@ If there are spaces in the directory names, you should enclose in double quotes.
 * IME output is written to a file called configYYYYMMDDhhMMss.json - where the date and time are added.   
 
 As an example:
-```ImageMetadataEnhancer.exe “d:/Photos” “d:/Results”```   
+```java -jar ImageMetadataEnhancer.jar “d:/Photos” “d:/Results”```   
 * The directory with existing photos (to search) is: ```d:/Photos```
 * The results will be sent to : ```d:/Results```     
 
 ** Please note that for consistency, all file directories should be specified with a forward slash "/".**
 It is recommended to follow the following process:
-1. Run in "read mode" - as above ```ImageMetadataEnhancer.exe “d:/Photos” “d:/Results”```
+1. Run in "read mode" - as above ```java -jar ImageMetadataEnhancer.jar “d:/Photos” “d:/Results”```
 2. Check for duplicates, and delete from file system
-3. Rename configYYYYMMDDhhMMss.json to config.json and provide this as an input file (this saves having to look up Open Street Map places again) - ```ImageMetadataEnhancer.exe “d:/config.json”```
+3. Rename configYYYYMMDDhhMMss.json to config.json and provide this as an input file (this saves having to look up Open Street Map places again) - ```ImageMetadataEnhancer.jar “d:/config.json”```
 4. Check that all duplicates are removed (if not, then run again)
-5. Run with an update parameter  ```ImageMetadataEnhancer.exe “d:/config.json” update```. If you don't have Lightroom or Bridge, then add the geocoding information to Windows Tags  ```ImageMetadataEnhancer.exe “d:/config.json” update addxpkeywords```
+5. Run with an update parameter  ```ImageMetadataEnhancer.jar “d:/config.json” update```. If you don't have Lightroom or Bridge, then add the geocoding information to Windows Tags  ```ImageMetadataEnhancer.jar “d:/config.json” update addxpkeywords```
 6. You should not be able to search for photos using Country, State/Province, City and Sub Location IPTC values.
 
 # Additional Paramaters
@@ -76,10 +77,13 @@ In addition, further "run time" parameters can be added to the command. These ar
 * **update** – this will update files with new metadata and move files. If this parameter is not provided, then update and move will not take place. 
 * **overwrite** – this will overwrite existing values in fields.  For instance, if there are already values in the IPTC location metadata fields, then they will be overwritten with new values.  If this is not set, then no overwriting will take place.
 * **showmetadata** – this will show all metadata in the output before and after updates.  This option is useful when debugging issues with files.
-* **redo** – once a file has been processed, a flag will be placed on the file and if subsequent runs are made, the file will not not be geocoded again. If this parameter is added, it will force processing of geocoding.  
+* **redo** – once a file has been processed, a flag will be placed on the file and if subsequent runs are made, the file will not not be geocoded again. If this parameter is added, it will force processing of geocoding and looking for events. 
+* **redoevents** – once a file has been processed, and matched against an event, the file will not be rematched against the same event.  If event details have been changed, this will force reprocessing of event information.  
 * **addxpkeywords** – this copies location address information to XP Keywords (or Windows Tags) in addition to the iPTC fields.  This is particularly useful if you do not have a tool such as Adobe Lightroom, and simply want use use Windows search features. 
 * **addiptckeywords** – this copies location address information to IPTC Keywords in addition to the iPTC fields.  This is useful if you are using Adobe Bridge keyword searching. 
 * **clear** - this will remove any existing comments in the JPEG Comments section metadata, which have been added by IME. This will force reprocessing next time IME is run. (If you want to remove from the Windows Comments or IPTC Comments, you can edit the metadata for multiple files using your regular editing tools.) 
+* **savefilemetadata** - this will output the file information to the JSON. This is useful if prrocessing your files in a number of batches (and using the append option.
+* **append** - this will merge file information with file information in the JSON file, to look for duplicate files across a number of batches.
 
 # Outputs
 ## HTML Outputs ##
@@ -245,15 +249,16 @@ The following sections outline the various sections of the JSON file - ytou can 
 	
 ## Top Level Parameters
 	 
-* **update**: - if false, no updates will take place to records (default is false)
-* **showmetadata**: - metadata will be shown before (and also after, if update is true) .. (default false)
-* overwriteValues: - if metadata already exists in a field, it will be replaced, unless it has already been geocoded by IME -  default false. (If the new field value is blank, then it will write a blank value)
-* **append**: if true, will append files in the JSON with files in the current run, useful for checking duplicates (default false)
-* **redo**: if true, will redo all processing (default false)
-* **overwrite**: if true, will overwrite existing values (default false)
-* **addxpkeywords**: if true, copy location information to the keywords (Tags) field (default false)
-* **addiptckeywords**: if true, copy location information to the IPTC keyword field (default false)
-* **clear**: if true, does not do any processing, but clears out the JPG Comments fields (default false)
+* **update**: - see Additional Parameters section.
+* **showmetadata**: -  see Additional Parameters section.
+* **append**: - see Additional Parameters section.
+* **redo**: - see Additional Parameters section.
+* **redoevents**: - see Additional Parameters section.
+* **savefilemetadata**: - see Additional Parameters section.
+* **overwrite**: - see Additional Parameters section.
+* **addxpkeywords**: - see Additional Parameters section.
+* **addiptckeywords**: - see Additional Parameters section.
+* **clear**: - see Additional Parameters section.
 * **tempdir**: - directory to hold results, including thumbnails 
 * **newdir**: - directory to move files to 
 * **htmllimit**: maximum number of photos referenced in a single html file (if more than this, the file is split up - default is 2,000). 
