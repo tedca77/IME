@@ -42,7 +42,18 @@ public class PlaceComparator implements Comparator<Place>
         {
             return stateResult;
         }
-
+// Next by city
+        int cityResult = p1.getIPTCCity().compareTo(p2.getIPTCCity());
+        if (cityResult != 0)
+        {
+            return cityResult;
+        }
+        // Next by subLocation
+        int subResult = p1.getIPTCSublocation().compareTo(p2.getIPTCSublocation());
+        if (subResult != 0)
+        {
+            return subResult;
+        }
         // Finally by longitude
         return p1.getLonAsDouble().compareTo(p2.getLonAsDouble());
     }

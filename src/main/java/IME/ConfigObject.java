@@ -31,8 +31,10 @@ public class ConfigObject {
     private Boolean showmetadata;
     private Boolean overwrite;
     private Boolean redo;
+    private Boolean redoevents;
     private Boolean append;
     private Boolean clear;
+    private Boolean savefilemetadata;
     private Boolean addxpkeywords;
     private Boolean addiptckeywords;
     private String thumbsize;

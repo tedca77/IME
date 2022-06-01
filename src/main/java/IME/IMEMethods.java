@@ -150,8 +150,9 @@ public class IMEMethods {
      * Main Method for the program - arguments passes as Java arguments
      * @param args - either single json file or two/three args, first one is root directory, second is output file, third is followed by parameters
      */
+    static String versionLabel="ImageMetadataEnhancer - Version 1.0.0.0 26 May 2022";
     public static void main(String[] args) {
-
+        message(versionLabel);
         z= ZoneId.systemDefault();
         startTime= new Date();
         ConfigObject config=null;
@@ -221,7 +222,9 @@ public class IMEMethods {
             addLinksToTracks(config.getTempdir());
             //sets config object with new values
             config.setCameras(cameras);
-            config.setPhotos(fileObjects);
+            if(config.getSavefilemetadata()) {
+                config.setPhotos(fileObjects);
+            }
             config.setPlaces(places);
             config.setTracks(tracks);
             config.setEvents(events);
@@ -444,11 +447,13 @@ public class IMEMethods {
             // overwrite and redo options are not possible if Update has not been set
             config.setOverwrite(false);
             config.setRedo(false);
+            config.setRedoevents(false);
         }
         else
         {
             if(config.getOverwrite()==null) {config.setOverwrite(false);}
             if(config.getRedo()==null) {config.setRedo(false);}
+            if(config.getRedoevents()==null) {config.setRedoevents(false);}
         }
         if(config.getAppend()==null) {config.setAppend(false);}
         if(config.getImageextensions()==null) {config.setImageextensions(imageDefaults);}
@@ -462,6 +467,7 @@ public class IMEMethods {
         }
         if(config.getAddxpkeywords()==null) {config.setAddxpkeywords(false);}
         if(config.getAddiptckeywords()==null) {config.setAddiptckeywords(false);}
+        if(config.getSavefilemetadata()==null) {config.setSavefilemetadata(false);}
         if(config.getClear()==null) {config.setClear(false);}
     }
     /**
@@ -1144,21 +1150,21 @@ public class IMEMethods {
      */
     public static void addLinksToEvents( String root)
     {
+        message("Adding thumbnail links to Events");
         for(EventObject r : events)
         {
             StringBuilder s= new StringBuilder();
             for(FileObject f: fileObjects)
             {
                 try {
-                    if(f.getEventKeys().length()>0) {
-                        String[] keys = f.getEventKeys().split(";",-1);
-                        for(String k : keys)
-                        {
-                            if (k.equals(r.getEventid().toString())) {
-                                s.append(getLink(root,f));
+                    if(f.getEventKeysArray()!=null) {
 
+                            for (String k : f.getEventKeysArray()) {
+                                if (k.equals(r.getEventid().toString())) {
+                                    s.append(getLink(root, f));
+                                }
                             }
-                        }
+
                     }
                 }
                 catch(Exception e)
@@ -1170,6 +1176,15 @@ public class IMEMethods {
                 r.setImagelinks(s.toString());
             }
         }
+        //set the FileObjects to have the Event Key value set from the Array, so it is written out correctly
+        for(FileObject f: fileObjects)
+        {
+           if(f.getEventKeysArray()!=null) {
+               f.setEventKeys(String.join(";", f.getEventKeysArray()));
+           }
+        }
+
+
     }
 
     /**
@@ -1201,7 +1216,7 @@ public class IMEMethods {
             }
             else
             {
-                message("Place Key found"+g.getPlaceid()+" but it does not match. lat/Lon distance is: "+distance +"need to redo...");
+                message("Place Key found ("+g.getPlaceid()+") but lat, lon does not match. lat/Lon distance is: "+String.format("%.3f",distance/1000) +"  so looking for Place");
                 return false;
             }
         }
@@ -1258,6 +1273,7 @@ public class IMEMethods {
      */
     public static void addLinksToPlaces( String root)
     {
+        message("Adding thumbnail links to Places");
         for(Place r : places)
         {
             StringBuilder s= new StringBuilder();
@@ -1329,7 +1345,7 @@ public class IMEMethods {
      */
     public static void addLinksToTracks( String root)
     {
-
+        message("Adding thumbnail links to Tracks");
         // for each track, get all the photos for the day, as some may not have location...and
         // they could be slotted in, in sequence (i.e. date order)
         for(TrackObject t : tracks) {
@@ -1681,7 +1697,7 @@ public class IMEMethods {
      * @param test - string to look for
      * @return - revised ExistingComments
      */
-    public static ArrayList<String> removeIPTCComments( ArrayList<String> existingComments,String test)
+    public static ArrayList<String> removeJPEGComments(ArrayList<String> existingComments, String test)
     {
 
         existingComments.removeIf(s -> s.contains(test));
@@ -1693,7 +1709,7 @@ public class IMEMethods {
      * @param test - string to look for
      * @return - either true if found or false
      */
-    public static boolean checkIPTCComments( List<String> existingComments,String test)
+    public static boolean checkJPEGComments(List<String> existingComments, String test)
     {
         for(String s : existingComments)
         {
@@ -1709,9 +1725,9 @@ public class IMEMethods {
      * Goes through existing JPEG comments looking for a string from the process mode e.g. to find event keys in the comments
      * @param existingComments - array of Comments
      * @param p - Process Mode to look for
-     * @return - either true if found or false
+     * @return - either ArrayList of Event values
      */
-    public static String getEventKeysFromIPTCComments(List<String> existingComments, Enums.processMode p)
+    public static ArrayList<String> getEventKeysFromJPEGComments(List<String> existingComments, Enums.processMode p)
     {
         ArrayList<String> keyStrings = new ArrayList<>();
         for(String s : existingComments)
@@ -1727,7 +1743,7 @@ public class IMEMethods {
 
             }
         }
-        return String.join(";",keyStrings);
+        return keyStrings;
     }
 
     /**
@@ -2057,6 +2073,9 @@ public class IMEMethods {
                 }
                 if (f.getWindowsKeywords() != null) {
                     f.setWindowsKeywordsArray(new ArrayList<>(Arrays.asList(f.getWindowsKeywords().split(";", -1))));
+                }
+                if (f.getEventKeys()!= null) {
+                    f.setEventKeysArray(new ArrayList<>(Arrays.asList(f.getEventKeys().split(";", -1))));
                 }
             }
         }
@@ -2489,7 +2508,7 @@ public class IMEMethods {
     }
 
     /**
-     * Checks a File Object's dates against an event date. If the Event has already been found before (in the eventKeys field), then it will not be rematched.
+     * Checks a File Object's dates against an event date. If the Event has already been found before (in the eventKeys field) and comment, then it will not be rematched.
      * @param config - Config Object
      * @param fNew - File Object
      * @param e - Event Object (providing dates)
@@ -2498,16 +2517,20 @@ public class IMEMethods {
     public static Integer checkEvent(ConfigObject config,FileObject fNew,EventObject e)
     {
         LocalDateTime d= fNew.getBestDate();
-        if(checkEventKey(fNew.getEventKeys(),e.getEventid()))
+        Boolean eventDone=false;
+        if(checkEventKey(fNew.getEventKeys(),e.getEventid()) && checkJPEGComments(fNew.getComments(), "#Event:" + e.getEventid() + Enums.doneValues.DONE+":"))
         {
-            return 0;
+            message("Event has previously been matched with event"+e.getEventid());
+            eventDone=true;
         }
-        if(!checkIPTCComments(fNew.getComments(), "#Event:" + e.getEventid() + Enums.doneValues.DONE+":") || config.getOverwrite()) {
+        if(!eventDone || config.getRedo() || config.getRedoevents()) {
+
             //eventcalendar - month and date must be exact (no time value) and year must be greater than or equal to event year....
             if (e.eventcalendar != null) {
                 if (d.getMonth() == e.getExactStartTime().getMonth() && d.getDayOfMonth() == e.getExactStartTime().getDayOfMonth() &&
                      d.getYear()>=e.getExactStartTime().getYear()) {
-                    updateEvent(config, fNew, e);
+
+                    updateEvent(config, fNew, e,eventDone);
                     message("Event calendar match for event:" + e.getEventid() + " " + e.getTitle());
                     countEventsFound++;
                     countDriveEventsFound++;
@@ -2520,7 +2543,7 @@ public class IMEMethods {
                 ) {
                     // we have a match... so process..
                     message("Event date match for event:" + e.getEventid() + " " + e.getTitle());
-                    updateEvent(config, fNew, e);
+                    updateEvent(config, fNew, e,eventDone);
                     countEventsFound++;
                     countDriveEventsFound++;
                     return 1;
@@ -2541,7 +2564,10 @@ public class IMEMethods {
 
         for(EventObject e : events)
         {
+          // message(e.getTitle()+e.getEventdate()+ e.getExactStartTime());
            eventFound=eventFound+checkEvent(config,fNew,e);
+
+
         }
         if(eventFound>0) {
             message("Number of Events found :"+eventFound);
@@ -2605,7 +2631,7 @@ public class IMEMethods {
                 } else if (meta instanceof Comments) {
                     fNew.setComments(clearBlanks(new ArrayList<>(((Comments) meta).getComments())));
 
-                    alreadyProcessed=checkIPTCComments(fNew.getComments(),"#"+Enums.statusValues.processed+Enums.doneValues.DONE+":");
+                    alreadyProcessed= checkJPEGComments(fNew.getComments(),"#"+Enums.statusValues.processed+Enums.doneValues.DONE+":");
                     if(alreadyProcessed)
                     {
                         message("File has already been processed:"+file.getName());
@@ -2617,7 +2643,7 @@ public class IMEMethods {
                         message("File has not been processed:"+fNew.getComments());
                     }
                     //set event keys based on values in comments.  This will prevent reprocessing the same events again
-                    fNew.setEventKeys(getEventKeysFromIPTCComments(fNew.getComments(),Enums.processMode.event));
+                    fNew.setEventKeysArray(getEventKeysFromJPEGComments(fNew.getComments(),Enums.processMode.event));
                 } else if (meta instanceof IPTC) {
                     iptc = (IPTC) meta;
                     if(!readIPTCdata(fNew,meta)){
@@ -2720,6 +2746,7 @@ public class IMEMethods {
         // events can be processed
         if(processEvents(config, fNew)>0)
         {
+
             if(config.getRedo() || !alreadyProcessed) {
                 message("Events processing done");
                 updateRequired = true;
@@ -2748,10 +2775,10 @@ public class IMEMethods {
     public static void clearFile(FileObject fNew,ConfigObject config,File file, DriveObject drive)
     {
         for(Enums.processMode p :Enums.processMode.values()) {
-            fNew.setComments(removeIPTCComments(fNew.getComments(),"#"+p+Enums.doneValues.DONE+":"));
+            fNew.setComments(removeJPEGComments(fNew.getComments(),"#"+p+Enums.doneValues.DONE+":"));
         }
         for(Enums.statusValues s :Enums.statusValues.values()) {
-            fNew.setComments(removeIPTCComments(fNew.getComments(),"#"+s+Enums.doneValues.DONE+":"));
+            fNew.setComments(removeJPEGComments(fNew.getComments(),"#"+s+Enums.doneValues.DONE+":"));
         }
         message("Clearing JPG Comments update");
         updateFile(config, drive, file, fNew);
@@ -2892,30 +2919,40 @@ public class IMEMethods {
     }
 
     /**
-     * Update file Object if event information has been found
+     * Update file Object if event information has been found - updates eventKeysArray, as it may have been found before and we dont want to duplicate the key
      * @param config - Config Object
      * @param fNew - File Object
      * @param e - Event object
+     * @param eventDone - if the Event has been found before this is flagged
 
      */
-    public static void updateEvent(ConfigObject config, FileObject fNew, EventObject e)
+    public static void updateEvent(ConfigObject config, FileObject fNew, EventObject e,Boolean eventDone)
     {
-       fNew.setWindowsTitle(addNotNull(fNew.getWindowsTitle(),e.getTitle()," "));
-       fNew.setIPTCObjectName(addNotNull(fNew.getWindowsTitle(),e.getTitle()," "));
-       fNew.setIPTCKeywords(addNotNull(fNew.getIPTCKeywords(),e.getKeywords(),";"));
-       fNew.setWindowsSubject(addNotNull(fNew.getWindowsSubject(),e.getDescription()," "));
+        if(eventDone)
+        {
+            fNew.setWindowsTitle( e.getTitle());
+            fNew.setIPTCObjectName( e.getTitle());
+            fNew.setIPTCKeywordsArray(joinKeys(fNew.getIPTCKeywordsArray(),new ArrayList<>(Arrays.asList(e.getKeywords().split(";",-1)))));
+            fNew.setWindowsSubject(e.getDescription());
+        }
+        else {
+            fNew.setWindowsTitle(addNotNull(fNew.getWindowsTitle(), e.getTitle(), " "));
+            fNew.setIPTCObjectName(addNotNull(fNew.getWindowsTitle(), e.getTitle(), " "));
+            fNew.setIPTCKeywords(addNotNull(fNew.getIPTCKeywords(), e.getKeywords(), ";"));
+            fNew.setWindowsSubject(addNotNull(fNew.getWindowsSubject(), e.getDescription(), " "));
+        }
        // we cannot process locations for Event Calendars - just event dates
        // and only process if lat and lon is missing
        if(e.getLocation()!=null && e.getEventcalendar()==null && fNew.getLatitude()==null && fNew.getLongitude()==null)
        {
             // sets the Windows Comment to the value in order to do forward processing...
-             fNew.setWindowsComments(appendComment(fNew.getWindowsComments(),e.getLocation()));
+             fNew.setWindowsComments(fNew.getWindowsComments()+" "+e.getLocation());
              if(forwardCode(config,fNew,e.getLocation()))
              {
                  message("Forward geocoding completed from Event");
              }
         }
-        fNew.setEventKeys(fNew.getEventKeys()+e.getEventid()+";");
+        fNew.setEventKeysArray(joinKeys(fNew.getEventKeysArray(),new ArrayList<>(Arrays.asList(e.getEventid().toString().split(";", -1)))));
         updateCommentFields(fNew,e.getEventid().toString(),Enums.processMode.event);
         e.setCountEvent(e.getCountEvent()+1);
 
@@ -3080,7 +3117,7 @@ public class IMEMethods {
                             message("This Event has not been found in the JSON - event:" + param);
                             addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Event not found for:" + param,false);
                         } else {
-                            updateEvent(config, fNew, e);
+                            updateEvent(config, fNew, e,false);
                             fNew.setBestDate(e.getExactStartTime());
                             message("Event ID match for event:" + e.getEventid() + " " + e.getTitle());
                             countAddedEvent++;
@@ -3143,16 +3180,19 @@ public class IMEMethods {
                                         }
 
                                     } else {
+                                        message("Open Street Map API cound not find the supplied postcode:"+param);
                                         addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Could not find postcode:" + param,false);
                                     }
                                 }
                             }
                             else
                             {
+                                message("Open Street Map API has not returned Lat, Lon");
                                 addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Lat Lon is null:" + param,false);
                             }
 
                         } else {
+                            message("Open Street Map API not provided - cannot convert postcode:" + param);
                             addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "API not available:" + param,false);
                         }
                     } catch (Exception e) {

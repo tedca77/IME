@@ -78,7 +78,7 @@ class IMEMethodsTest {
                 assertEquals(0,fNew.getWindowsComments().indexOf("#geocodeDONE:"));
                 assertEquals(0,fNew.getIPTCInstructions().indexOf("#geocodeDONE:"));
                 //
-                assertTrue(checkIPTCComments(fNew.getComments(),"#geocodeDONE:"));
+                assertTrue(checkJPEGComments(fNew.getComments(),"#geocodeDONE:"));
                 ConfigObject c = readConfig(startDir + "/TestRESULTS/"+jsonFile);
                 assertEquals("Corfe Castle",c.getPhotos().get(0).getCity());
                 assertEquals("GB", c.getPhotos().get(0).getCountry_code());

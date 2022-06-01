@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
-@JsonIgnoreProperties(value={"IPTCKeywordsArray", "windowsKeywordsArray"})
+@JsonIgnoreProperties(value={"IPTCKeywordsArray", "windowsKeywordsArray","eventKeysArray"})
 @Data
 public class FileObject {
     String fileName;
@@ -54,6 +54,7 @@ public class FileObject {
     Integer cameraKey;
     Integer placeKey;
     String eventKeys;
+    ArrayList<String> eventKeysArray;
     String programName;
     Double fStop;
     Double latitude;
