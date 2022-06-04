@@ -81,43 +81,7 @@ import static IME.openmaps.OpenMaps.checkPostCode;
  */
 public class IMEMethods {
     static ZoneId z;
-    static int countFiles = 0;   //total number of images found
-    static int countImages = 0;   //total number of images found
-    static int countTooSmall = 0; // images too small (images processed is countImages-countTooSmall)
-    static int countProcessed = 0; // images processed (images processed is countImages-countTooSmall)
-    static int countLATLONG = 0;  // images with lat/long info
-    static int countALREADYPROCESSED = 0; // images already processed
-    static int countGEOCODED = 0; // images which were successfully geocoded
-    static int countNOTGEOCODED = 0; // images which were not successfully geocoded (but with lat/long)
-    static int countDateUpdate = 0;   // images where the date was updated.
-    static int countEventsFound = 0;   // images where events were found through date checks...
-    static int countAddedPlace = 0;   // images where a place has been specified
-    static int countAddedLATLONG = 0;   // images where a LatLon has been added (either directly or via an event)
-    static int countAddedPostcode = 0;   // images where a postcode has been used to determine LatLon (either directly or via an event)
-    static int countAddedEvent = 0;   // images where an event has been added  manually
-    static int countUPDATED = 0; // images which were not successfully updated
-    static int countErrors = 0;   // images where there were errors (e.g. failure of geocode or others)....
-    static int countMoved = 0;    // images which have been moved
-    static int countDuplicates = 0;  // images which are duplicates
-//
-    static int countDriveFiles = 0;
-    static int countDriveImages = 0;
-    static int countDriveTooSmall = 0;
-    static int countDriveProcessed = 0;
-    static int countDriveLATLONG = 0;
-    static int countDriveALREADYPROCESSED = 0;
-    static int countDriveGEOCODED = 0;
-    static int countDriveNOTGEOCODED = 0;
-    static int countDriveDateUpdate = 0;
-    static int countDriveEventsFound = 0;
-    static int countDriveAddedPlace = 0;
-    static int countDriveAddedLATLONG = 0;
-    static int countDriveAddedPostcode = 0;
-    static int countDriveAddedEvent = 0;
-    static int countDriveUPDATED = 0;
-    static int countDriveErrors = 0;
-    static int countDriveMoved = 0;
-    static int countDriveDuplicates = 0;
+
     static ArrayList<CameraObject> cameras = new ArrayList<>();
     static ArrayList<FileObject> fileObjects = new ArrayList<>();
     static ArrayList<FileObject> duplicateObjects = new ArrayList<>();
@@ -146,6 +110,9 @@ public class IMEMethods {
     //
     static Date startTime;
     static Date endTime;
+    //
+    static CounterObject driveCounter=new CounterObject();
+    static CounterObject mainCounter=new CounterObject();
     /**
      * Main Method for the program - arguments passes as Java arguments
      * @param args - either single json file or two/three args, first one is root directory, second is output file, third is followed by parameters
@@ -199,6 +166,8 @@ public class IMEMethods {
             readConfigLists(config);
             createTempDirForUser(config.getTempdir());
             readDrives(config);
+            messageLine("*");
+            message("Sorting objects");
             try {
                 fileObjects.sort(Comparator.comparing(FileObject::getFileName));
             }
@@ -211,7 +180,7 @@ public class IMEMethods {
             cameras.sort(Comparator.comparing(CameraObject::getStartdate));
             //sort Places by area and longitude
             Collections.sort(places,new PlaceComparator());
-
+            messageLine("*");
             addLinksToPlaces(config.getTempdir());
             addLinksToEvents(config.getTempdir());
             //create tracks - this will also update the geoObjects
@@ -225,6 +194,10 @@ public class IMEMethods {
             if(config.getSavefilemetadata()) {
                 config.setPhotos(fileObjects);
             }
+            else
+            {
+                config.setPhotos(null);
+            }
             config.setPlaces(places);
             config.setTracks(tracks);
             config.setEvents(events);
@@ -235,10 +208,7 @@ public class IMEMethods {
             }
             // runs report for console
             runReport();
-            message("Number of Errors:"+errorObjects.size());
-            message("Number of Warnings:"+warningObjects.size());
-            message("Number of Duplicates found:"+duplicateObjects.size());
-            messageLine("*");
+
             //Exports reports for cameras, fileObjects etc...
             if(!exportHTML(config))
             {
@@ -247,25 +217,8 @@ public class IMEMethods {
             // print out total number of photos if more than one drive...
             if(config.getDrives().size()>1) {
                 messageLine("*");
-                message("All Drives - " + "Files found                         :" + countFiles);
-                message("All Drives - " + "Photos found                        :" + countImages);
-                message("All Drives - " + "Photos too small                   :" + countTooSmall);
-                message("All Drives - " + "Photos to be processed             :" + countProcessed);
-                message("All Drives - " + "Photos already Processed           :" + countALREADYPROCESSED);
-                message("All Drives - " + "Photos Updated                     :" + countUPDATED);
-                message("All Drives - " + "Photos where metadata not read     :" + countErrors);
-                message("All Drives - " + "Photos which have been moved       :" + countMoved);
-                message("All Drives - " + "Photos which are duplicates        :" + countDuplicates);
-                message("All Drives - " + "------------------------------------" );
-                message("All Drives - " + "Photos with Lat Long               :" + countLATLONG);
-                message("All Drives - " + "Photos Geocoded                    :" + countGEOCODED);
-                message("All Drives - " + "Photos with failed Geocoding       :" + countNOTGEOCODED);
-                message("All Drives - " + "Photos where Date added            :" + countDateUpdate);
-                message("All Drives - " + "Photos where Events found from date:" + countEventsFound);
-                message("All Drives - " + "Photos with Place added            :" + countAddedPlace);
-                message("All Drives - " + "Photos with Lat Lon added          :" + countAddedLATLONG);
-                message("All Drives - " + "Photos with Postcode added         :" + countAddedPostcode);
-                message("All Drives - " + "Photos with Event added            :" + countAddedEvent);
+                mainCounter.printResults("All Drives");
+
             }
         } catch (Exception e) {
             message("Error reading json file " + e);
@@ -388,6 +341,14 @@ public class IMEMethods {
             else if(s.trim().equalsIgnoreCase(Enums.argOptions.addiptckeywords.toString()))
             {
                 config.setAddiptckeywords(true);
+            }
+            else if(s.trim().equalsIgnoreCase(Enums.argOptions.savefilemetadata.toString()))
+            {
+                config.setSavefilemetadata(true);
+            }
+            else if(s.trim().equalsIgnoreCase(Enums.argOptions.redoevents.toString()))
+            {
+                config.setRedoevents(true);
             }
             else
             {
@@ -760,14 +721,18 @@ public class IMEMethods {
                 if (c.getShowmetadata()) {
                     message("METADATA WILL BE SHOWN BEFORE AND AFTER UPDATING");
                 }
+                if (c.getRedo()) {
+                    message("REDO - ALL PROCESSING WILL BE REDONE ");
+                }
+                if (c.getRedoevents()) {
+                    message("REDO EVENTS - ALL EVENT PROCESSING WILL BE REDONE ");
+                }
                 if (c.getOverwrite()) {
                     message("EXISTING METADATA WILL BE OVERWRITTEN");
                 } else {
-                    if (c.getRedo()) {
-                        message("REDO - GEOCODE METADATA WILL BE OVERWRITTEN ");
-                    } else {
+
                         message("EXISTING METADATA WILL NOT BE OVERWRITTEN");
-                    }
+
                 }
 
             }
@@ -782,7 +747,15 @@ public class IMEMethods {
         if(c.getAppend()) {
             message("PHOTOS WILL BE APPENDED TO PHOTOS LISTED IN JSON");
         }
-
+        if(c.getSavefilemetadata()) {
+            message("PHOTO METADATA WILL BE WRITTEN TO JSON");
+        }
+        if(c.getAddiptckeywords()) {
+            message("GEOCODING INFORMATION WRITTEN TO IPTC KEYWORDS");
+        }
+        if(c.getAddxpkeywords()) {
+            message("GEOCODING INFORMATION WRITTEN TO XP KEYWORDS");
+        }
         message("Fields for Sub Location: "+c.getSublocation().toString());
         message("Fields for State/Province: "+c.getStateprovince().toString());
         message("Fields for City: "+c.getCity().toString());
@@ -821,7 +794,10 @@ public class IMEMethods {
         message("Number of Places :"+places.size());
         message("Number of Events :"+events.size());
         message("Number of Tracks :"+tracks.size());
-
+        message("Number of Errors:"+errorObjects.size());
+        message("Number of Warnings:"+warningObjects.size());
+        message("Number of Duplicates found:"+duplicateObjects.size());
+        messageLine("*");
     }
 
     /**
@@ -906,12 +882,10 @@ public class IMEMethods {
                                 }
                             }
                         } else {
-                            countFiles++;
-                            countDriveFiles++;
+                            driveCounter.addCountFiles();
                             if (isImage(file.getName(),config.getImageextensions())) {
                                 if (!isExcludedPrefix(file.getName(), drive)) {
-                                    countImages++;
-                                    countDriveImages++;
+                                    driveCounter.addCountImages();
                                     Long fileSize = file.length();
                                     Long testFileSize=FileUtils.sizeOf(file);
                                     if(!fileSize.equals(testFileSize))
@@ -919,10 +893,10 @@ public class IMEMethods {
                                         message ("Discrepancy in file size"+fileSize + ": " +testFileSize);
                                     }
                                     if (fileSize > config.getMinfilesize()) {
-                                        countProcessed++;
-                                        countDriveProcessed++;
+
+                                        driveCounter.addCountProcessed();
                                         messageLine("-");
-                                        message("File number:["+ countProcessed + "], file:" + fixSlash(file.getCanonicalPath()));
+                                        message("File number:["+ driveCounter.getCountProcessed() + "], file:" + fixSlash(file.getCanonicalPath()));
                                         message("File size is:" + fileSize +" ( bytes)");
                                         if(config.getShowmetadata()) {
                                             if (!readMetadata(file)) {
@@ -934,8 +908,7 @@ public class IMEMethods {
                                         FileObject fNew= readAndUpdateFile(file, thumbName,config, drive,false);
                                         if(fNew==null)
                                         {
-                                            countErrors++;
-                                            countDriveErrors++;
+                                            driveCounter.addCountErrors();
                                             message("Could not process file:"+file.getCanonicalPath());
                                             addError(file.getName(),fixSlash(FilenameUtils.getFullPath(file.getPath())),convertToLocalDateTimeViaInstant(getFileDate(file)),"Error - Could not process file",false);
                                         }
@@ -953,8 +926,7 @@ public class IMEMethods {
                                         }
 
                                     } else {
-                                        countTooSmall++;
-                                        countDriveTooSmall++;
+                                        driveCounter.addCountTooSmall();
                                         message("File too small "+ file.getCanonicalPath() + ",Name:" + file.getName()+"- size is:" + fileSize);
                                     }
                                 }
@@ -1633,6 +1605,28 @@ public class IMEMethods {
         }
         return existingComment+newComment+":" + formatter.format(new Date());
     }
+    public static void addCounter()
+    {
+        mainCounter.setCountFiles(mainCounter.getCountFiles()+driveCounter.getCountFiles());
+        mainCounter.setCountImages(mainCounter.getCountImages()+driveCounter.getCountImages());
+        mainCounter.setCountTooSmall(mainCounter.getCountTooSmall()+driveCounter.getCountTooSmall());
+        mainCounter.setCountProcessed(mainCounter.getCountProcessed()+driveCounter.getCountProcessed());
+        mainCounter.setCountALREADYPROCESSED(mainCounter.getCountALREADYPROCESSED()+driveCounter.getCountALREADYPROCESSED());
+        mainCounter.setCountUPDATED(mainCounter.getCountUPDATED()+driveCounter.getCountUPDATED());
+        mainCounter.setCountErrors(mainCounter.getCountErrors()+driveCounter.getCountErrors());
+        mainCounter.setCountMoved(mainCounter.getCountMoved()+driveCounter.getCountMoved());
+        mainCounter.setCountDuplicates(mainCounter.getCountDuplicates()+driveCounter.getCountDuplicates());
+        mainCounter.setCountLATLONG(mainCounter.getCountLATLONG()+driveCounter.getCountLATLONG());
+        mainCounter.setCountGEOCODED(mainCounter.getCountGEOCODED()+driveCounter.getCountGEOCODED());
+        mainCounter.setCountNOTGEOCODED(mainCounter.getCountNOTGEOCODED()+driveCounter.getCountNOTGEOCODED());
+        mainCounter.setCountDateUpdate(mainCounter.getCountDateUpdate()+driveCounter.getCountDateUpdate());
+        mainCounter.setCountEventsFound(mainCounter.getCountEventsFound()+driveCounter.getCountEventsFound());
+        mainCounter.setCountAddedPlace(mainCounter.getCountAddedPlace()+driveCounter.getCountAddedPlace());
+        mainCounter.setCountAddedLATLONG(mainCounter.getCountAddedLATLONG()+driveCounter.getCountAddedLATLONG());
+        mainCounter.setCountAddedPostcode(mainCounter.getCountAddedPostcode()+driveCounter.getCountAddedPostcode());
+        mainCounter.setCountAddedEvent(mainCounter.getCountAddedEvent()+driveCounter.getCountAddedEvent());
+
+    }
     /**
      * Adds a new camera if it does not exist in the array and sets start and end date
      * If it is not a new camera, start and/or end date are updated in the ArrayList only
@@ -1735,7 +1729,7 @@ public class IMEMethods {
             String test="#"+p+Enums.doneValues.DONE+":";
             if(s.contains(test))
             {
-                String ss = s.substring(test.length(),s.indexOf(":",test.length()+2));
+                String ss = s.substring(test.length(),s.indexOf(":",test.length()+1));
                 if(!keyStrings.contains(ss))
                 {
                     keyStrings.add(ss);
@@ -1783,8 +1777,7 @@ public class IMEMethods {
                         // if there is more than one duplicate, we don't want to duplicate the fNew, so if it is already in the list, it does not need to go in again
                         if(!duplicateObjects.contains(fNew)) {
                             duplicateObjects.add(fNew);
-                            countDriveDuplicates++;
-                            countDuplicates++;
+                            driveCounter.addCountDuplicates();
                             fNew.setDuplicate(true);
                             message("Duplicate file - also in:" + f.getDirectory());
                             addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Warning - duplicate file - also in:" + f.getDirectory(), true);
@@ -2002,6 +1995,19 @@ public class IMEMethods {
         // write out last track
         addTrack(points,startDate,endDate,lastDay,coordinates.toString());
         return true;
+    }
+    public static String truncate(String s, int length)
+    {
+        if(s==null)
+        {
+            return null;
+        }
+        if(s.length()<=length)
+        {
+            return s;
+        }
+        return s.substring(0,length-1);
+
     }
     /**
      * Writes out message to the console
@@ -2518,9 +2524,9 @@ public class IMEMethods {
     {
         LocalDateTime d= fNew.getBestDate();
         Boolean eventDone=false;
-        if(checkEventKey(fNew.getEventKeys(),e.getEventid()) && checkJPEGComments(fNew.getComments(), "#Event:" + e.getEventid() + Enums.doneValues.DONE+":"))
+        if(fNew.getEventKeysArray().contains(e.getEventid()))
         {
-            message("Event has previously been matched with event"+e.getEventid());
+            message("File has previously been matched with this event:"+e.getEventid());
             eventDone=true;
         }
         if(!eventDone || config.getRedo() || config.getRedoevents()) {
@@ -2532,8 +2538,7 @@ public class IMEMethods {
 
                     updateEvent(config, fNew, e,eventDone);
                     message("Event calendar match for event:" + e.getEventid() + " " + e.getTitle());
-                    countEventsFound++;
-                    countDriveEventsFound++;
+                    driveCounter.addCountEventsFound();
                     return 1;
                 }
             } else {
@@ -2544,8 +2549,7 @@ public class IMEMethods {
                     // we have a match... so process..
                     message("Event date match for event:" + e.getEventid() + " " + e.getTitle());
                     updateEvent(config, fNew, e,eventDone);
-                    countEventsFound++;
-                    countDriveEventsFound++;
+                    driveCounter.addCountEventsFound();
                     return 1;
                   }
             }
@@ -2560,14 +2564,20 @@ public class IMEMethods {
      */
     public static Integer processEvents(ConfigObject config,FileObject fNew)
     {
+        if(fNew.getEventKeysArray().size()>0)
+        {
+            message("File has previously been matched with "+fNew.getEventKeysArray().size()+" events:"+String.join(",",fNew.getEventKeysArray()));
+        }
+        //if redo or redoevents we should clear out any matched events in the comments and ArrayList
+        if(config.getRedo() || config.getRedoevents()) {
+           fNew.setComments(removeJPEGComments(fNew.getComments(), "#" + Enums.processMode.event + Enums.doneValues.DONE + ":"));
+           fNew.setEventKeysArray(new ArrayList<>());
+        }
         int eventFound=0;
-
         for(EventObject e : events)
         {
           // message(e.getTitle()+e.getEventdate()+ e.getExactStartTime());
            eventFound=eventFound+checkEvent(config,fNew,e);
-
-
         }
         if(eventFound>0) {
             message("Number of Events found :"+eventFound);
@@ -2635,15 +2645,15 @@ public class IMEMethods {
                     if(alreadyProcessed)
                     {
                         message("File has already been processed:"+file.getName());
-                        countALREADYPROCESSED++;
-                        countDriveALREADYPROCESSED++;
+                        driveCounter.addCountALREADYPROCESSED();
                     }
                     else
                     {
-                        message("File has not been processed:"+fNew.getComments());
+                        message("File has not been processed:");
                     }
                     //set event keys based on values in comments.  This will prevent reprocessing the same events again
                     fNew.setEventKeysArray(getEventKeysFromJPEGComments(fNew.getComments(),Enums.processMode.event));
+
                 } else if (meta instanceof IPTC) {
                     iptc = (IPTC) meta;
                     if(!readIPTCdata(fNew,meta)){
@@ -2709,8 +2719,7 @@ public class IMEMethods {
         }
         // Geocodes if lat and long present
         if (fNew.getLatitude() != null && fNew.getLongitude() != null) {
-            countLATLONG++;
-            countDriveLATLONG++;
+            driveCounter.addCountLATLONG();
             if(config.getRedo() || !alreadyProcessed) {
                 if(geocode(fNew, fNew.getLatitude(),fNew.getLongitude(),config,true)) {
                     updateCommentFields(fNew,fNew.getLatitude()+","+fNew.getLongitude()+":"+fNew.getPlaceKey(),Enums.processMode.geocode);
@@ -2724,8 +2733,8 @@ public class IMEMethods {
                 if(checkPlaceKeyFound(fNew,config))
                 {
                     message("Place key found matching lat, lon values:"+fNew.getPlaceKey()+" no need to geocode");
-                    countGEOCODED++;
-                    countDriveGEOCODED++;
+
+                    driveCounter.addCountGEOCODED();
                 }
                 else {
                     // geocode but do not update fields - we need to do this if there is no matched place Object Place Objects...
@@ -2805,9 +2814,7 @@ public class IMEMethods {
                 fNew.setPlaceKey(addPlace(g, fNew.getBestDate()));
                // message("Successfully geocoded:" + g.getPlaceid());
             } else {
-                countNOTGEOCODED++;
-                countDriveNOTGEOCODED++;
-
+                driveCounter.addCountNOTGEOCODED();
                 message("Could not geocode :Lat" + fNew.getLatitude() + ", Long:" + fNew.getLongitude());
                 addError(fNew.getFileName(),fNew.getDirectory(),fNew.getBestDate(),"could not geocode:"+fNew.getLongitude()+","+fNew.getLatitude(),false);
             }
@@ -2825,8 +2832,7 @@ public class IMEMethods {
                 setFileObjectGEOValues(fNew, g, config);
 
             }
-            countGEOCODED++;
-            countDriveGEOCODED++;
+            driveCounter.addCountGEOCODED();
             return true;
         }
         return false;
@@ -2928,19 +2934,11 @@ public class IMEMethods {
      */
     public static void updateEvent(ConfigObject config, FileObject fNew, EventObject e,Boolean eventDone)
     {
-        if(eventDone)
-        {
             fNew.setWindowsTitle( e.getTitle());
             fNew.setIPTCObjectName( e.getTitle());
             fNew.setIPTCKeywordsArray(joinKeys(fNew.getIPTCKeywordsArray(),new ArrayList<>(Arrays.asList(e.getKeywords().split(";",-1)))));
             fNew.setWindowsSubject(e.getDescription());
-        }
-        else {
-            fNew.setWindowsTitle(addNotNull(fNew.getWindowsTitle(), e.getTitle(), " "));
-            fNew.setIPTCObjectName(addNotNull(fNew.getWindowsTitle(), e.getTitle(), " "));
-            fNew.setIPTCKeywords(addNotNull(fNew.getIPTCKeywords(), e.getKeywords(), ";"));
-            fNew.setWindowsSubject(addNotNull(fNew.getWindowsSubject(), e.getDescription(), " "));
-        }
+
        // we cannot process locations for Event Calendars - just event dates
        // and only process if lat and lon is missing
        if(e.getLocation()!=null && e.getEventcalendar()==null && fNew.getLatitude()==null && fNew.getLongitude()==null)
@@ -3010,8 +3008,7 @@ public class IMEMethods {
                 fNew.setExifOriginal(fNew.getBestDate().minusYears(1L));
             }
             fNew.setBestDate(fNew.getExifOriginal());
-            countDriveDateUpdate++;
-            countDateUpdate++;
+            driveCounter.addCountDateUpdate();
             if (StringUtils.isNullOrEmpty(fNew.getIPTCDateCreated()) || config.getOverwrite()) {
                 DateFormat formatter = new SimpleDateFormat("yyyyMMdd");
 
@@ -3024,8 +3021,7 @@ public class IMEMethods {
             if (c != null) {
                 fNew.setExifOriginal(c);
                 fNew.setBestDate(fNew.getExifOriginal());
-                countDriveDateUpdate++;
-                countDateUpdate++;
+                driveCounter.addCountDateUpdate();
                 if (StringUtils.isNullOrEmpty(fNew.getIPTCDateCreated()) || config.getOverwrite()) {
                     fNew.setIPTCDateCreated(param.replace("-", ""));
                     return param;
@@ -3092,8 +3088,7 @@ public class IMEMethods {
                             // we should also set lat and lon if it is correct
                             if (fNew.getPlaceKey() != null) {
                                 if (updateLatLon(lat, lon, fNew)) {
-                                    countAddedLATLONG++;
-                                    countDriveAddedLATLONG++;
+                                      driveCounter.addCountAddedLATLONG();
                                     updateCommentFields(fNew,lat+","+lon,p);
 
                                 }
@@ -3120,8 +3115,7 @@ public class IMEMethods {
                             updateEvent(config, fNew, e,false);
                             fNew.setBestDate(e.getExactStartTime());
                             message("Event ID match for event:" + e.getEventid() + " " + e.getTitle());
-                            countAddedEvent++;
-                            countDriveAddedEvent++;
+                            driveCounter.addCountAddedEvent();
                        }
                     } catch (Exception e) {
                         message("could not convert provided values to a place:" + param);
@@ -3141,8 +3135,7 @@ public class IMEMethods {
                             if (updateLatLon(g.getLatAsDouble(), g.getLonAsDouble(), fNew)) {
                                 fNew.setPlaceKey(g.getPlaceid());
                                 setFileObjectGEOValues(fNew, g,  config);
-                                countAddedPlace++;
-                                countDriveAddedPlace++;
+                                driveCounter.addCountAddedPlace();
                                 updateCommentFields(fNew,param,p);
                             }
 
@@ -3174,8 +3167,7 @@ public class IMEMethods {
                                     // we should also set lat and lon if it is correct
                                     if (fNew.getPlaceKey() != null) {
                                         if (updateLatLon(lat, lon, fNew)) {
-                                            countAddedPostcode++;
-                                            countDriveAddedPostcode++;
+                                            driveCounter.addCountAddedPostcode();
                                             updateCommentFields(fNew, param, p);
                                         }
 
@@ -3312,7 +3304,8 @@ public class IMEMethods {
         fNew.setFileName(file.getName());
         fNew.setFileSize(new BigDecimal(file.length()));
         fNew.setDirectory(fixSlash(FilenameUtils.getFullPath(file.getPath())));
-        fNew.setFileKey(countProcessed);
+        // this is a sequence number across multiple drives, so add the two together
+        fNew.setFileKey(mainCounter.getCountProcessed()+driveCounter.getCountProcessed());
         try {
             BufferedImage bimg = ImageIO.read(file);
             fNew.setWidth(bimg.getWidth());
@@ -3667,8 +3660,7 @@ public class IMEMethods {
                         if (moveFile(config, fNew, newFileName)) {
                             finalFile = new File(newDirectory + "/" + newFileName);
                             fNew.setFileName(newFileName);
-                            countDriveMoved++;
-                            countMoved++;
+                            driveCounter.addCountMoved();
                         } else {
                             message("Did not move file" + fNew.getFileName());
                             addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Error moving Final file",false);
@@ -3679,8 +3671,7 @@ public class IMEMethods {
                 Files.setAttribute(finalFile.toPath(), "lastAccessTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileAccessed()).getTime()));
                 Files.setAttribute(finalFile.toPath(), "lastModifiedTime", FileTime.fromMillis(convertToDateViaInstant(fNew.getFileModified()).getTime()));
                 cleanUpTempFiles(file,fNew);
-                countUPDATED++;
-                countDriveUPDATED++;
+                driveCounter.addCountUPDATED();
             } catch (Exception e) {
                 message("Cannot update File - it will not be moved"+e);
                 cleanUpTempFiles(file,fNew);
@@ -4055,52 +4046,14 @@ public class IMEMethods {
     public static void readDrives(ConfigObject c)
     {
         for (DriveObject d : c.getDrives()) {
-            countDriveFiles = 0;
-            countDriveImages = 0;
-            countDriveTooSmall = 0;
-            countDriveProcessed = 0;
-            countDriveLATLONG=0;
-            countDriveALREADYPROCESSED =0;
-            countDriveGEOCODED = 0;
-            countDriveNOTGEOCODED=0;
-            countDriveDateUpdate=0;
-            countDriveEventsFound=0;
-            countDriveAddedPlace=0;
-            countDriveAddedLATLONG=0;
-            countDriveAddedPostcode=0;
-            countDriveAddedEvent=0;
-            countDriveUPDATED=0;
-            countDriveErrors=0;
-            countDriveDuplicates=0;
-            countDriveMoved=0;
+            driveCounter=new CounterObject();
             message("Reading drive: "+d.getStartdir());
-
             //recursively find all files
             readDirectoryContents(new File(d.getStartdir()), d, c.getTempdir(), c);
             messageLine("-");
             String ex=" on drive "+d.getStartdir()+" :";
-            message("Files found                        "+ex + countDriveFiles);
-            message("Photos found                       "+ex + countDriveImages);
-            message("Photos too small                   "+ex + countDriveTooSmall);
-            message("Photos to be processed             "+ex + countDriveProcessed);
-            message("Photos already Processed           "+ex + countDriveALREADYPROCESSED);
-            message("Photos updated                     "+ex + countDriveUPDATED);
-            message("Photos where metadata not read     "+ex + countDriveErrors);
-            message("Photos which have been moved       "+ex + countDriveMoved);
-            message("Photos which are duplicates        "+ex + countDriveDuplicates);
-            message("-----------------------------------");
-            message("Photos with Lat Long               "+ex + countDriveLATLONG);
-            message("Photos Geocoded                    "+ex + countDriveGEOCODED);
-            message("Photos with failed Geocoding       "+ex + countDriveNOTGEOCODED);
-            message("Photos where Date added            "+ex + countDriveDateUpdate);
-            message("Photos where Events found from date"+ex + countDriveEventsFound);
-            message("Photos with Place added            "+ex + countDriveAddedPlace);
-            message("Photos with Lat Lon added          "+ex + countDriveAddedLATLONG);
-            message("Photos with Postcode added         "+ex + countDriveAddedPostcode);
-            message("Photos with Event added            "+ex + countDriveAddedEvent);
-
-
-
+            driveCounter.printResults(ex);
+            addCounter();
         }
     }
 

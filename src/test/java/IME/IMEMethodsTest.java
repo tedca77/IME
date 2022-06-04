@@ -38,7 +38,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Testing Longitude / latitude distance calculation")
-    //@Disabled
+    @Disabled
     void distance_Between_LatLongTest() {
         //choose two points separated by 58742 metres
         // George V Way,WD3 6 Rickmansworth,United Kingdom 51.68250194,-0.49026778
@@ -48,7 +48,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 1 - Geocoding with update")
-    //@Disabled
+    @Disabled
     void update1Test() {
         // Test: 1 - SIMPLE GEOCODING
         // Uses TestSource1
@@ -57,7 +57,7 @@ class IMEMethodsTest {
         // File is in a sub-directory so the old directory name is added as keywords (one for each word in directory name)
         System.out.println("==========================TEST 1 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 1, startDir + "/Test")) {
-            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir","update"});
+            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir","update","savefilemetadata"});
             String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
@@ -80,12 +80,18 @@ class IMEMethodsTest {
                 //
                 assertTrue(checkJPEGComments(fNew.getComments(),"#geocodeDONE:"));
                 ConfigObject c = readConfig(startDir + "/TestRESULTS/"+jsonFile);
-                assertEquals("Corfe Castle",c.getPhotos().get(0).getCity());
-                assertEquals("GB", c.getPhotos().get(0).getCountry_code());
-                assertEquals("United Kingdom", c.getPhotos().get(0).getCountry_name());
-                assertEquals("Dorset, South West England", c.getPhotos().get(0).getStateProvince());
-                assertEquals("", c.getPhotos().get(0).getSubLocation());
-                assertEquals(countDriveImages,1);
+                if(c!=null) {
+                    assertEquals("Corfe Castle", c.getPhotos().get(0).getCity());
+                    assertEquals("GB", c.getPhotos().get(0).getCountry_code());
+                    assertEquals("United Kingdom", c.getPhotos().get(0).getCountry_name());
+                    assertEquals("Dorset, South West England", c.getPhotos().get(0).getStateProvince());
+                    assertEquals("", c.getPhotos().get(0).getSubLocation());
+                }
+                else
+                {
+                    fail("Counld not read JSON file");
+                }
+                assertEquals(driveCounter.getCountImages(),1);
 
             }
             else
@@ -98,7 +104,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 2 - Geocoding with no overwriting of existing values")
-    //@Disabled
+    @Disabled
     void update2Test() {
         //Test 2 - SIMPLE GEOCODING _ NO OVERWRITING
         // Uses TestSource2
@@ -106,7 +112,7 @@ class IMEMethodsTest {
         //No Json input file, but update parameter added and New Directory provided, so will copy to TestNewDir
         System.out.println("==========================TEST 2 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 2, startDir + "/Test")) {
-            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir","update"});
+            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir","update","savefilemetadata"});
             String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
@@ -119,11 +125,18 @@ class IMEMethodsTest {
                 assertEquals("Filled in sublocation", fNew.getSubLocation());
                 //
                 ConfigObject c = readConfig(startDir + "/TestRESULTS/"+jsonFile);
+                if(c!=null)
+                {
                 assertEquals("Filled in city",c.getPhotos().get(0).getCity());
                 assertEquals("GB", c.getPhotos().get(0).getCountry_code());
                 assertEquals("Filled in country", c.getPhotos().get(0).getCountry_name());
                 assertEquals("Filled in province state", c.getPhotos().get(0).getStateProvince());
                 assertEquals("Filled in sublocation", c.getPhotos().get(0).getSubLocation());
+                }
+                else
+                {
+                    fail("Could not read JSON file");
+                }
 
             }
              else
@@ -136,7 +149,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 3 - Geocoding with overwrite")
-    //@Disabled
+    @Disabled
     void update3Test() {
         //Test: 3 - SIMPLE GEOCODING - WITH OVERWRITING
         // Uses TestSource2
@@ -144,7 +157,7 @@ class IMEMethodsTest {
         //No Json input file, but update parameter added and New Directory provided, so will copy to TestNewDir, overwriteValues parameter set
         System.out.println("==========================TEST 3 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 2, startDir + "/Test")) {
-            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir","update","overwrite"});
+            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir","update","overwrite","savefilemetadata"});
             String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
@@ -160,11 +173,18 @@ class IMEMethodsTest {
                 assertEquals("filled keywords 2;filled keywords1",fNew.getIPTCKeywords());
                 //
                 ConfigObject c = readConfig(startDir + "/TestRESULTS/"+jsonFile);
-                assertEquals("Corfe Castle",c.getPhotos().get(0).getCity());
-                assertEquals("GB", c.getPhotos().get(0).getCountry_code());
-                assertEquals("United Kingdom", c.getPhotos().get(0).getCountry_name());
-                assertEquals("Dorset, South West England", c.getPhotos().get(0).getStateProvince());
-                assertEquals("", c.getPhotos().get(0).getSubLocation());
+                if(c!=null)
+                {
+                    assertEquals("Corfe Castle",c.getPhotos().get(0).getCity());
+                    assertEquals("GB", c.getPhotos().get(0).getCountry_code());
+                    assertEquals("United Kingdom", c.getPhotos().get(0).getCountry_name());
+                    assertEquals("Dorset, South West England", c.getPhotos().get(0).getStateProvince());
+                    assertEquals("", c.getPhotos().get(0).getSubLocation());
+                }
+                else
+                {
+                    fail("Could not read JSON file");
+                }
 
             }
             else
@@ -176,7 +196,7 @@ class IMEMethodsTest {
         }
     }
     @Test
-    //@Disabled
+    @Disabled
     @DisplayName("Test 4 -  image - rotated  thumbnail           ")
     void update4Test() {
         //Test: 4 - ROTATING THUMBNAIL
@@ -205,7 +225,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 5 - geocode - checks JSON has geocode information - read only" )
-    //@Disabled
+    @Disabled
     void update5Test() {
         //Test: 5 - READ ONLY -  CHECKS JSON HAS GEOCODE INFORMATION
         // Uses TestSource1
@@ -214,7 +234,7 @@ class IMEMethodsTest {
         String fileName="T_"+"nodescriptivemetadata_haslonlat.jpg";
         System.out.println("==========================TEST 5 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 1, startDir + "/Test")) {
-            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS"});
+            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS","savefilemetadata"});
             String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
@@ -229,11 +249,17 @@ class IMEMethodsTest {
                 assertEquals("",fNew.getSubLocation());
                 //
                 ConfigObject c = readConfig(startDir + "/TestRESULTS/"+jsonFile);
-                assertEquals("Corfe Castle",c.getPhotos().get(0).getCity());
-                assertEquals("GB", c.getPhotos().get(0).getCountry_code());
-                assertEquals("United Kingdom", c.getPhotos().get(0).getCountry_name());
-                assertEquals("Dorset, South West England", c.getPhotos().get(0).getStateProvince());
-                assertEquals("", c.getPhotos().get(0).getSubLocation());
+                if(c!=null) {
+                    assertEquals("Corfe Castle", c.getPhotos().get(0).getCity());
+                    assertEquals("GB", c.getPhotos().get(0).getCountry_code());
+                    assertEquals("United Kingdom", c.getPhotos().get(0).getCountry_name());
+                    assertEquals("Dorset, South West England", c.getPhotos().get(0).getStateProvince());
+                    assertEquals("", c.getPhotos().get(0).getSubLocation());
+                }
+                else
+                {
+                    fail("Could not read JSON file");
+                }
             } else {
                 fail("Did not find output file");
             }
@@ -243,7 +269,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 6 - geocode - checks JSON has geocode information - update")
-    //@Disabled
+    @Disabled
     void update6Test() {
         //Test: 6 UPDATE GEOCODE -  CHECKS JSON HAS GEOCODE INFORMATION
         // Uses TestSource1
@@ -251,7 +277,7 @@ class IMEMethodsTest {
         //No Json input file, update parameter included, but no directory provided so will not move  (HTML output wil includeGeocode details)
         System.out.println("==========================TEST 6 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 1, startDir + "/Test")) {
-            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS","update"});
+            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS","update","savefilemetadata"});
             String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
@@ -265,11 +291,17 @@ class IMEMethodsTest {
                 assertEquals("", fNew.getSubLocation());
                 //
                 ConfigObject c = readConfig(startDir + "/TestRESULTS/"+jsonFile);
-                assertEquals("Corfe Castle",c.getPhotos().get(0).getCity());
-                assertEquals("GB", c.getPhotos().get(0).getCountry_code());
-                assertEquals("United Kingdom", c.getPhotos().get(0).getCountry_name());
-                assertEquals("Dorset, South West England", c.getPhotos().get(0).getStateProvince());
-                assertEquals("", c.getPhotos().get(0).getSubLocation());
+                if(c!=null) {
+                    assertEquals("Corfe Castle", c.getPhotos().get(0).getCity());
+                    assertEquals("GB", c.getPhotos().get(0).getCountry_code());
+                    assertEquals("United Kingdom", c.getPhotos().get(0).getCountry_name());
+                    assertEquals("Dorset, South West England", c.getPhotos().get(0).getStateProvince());
+                    assertEquals("", c.getPhotos().get(0).getSubLocation());
+                }
+                else
+                {
+                    fail("Counld not read JSON file");
+                }
             } else {
                 fail("Did not find output file");
             }
@@ -278,8 +310,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-    //@Disabled
-    @DisplayName("Test 7")
+    @Disabled
+    @DisplayName("Test 7 - Date Updated YYYY and IPTC keywords added")
     void update7Test() {
         //Test: 7 - HARD CODE YEAR CHECKS IPTC DATE CREATED AND KEYWORDS
         // Uses TestSource4
@@ -311,8 +343,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 8 - Hard coded Year from Windows Comments")
-    //@Disabled
+    @DisplayName("Test 8 - Date added YYYY from Windows Comments")
+    @Disabled
     void update8Test() {
         //Test: 8 - HARD CODE YEAR - CHECK FILE DATES
         // Uses TestSource4
@@ -350,8 +382,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 9")
-    //@Disabled
+    @DisplayName("Test 9 - Date Updated YYYY MM and IPTC keywords added")
+    @Disabled
     void update9Test() {
         //Test: 9 - HARD CODE YEAR AND MONTH
         // Uses TestSource4
@@ -383,7 +415,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 10 - Add Year Month Day via Windows Comment")
-    //@Disabled
+    @Disabled
     void update10Test() {
         //Test: 10 - HARD CODE YEAR MONTH DAY
         // Uses TestSource4
@@ -417,7 +449,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 11 - Add Year via IPTC Instruction")
-    //@Disabled
+    @Disabled
     void update11Test() {
         //Test: 11 - HARD CODE DATE USING IPTC INSTRUCTIONS FIELD
         // Uses TestSource4
@@ -449,8 +481,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 12")
-    //@Disabled
+    @DisplayName("Test 12 - Date Updated YYYY MM from IPTC Instructio")
+        @Disabled
     void update12Test() {
         //Test: 7 - HARD CODE DATE USING IPTC INSTRUCTIONS FIELD YEAR AND MONTH
         // Uses TestSource4
@@ -482,8 +514,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 13")
-    //@Disabled
+    @DisplayName("Test 13 - Date Updated YYYY Mm DD from IPTC Instruction")
+    @Disabled
     void update13Test() {
         //Test: 13 - HARD CODE DATE USING IPTC INSTRUCTIONS FIELD YEAR AND MONTH
         // Uses TestSource4
@@ -516,8 +548,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-    //@Disabled
-    @DisplayName("Test 14")
+    @Disabled
+    @DisplayName("Test 14 - Place found from Postcode for Added Event")
     void update14Test() {
         // Test 14 :  HARD CODE EVENT WITH A POSTCODE
         // Uses TestSource5
@@ -549,8 +581,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-    //@Disabled
-    @DisplayName("Test 15")
+    @Disabled
+    @DisplayName("Test 15 - Place found from Added Place ID")
     void update15Test() {
         // Test 15 - HARD CODE EVENT WITH PLACE
         // Uses TestSource5
@@ -582,8 +614,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-    //@Disabled
-    @DisplayName("Test 16")
+    @Disabled
+    @DisplayName("Test 16 - Place found via match of Date with Event Date")
     void update16Test() {
         // Test 16 - FIND EVENT WITH PLACE
         // Uses TestSource5
@@ -615,8 +647,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-     //@Disabled
-    @DisplayName("Test 17")
+     @Disabled
+    @DisplayName("Test 17 - Match of Date with Event Date - no Place")
     void update17Test() {
         // Test 17 - FIND EVENT WITH NO PLACE
         // Uses TestSource5
@@ -645,8 +677,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-    //@Disabled
-    @DisplayName("Test 18")
+    @Disabled
+    @DisplayName("Test 18 - Event with Postcode matched on date")
     void update18Test() {
         // Test 18 - FIND EVENT WITH POSTCODE
         // Uses TestSource5
@@ -678,8 +710,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-     //@Disabled
-    @DisplayName("Test 19")
+     @Disabled
+    @DisplayName("Test 19 - Added Event with Lat, Lon")
     void update19Test() {
         // Test 19 - ADD EVENT WITH LAT, LON
         // Uses TestSource5
@@ -709,8 +741,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-     //@Disabled
-    @DisplayName("Test 20")
+     @Disabled
+    @DisplayName("Test 20 - Find event from Date with Lat, Lon")
     void update20Test() {
         // Test 20 - FIND EVENT WITH LAT, LON
         // Uses TestSource5
@@ -740,8 +772,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-     //@Disabled
-    @DisplayName("Test 21")
+     @Disabled
+    @DisplayName("Test 21 - Find Calendar Event from Date - No place")
     void update21Test() {
         // Test 21 - FIND EVENT CALENDAR - NO PLACE
         // Uses TestSource5
@@ -770,8 +802,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-     //@Disabled
-    @DisplayName("Test 22")
+     @Disabled
+    @DisplayName("Test 22 - Added Lat, Lon")
     void update22Test() {
         // Test 22 -HARD CODE LAT,LON
         // Uses TestSource5
@@ -801,8 +833,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-     //@Disabled
-    @DisplayName("Test 23")
+     @Disabled
+    @DisplayName("Test 23 - Added Place")
     void update23Test() {
         // Test 23 -HARD CODE PLACE
         // Uses TestSource5
@@ -832,8 +864,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-     //@Disabled
-    @DisplayName("Test 24")
+     @Disabled
+    @DisplayName("Test 24 - Added Postcode")
     void update24Test() {
         // Test 24 -HARD CODE POST CODE
         // Uses TestSource5
@@ -861,8 +893,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 25")
-    //@Disabled
+    @DisplayName("Test 25 moving duplicate files - ensuring the file  names do not clash")
+    @Disabled
     void update25Test() {
         // Test: 25 - MOVING DUPLICATE FILES AND RENAMING
         // Uses TestSource6
@@ -891,7 +923,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 26 - Checks that metadata written to Config Output file")
-    //@Disabled
+    @Disabled
     void update26Test() {
         //Test: 26 - CHECKS THAT METADATA FIELDS ARE ALL READ
         // Uses TestSource4
@@ -900,7 +932,7 @@ class IMEMethodsTest {
         String fileName="lightroom date year month day.jpg";
         System.out.println("==========================TEST 26 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 4, startDir + "/Test")) {
-            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir"});
+            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir","savefilemetadata"});
             String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
@@ -910,8 +942,10 @@ class IMEMethodsTest {
 
                 //
                 ConfigObject c = readConfig(startDir + "/TestRESULTS/"+jsonFile);
-                assertEquals("The Title (ref2021.1)",c.getPhotos().get(0).getIPTCObjectName());
-                assertEquals("The description aka caption (ref2021.1)", c.getPhotos().get(0).getIPTCCaptionAbstract());
+                if(c!=null) {
+                    assertEquals("The Title (ref2021.1)", c.getPhotos().get(0).getIPTCObjectName());
+                    assertEquals("The description aka caption (ref2021.1)", c.getPhotos().get(0).getIPTCCaptionAbstract());
+                }
 
 
             }
@@ -926,7 +960,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 27 - Checks all metadata fields are read")
-    //@Disabled
+    @Disabled
     void update27Test() {
         //Test: 26 - CHECKS THAT METADATA FIELDS ARE ALL READ
         // Uses TestSource4
@@ -954,7 +988,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 28 - Checks that XP Keywords and IPTC Keywords are written")
-    //@Disabled
+    @Disabled
     void update28Test() {
         // Test: 1 - SIMPLE GEOCODING
         // Uses TestSource1
@@ -963,7 +997,7 @@ class IMEMethodsTest {
         // File is in a sub-directory so the old directory name is added as keywords (one for each word in directory name)
         System.out.println("==========================TEST 28 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 1, startDir + "/Test")) {
-            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir","update","addxpkeywords","addiptckeywords"});
+            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir","update","addxpkeywords","addiptckeywords","savefilemetadata"});
             String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:"+jsonFile);
             assertNotEquals(jsonFile.length(),0);
@@ -974,8 +1008,15 @@ class IMEMethodsTest {
                 assertEquals("DirKeyword1;DirKeyword2;IPTCkey1;IPTCkey2;GB;United Kingdom;Dorset;BH20 5DY;England;South West England;Corfe Castle", fNew.getIPTCKeywords());
                 assertEquals("GB;United Kingdom;Dorset;BH20 5DY;England;South West England;Corfe Castle", fNew.getWindowsKeywords());
                 ConfigObject c = readConfig(startDir + "/TestRESULTS/"+jsonFile);
-                assertEquals("DirKeyword1;DirKeyword2;IPTCkey1;IPTCkey2;GB;United Kingdom;Dorset;BH20 5DY;England;South West England;Corfe Castle",c.getPhotos().get(0).getIPTCKeywords());
-                assertEquals("GB;United Kingdom;Dorset;BH20 5DY;England;South West England;Corfe Castle",c.getPhotos().get(0).getWindowsKeywords());
+                if(c!=null)
+                {
+                    assertEquals("DirKeyword1;DirKeyword2;IPTCkey1;IPTCkey2;GB;United Kingdom;Dorset;BH20 5DY;England;South West England;Corfe Castle",c.getPhotos().get(0).getIPTCKeywords());
+                    assertEquals("GB;United Kingdom;Dorset;BH20 5DY;England;South West England;Corfe Castle",c.getPhotos().get(0).getWindowsKeywords());
+                }
+                else
+                {
+                    fail("Could not read JSON file");
+                }
             }
             else
             {
@@ -987,7 +1028,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 29 - Checks that Processed file not reprocessed - geocoded")
-    //@Disabled
+    @Disabled
     void update29Test() {
         // Test: 1 - SIMPLE GEOCODING
         // Uses TestSource1
@@ -999,8 +1040,8 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test",startDir + "/TestRESULTS","update"});
             String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:"+jsonFile);
-            assertEquals(countDriveALREADYPROCESSED,1);
-            assertEquals(countDriveUPDATED,0);
+            assertEquals(driveCounter.getCountALREADYPROCESSED(),1);
+            assertEquals(driveCounter.getCountUPDATED(),0);
             String fileName="T_"+"already_geocoded.jpg";
             FileObject fNew= readAndUpdateFile(new File(startDir+"/Test/"+fileName), null,null, null,true);
             if(fNew!=null) {
@@ -1018,7 +1059,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 30 - Checks that Processed file not reprocessed - Date")
-    //@Disabled
+    @Disabled
     void update30Test() {
         // Test: 1 - SIMPLE GEOCODING
         // Uses TestSource1
@@ -1030,8 +1071,8 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS","update"});
             String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:"+jsonFile);
-            assertEquals(countDriveALREADYPROCESSED,1);
-            assertEquals(countDriveUPDATED,0);
+            assertEquals(driveCounter.getCountALREADYPROCESSED(),1);
+            assertEquals(driveCounter.getCountUPDATED(),0);
             String fileName="T_"+"IPTC-already processed.jpg";
             FileObject fNew= readAndUpdateFile(new File(startDir+"/Test/"+fileName), null,null, null,true);
             if(fNew!=null) {
@@ -1049,7 +1090,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 31 - Checks that Processed file reprocessed with REDO - geocoded")
-    //@Disabled
+    @Disabled
     void update31Test() {
         // Test: 1 - SIMPLE GEOCODING
         // Uses TestSource1
@@ -1061,8 +1102,8 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test",startDir + "/TestRESULTS","update", "redo"});
             String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:"+jsonFile);
-            assertEquals(countDriveALREADYPROCESSED,1);
-            assertEquals(countDriveUPDATED,1);
+            assertEquals(driveCounter.getCountALREADYPROCESSED(),1);
+            assertEquals(driveCounter.getCountUPDATED(),1);
             String fileName="T_"+"already_geocoded.jpg";
             FileObject fNew= readAndUpdateFile(new File(startDir+"/Test/"+fileName), null,null, null,true);
             if(fNew!=null) {
@@ -1079,7 +1120,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 32 - Checks CLEAR option")
-     //@Disabled
+     @Disabled
     void update32Test() {
         // Test: 1 - CLEAR option
         // Uses TestSource1
@@ -1091,8 +1132,8 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test",startDir + "/TestRESULTS","update","clear"});
             String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:"+jsonFile);
-            assertEquals(countDriveALREADYPROCESSED,1);
-            assertEquals(countDriveUPDATED,1);
+            assertEquals(driveCounter.getCountALREADYPROCESSED(),1);
+            assertEquals(driveCounter.getCountUPDATED(),1);
             String fileName="T_"+"already_geocoded.jpg";
             FileObject fNew= readAndUpdateFile(new File(startDir+"/Test/"+fileName), null,null, null,true);
             if(fNew!=null) {
@@ -1109,14 +1150,14 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 33 - Check files are created")
-        ////@Disabled
+        @Disabled
     void update33Test() {
         // Test: 33 - SIMPLE GEOCODING - CHECKS FILES ARE created
         // Uses TestSource1
         // One image with no IPTC metadata and with lat and lon, so should geocode
         // No Json input file, but update parameter added and New Directory provided, so will copy to TestNewDir
         // File is in a sub-directory so the old directory name is added as keywords (one for each word in directory name)
-        System.out.println("==========================TEST 1 =================================");
+        System.out.println("==========================TEST 33 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 1, startDir + "/Test")) {
             IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir","update"});
             String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
@@ -1142,6 +1183,53 @@ class IMEMethodsTest {
             assertTrue(f.exists());
             
             
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @DisplayName("Test 34 - Check File Metadata not written out")
+    @Disabled
+    void update34Test() {
+            // Uses TestSource1
+        // One image with no IPTC metadata and with lat and lon, so should geocode
+        // No Json input file, but update parameter added and New Directory provided, so will copy to TestNewDir
+        // File is in a sub-directory so the old directory name is added as keywords (one for each word in directory name)
+        System.out.println("==========================TEST 34 =================================");
+        if (copyToTestArea(startDir + "/TestSource" + 1, startDir + "/Test")) {
+
+            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir","update"});
+            String jsonFile=findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("JSON  file found:"+jsonFile);
+            assertNotEquals(jsonFile.length(),0);
+            ConfigObject c = readConfig(startDir + "/TestRESULTS/"+jsonFile);
+            if(c!=null)
+            {
+                 assertNull(c.getPhotos());
+            }
+            else
+            {
+                fail("Could not read JSON file");
+            }
+
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @DisplayName("Test 35 - Event is not re-processed")
+        //@Disabled
+    void update35Test() {
+        // Uses TestSource1
+        // One image with no IPTC metadata and with lat and lon, so should geocode
+        // No Json input file, but update parameter added - will not move
+        System.out.println("==========================TEST 35 =================================");
+        if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
+            updateTextFile(startDir+"/Test/config-nomove.json","<<startdir>>",startDir);
+            IMEMethods.main(new String[]{startDir + "/Test/config-nomove.json","update"});
+            assertEquals(driveCounter.getCountUPDATED(),11);
+            IMEMethods.main(new String[]{startDir + "/Test/config-nomove.json","update"});
+            assertEquals(driveCounter.getCountUPDATED(),0);
         } else {
             fail("Setup Copy files to Test Area could not complete");
         }

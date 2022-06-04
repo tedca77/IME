@@ -23,7 +23,7 @@ public class Enums {
         public enum prog {temp}
 
         public enum argOptions {
-            overwrite,update,showmetadata,redo,append,addxpkeywords,addiptckeywords,clear
+            overwrite,update,showmetadata,redo,redoevents,append,addxpkeywords,addiptckeywords,clear,savefilemetadata
         }
         /*
            update - if false, no updates will take place to records ...default false
