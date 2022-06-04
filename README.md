@@ -12,7 +12,7 @@ Image Metadata Enhancer has extensive reporting and output of metadata informati
 * A JSON file containing all the metadata information for each file – the JSON file can also be used as an input file for future runs of the program or for transferring information to other systems, so it can be integrated in the workflow for bringing in new content in business environments;
 * KML files are created which can be uploaded to mapping systems, so you can visualise collections as a series of tracks or points.
 
-IME is simple to run, from a Command Prompt on Windows. An "exe" version is available for Windows, and a jar file can be used on non-Windows platforms.  Once you have familiarised yourself with IME, parameters can be adjusted by providing a JSON input file.  You will need to understand the basics of JSON to make use of the advanced features (examples are provided below).  The program always outputs a correctly formatted JSON file which can be used as input for future runs. 
+IME is simple to run, from a Command Prompt on Windows or other systems using a "jar" file. Once you have familiarised yourself with IME, parameters can be adjusted by providing a JSON input file.  You will need to understand the basics of JSON to make use of the advanced features (examples are provided below).  The program always outputs a correctly formatted JSON file which can be used as input for future runs. 
 
 IME is copyright but available under an open source licence - source code is available on this Github repository. The software is currently only tested on Windows. 
 # Why is this tool needed?
@@ -21,7 +21,7 @@ IME is copyright but available under an open source licence - source code is ava
 3.	It is difficult to search or review geographical and other metadata across a collection of images – in Windows you have to select properties on each photo in turn.  IME helps you view the geographical information and remind you of trips and visits, and helps to identify where photos have been taken.
 4.	Windows thumbnail generation can be slow for large collections – IME generates thumbnails which are faster to view in the HTML reports.
 5.	Adobe Lightroom “Classic” is a great tool – but reverse Geocoding is only possible by purchasing one of the Lightroom Cloud-based packages. Adobe Bridge does not have geocoding capabilities. There is a plug in for Lightroom Classic which does something similar, but this tool is independent of Lightroom or other tools.
-6.	IME provides Tag information allowing Windows searching of location metadata withou any extra software.
+6.	IME also generates Windows "Tag" information allowing Windows searching of location metadata withou any extra software.
 # About Photo Metadata
 Photo metadata in stored within each JPEG image file (JPEG files are produced by most mobile phones). The metadata is organised in a set of categories.  These categories include:
 * **EXIF** – this contains the longitude and latitude information, as well as information on the camera / phone,  date of photo etc.
@@ -35,7 +35,7 @@ IME will leave the standard Windows date fields (Date Modified, Date Accessed an
 **BEFORE RUNNING ENSURE YOU HAVE A VALID BACKUP OF YOUR PHOTO FILES.  IF YOU DON'T HAVE A BACKUP - THEN CREATE ONE BEFORE YOU START !**
 Image Metadata Enhancer is distributed in the hope that it will be useful,  but WITHOUT ANY WARRANTY, under the GNU General Public Licence.  While it has been tested extensively, the range of formats possible are large and the program may not operate correctly with all files, so if you have a backup, you should not lose any photos. 
 
-1. Copy the ImageMetadataEnhancer.jar to your drive e.g. D:/IME/ImageMetadataEnhancer.jar 
+1. Download the ImageMetadataEnhancer.jar to your drive e.g. D:/IME/ImageMetadataEnhancer.jar 
 2. Ensure that version 17 or 18 of Java is installed.
 3. Run as a Windows command  
 ```java -jar ImageMetadataEnhancer.jar  <directory to search> <output directory> <new directory structure> <parameters>```  
@@ -59,16 +59,16 @@ As an example:
 It is recommended to follow the following process:
 1. Run in "read mode" - as above ```java -jar ImageMetadataEnhancer.jar “d:/Photos” “d:/Results”```
 2. Check for duplicates, and delete from file system
-3. Rename configYYYYMMDDhhMMss.json to config.json and provide this as an input file (this saves having to look up Open Street Map places again) - ```ImageMetadataEnhancer.jar “d:/config.json”```
+3. Rename configYYYYMMDDhhMMss.json to config.json and provide this as an input file (this saves having to look up Open Street Map places again) - ```java -jar ImageMetadataEnhancer.jar “d:/config.json”```
 4. Check that all duplicates are removed (if not, then run again)
-5. Run with an update parameter  ```ImageMetadataEnhancer.jar “d:/config.json” update```. If you don't have Lightroom or Bridge, then add the geocoding information to Windows Tags  ```ImageMetadataEnhancer.jar “d:/config.json” update addxpkeywords```
+5. Run with an update parameter  ```java -jar ImageMetadataEnhancer.jar “d:/config.json” update```. If you don't have Lightroom or Bridge, then add the geocoding information to Windows Tags  ```java -jar ImageMetadataEnhancer.jar “d:/config.json” update addxpkeywords```
 6. You should not be able to search for photos using Country, State/Province, City and Sub Location IPTC values.
 
 # Additional Paramaters
 **Third parameter** (new directory structure) – is the new directory which files are to be copied to.  The new directory structure will be /Year/Month/Photo1 etc.  This should be a different area than the directory to search and the output directory.  Files will be be copied to the new directory structure using the "Original Date" to put in the correct place.
 
 As an example:
-```ImageMetadataEnhancer.exe “d:/Photos” “d:/Results” “d:/newDir”```   
+```java -jar ImageMetadataEnhancer.jar “d:/Photos” “d:/Results” “d:/newDir”```   
 * The directory with existing photos (to search) is: ```d:/Photos```
 * The results will be sent to : ```d:/Results```
 * Files will be copied to a new structure at : ```d:/newDir``` i.e. ```d:/newDir/2021/08/photo1.jpg```
