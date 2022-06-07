@@ -27,6 +27,8 @@ import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+
 public class Rest {
     public Rest() {
 
@@ -36,17 +38,18 @@ public class Rest {
         try {
             HttpClient client = HttpClientBuilder.create().build();
             HttpUriRequest httpUriRequest = new HttpGet(command);
-            httpUriRequest.addHeader("Accept-Charset", "utf-8");
+            httpUriRequest.addHeader("accept-charset", "utf-8");
             httpUriRequest.addHeader("Accept", "application/json");
             HttpResponse response = client.execute(httpUriRequest);
             BufferedReader rd = new BufferedReader(
-                    new InputStreamReader(response.getEntity().getContent()));
+                    new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8));
 
             String line = "";
             while ((line = rd.readLine()) != null) {
               //  System.out.println(line);
                 lineOut=lineOut+line;
             }
+
         } catch (Exception e) {
             return "";
         }

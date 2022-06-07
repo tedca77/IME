@@ -41,6 +41,7 @@ public class OpenMaps {
             Rest r = new Rest();
             String s="https://nominatim.openstreetmap.org/reverse?lat="+lat+"&lon="+lon+"&format=json";
             String result = r.doGetString(s);
+
             ObjectMapper mapper = new ObjectMapper();
             Place dResult = mapper.readValue(result, Place.class);
             dResult.setIPTCCity(assembleLocation(dResult,config.getCity()));

@@ -133,6 +133,7 @@ public class IMEMethods {
                 configFileName = Path.of(args[0]);
                 message("JSON file name provided:"+configFileName);
                 config = readConfig(configFileName.toString());
+
                 if(config==null)
                 {
                     System.exit(0);
@@ -145,7 +146,7 @@ public class IMEMethods {
                     config = new ConfigObject();
                     setDrives(config, args[0]);
                     config.setTempdir(args[1]);
-                    configFileName=Path.of(args[0]+"\\"+jsonDefault);
+                    configFileName=Path.of(args[0]+"/"+jsonDefault);
                     message("Parameter 1 - Root Directory: "+args[0]);
                     message("Output Config File: "+configFileName);
                     message("Parameter 2 - Output Directory: "+args[1]);
@@ -360,10 +361,7 @@ public class IMEMethods {
             }
 
         }
-
-
     }
-
     /**
      * Hard codes Windows dates (used for Test only)
      * @param fileName - File to modify
@@ -379,7 +377,6 @@ public class IMEMethods {
                 Files.setAttribute(file.toPath(), "lastAccessTime", FileTime.fromMillis(convertToDateViaInstant(d).getTime()));
                 Files.setAttribute(file.toPath(), "lastModifiedTime", FileTime.fromMillis(convertToDateViaInstant(d).getTime()));
             }
-
         }
         catch(Exception e)
         {
@@ -393,15 +390,13 @@ public class IMEMethods {
     public static void setDefaults(ConfigObject config,ZoneId z)
     {
         if(config.getTimeZone()==null){config.setTimeZone(z.toString());}
-
         if(config.getMinfilesize()==null){config.setMinfilesize(minFileSizeDefault);}
         if(config.getPauseSeconds()==null){config.setPauseSeconds(pauseSecondsDefault);}
         if(config.getHtmlLimit()==null){config.setHtmlLimit(htmlLimitDefault);}
         if(config.getKmlLimit()==null){config.setKmlLimit(kmlLimitDefault);}
         if(config.getPauseSeconds()<1){config.setPauseSeconds(pauseSecondsDefault);}
         if(config.getThumbsize()==null){config.setThumbsize(thumbSizeDefault);}
-        // sets the defaults
-        if(config.getUpdate()==null){config.setUpdate(false);}
+         if(config.getUpdate()==null){config.setUpdate(false);}
         if(config.getShowmetadata()==null) {config.setShowmetadata(false);}
         if(!config.getUpdate())
         {
@@ -430,15 +425,22 @@ public class IMEMethods {
         if(config.getAddiptckeywords()==null) {config.setAddiptckeywords(false);}
         if(config.getSavefilemetadata()==null) {config.setSavefilemetadata(false);}
         if(config.getClear()==null) {config.setClear(false);}
+        if(config.getTempdir()!=null)
+            {
+                config.setTempdir(fixSlash(config.getTempdir()));
+            }
+        if(config.getNewdir()!=null)
+        {
+            config.setNewdir(fixSlash(config.getNewdir()));
+        }
     }
     /**
      * Writes out HTML reports using freemarker for the main objects.  Freemarker templates are in the project.
      * Files are written to the tempDir
      * @return - returns true or false
      */
-    public static Boolean exportHTML(ConfigObject config)
-    {
-        String tempDir=config.getTempdir();
+    public static Boolean exportHTML(ConfigObject config) {
+        String tempDir = config.getTempdir();
         Configuration cfg = new Configuration(Configuration.VERSION_2_3_29);
         cfg.setObjectWrapper(new Java8ObjectWrapper(Configuration.VERSION_2_3_23));
         cfg.setClassForTemplateLoading(IMEMethods.class, "/Templates");
@@ -448,22 +450,18 @@ public class IMEMethods {
         cfg.setLogTemplateExceptions(false);
         cfg.setWrapUncheckedExceptions(true);
         cfg.setFallbackOnNullLoopVariable(false);
-
-            makeReport(config.getHtmlLimit(),cfg,tempDir,"cameras.ftl","cameras.html","cameras",cameras);
-            makeReportLimitCount(config.getHtmlLimit(),cfg,tempDir,"places.ftl","places.html","places",places);
-            makeReportLimitCount(config.getHtmlLimit(),cfg,tempDir,"tracks.ftl","tracks.html","tracks",tracks);
-            makeReportKML(config.getKmlLimit(),cfg,tempDir,"trackkml.ftl","pointkml.ftl","track.kml","point.kml","tracks","places");
-           // makeReportLimitCount(config.getKmlLimit(),cfg,tempDir,"pointkml.ftl","point.kml","places",places);
-            makeReport(config.getHtmlLimit(),cfg,tempDir,"photosbydate.ftl","photosbydate.html","photos",fileObjects);
-            makeReport(config.getHtmlLimit(),cfg,tempDir,"duplicates.ftl","duplicates.html","photos",duplicateObjects);
-            makeReportLimitCount(config.getHtmlLimit(),cfg,tempDir,"events.ftl","events.html","events",events);
-            makeReport(config.getHtmlLimit(),cfg,tempDir,"errors.ftl","errors.html","comments",errorObjects);
-            makeReport(config.getHtmlLimit(),cfg,tempDir,"warnings.ftl","warnings.html","comments",warningObjects);
-
-
+        makeReport(config.getHtmlLimit(), cfg, tempDir, "cameras.ftl", "cameras.html", "cameras", cameras);
+        makeReportLimitCount(config.getHtmlLimit(), cfg, tempDir, "places.ftl", "places.html", "places", places);
+        makeReportLimitCount(config.getHtmlLimit(), cfg, tempDir, "tracks.ftl", "tracks.html", "tracks", tracks);
+        makeReportKML(config.getKmlLimit(), cfg, tempDir, "trackkml.ftl", "pointkml.ftl", "track.kml", "point.kml", "tracks", "places");
+        // makeReportLimitCount(config.getKmlLimit(),cfg,tempDir,"pointkml.ftl","point.kml","places",places);
+        makeReport(config.getHtmlLimit(), cfg, tempDir, "photosbydate.ftl", "photosbydate.html", "photos", fileObjects);
+        makeReport(config.getHtmlLimit(), cfg, tempDir, "duplicates.ftl", "duplicates.html", "photos", duplicateObjects);
+        makeReportLimitCount(config.getHtmlLimit(), cfg, tempDir, "events.ftl", "events.html", "events", events);
+        makeReport(config.getHtmlLimit(), cfg, tempDir, "errors.ftl", "errors.html", "comments", errorObjects);
+        makeReport(config.getHtmlLimit(), cfg, tempDir, "warnings.ftl", "warnings.html", "comments", warningObjects);
         return true;
     }
-
     /**
      * We want a lost of Points that corresponds to a list of Tracks, so both files can be added as Layers on a Google Map
      * @param tr - List of Trackss
@@ -480,13 +478,10 @@ public class IMEMethods {
                 {
                     p.add(getPlace(i));
                 }
-
             }
         }
         return p;
-
     }
-
     /**
      * Makes KML Report, using Freemarker
      * @param limit - maximum number of points (Places)in the KML file
@@ -546,10 +541,8 @@ public class IMEMethods {
 
                     runFreeMarker(tempDir + "/" + FilenameUtils.getBaseName(pointOutputFile) + (fileCounter) + "." + FilenameUtils.getExtension(pointOutputFile),
                             pointObjectName,tempDir,"Part "+fileCounter,ptemplate,p);
-
                 }
             }
-
         } catch (IOException e) {
             message("Cannot write output files to directory - please check the path exists:"+tempDir);
         }
@@ -558,7 +551,6 @@ public class IMEMethods {
             message("Error writing output files :"+ee);
         }
     }
-
     /**
      *  Produces report but limits the size, based on limit, into separate files - used for reports where we could the number of photos from the Object
      * @param limit - maximum number of files
@@ -636,7 +628,6 @@ public class IMEMethods {
             message("Error writing output files :"+ee);
         }
     }
-
     /**
      * Runs freemarker
      * @param fileName - file name to produce
@@ -646,8 +637,7 @@ public class IMEMethods {
      * @param template - name of template
      * @param objects - Array of objects for report
      */
-    public static void runFreeMarker(String fileName,String objectName,String tempDir,String partText,Template template,List<?> objects)
-    {
+    public static void runFreeMarker(String fileName, String objectName, String tempDir, String partText, Template template, List<?> objects) {
         try {
             FileWriter fwriter = new FileWriter(fileName);
             Map<String, Object> froot = new HashMap<>();
@@ -657,15 +647,12 @@ public class IMEMethods {
             template.process(froot, fwriter);
             fwriter.close();
 
-    } catch (IOException e) {
-        message("Cannot write output files to directory - please check the path exists:"+tempDir);
+        } catch (IOException e) {
+            message("Cannot write output files to directory - please check the path exists:" + tempDir);
+        } catch (Exception ee) {
+            message("Error writing output files :" + ee);
+        }
     }
-        catch(Exception ee)
-    {
-        message("Error writing output files :"+ee);
-    }
-    }
-
     /**
      *  Produce reports - used for simple reports where there is one thumbnail per file - splits up if too many files
      * @param limit - maximum bnumber of files in a file
@@ -684,7 +671,6 @@ public class IMEMethods {
             if(objects.size()<=limit) {
                 runFreeMarker(tempDir + "/" + outputFile,
                         objectName,tempDir," ",ftemplate,objects);
-
             }
             else
             {
@@ -695,7 +681,6 @@ public class IMEMethods {
                     counter++;
                 }
             }
-
         } catch (IOException e) {
             message("Cannot write output files to directory - please check the path exists:"+tempDir);
         }
@@ -732,9 +717,7 @@ public class IMEMethods {
                 } else {
 
                         message("EXISTING METADATA WILL NOT BE OVERWRITTEN");
-
                 }
-
             }
         }
         else {
@@ -743,7 +726,6 @@ public class IMEMethods {
                 message("METADATA WILL BE SHOWN");
             }
         }
-
         if(c.getAppend()) {
             message("PHOTOS WILL BE APPENDED TO PHOTOS LISTED IN JSON");
         }
@@ -799,7 +781,6 @@ public class IMEMethods {
         message("Number of Duplicates found:"+duplicateObjects.size());
         messageLine("*");
     }
-
     /**
      *  Reads JPEG metadata and updates fNew object with values - this uses Apache Imaging
      *  If there is no metadata, then default values are added
@@ -853,8 +834,6 @@ public class IMEMethods {
             {
                 fNew.setComments(new ArrayList<>());
             }
-
-
         } catch (Exception e) {
             message("Error reading metadata:"+e);
             setFileObjectValues(fNew,null,file);
@@ -941,7 +920,6 @@ public class IMEMethods {
             message("Error reading directory:" + drive.getStartdir()+", Error:"+e);
         }
     }
-
     /**
      * Converts Address into an Array of Keywords
      * @param g - Place Object
@@ -980,73 +958,55 @@ public class IMEMethods {
         for (String f : fieldnames) {
             if (f.equals("country_code")) {
                s = addWithCommaIfNotNull(s,g.getAddress().getCountry_code().toUpperCase() );
-
             }
             if (f.equals("country")) {
                 s = addWithCommaIfNotNull(s, g.getAddress().getCountry());
-
             }
             if (f.equals("county")) {
                 s = addWithCommaIfNotNull(s, g.getAddress().getCounty());
-
             }
             if (f.equals("city")) {
                 s = addWithCommaIfNotNull(s, g.getAddress().getCity());
-
             }
             if (f.equals("postcode")) {
                 s = addWithCommaIfNotNull(s, g.getAddress().getPostcode());
-
             }
             if (f.equals("road")) {
                 s = addWithCommaIfNotNull(s, g.getAddress().getRoad());
-
             }
             if (f.equals("house_number")) {
                 s = addWithCommaIfNotNull(s, g.getAddress().getHouse_number());
-
             }
             if (f.equals("state")) {
                 s = addWithCommaIfNotNull(s, g.getAddress().getState());
-
             }
             if (f.equals("state_district")) {
                 s = addWithCommaIfNotNull(s, g.getAddress().getState_district());
-
             }
             if (f.equals("village")) {
                 s = addWithCommaIfNotNull(s, g.getAddress().getVillage());
-
             }
             if (f.equals("hamlet")) {
                 s = addWithCommaIfNotNull(s, g.getAddress().getHamlet());
-
             }
             if (f.equals("postcode")) {
                 s = addWithCommaIfNotNull(s, g.getAddress().getPostcode());
-
             }
             if (f.equals("town")) {
                 s = addWithCommaIfNotNull(s, g.getAddress().getTown());
-
             }
             if (f.equals("suburb")) {
                 s = addWithCommaIfNotNull(s, g.getAddress().getSuburb());
-
             }
             if (f.equals("amenity")) {
                 s = addWithCommaIfNotNull(s, g.getAddress().getAmenity());
-
             }
             if (f.equals("city_district")) {
                 s = addWithCommaIfNotNull(s, g.getAddress().getCity_district());
-
             }
             if (f.equals("leisure")) {
                 s = addWithCommaIfNotNull(s, g.getAddress().getLeisure());
-
             }
-
         }
         // replace spare comma at the end....
         s = s.trim();
@@ -1115,7 +1075,6 @@ public class IMEMethods {
         }
         return s;
     }
-
     /**
      * Iterates through events and adds HTML links for each file matching the event, which are added to the HTML reports
      * @param root - file root, used to create the full link
@@ -1136,7 +1095,6 @@ public class IMEMethods {
                                     s.append(getLink(root, f));
                                 }
                             }
-
                     }
                 }
                 catch(Exception e)
@@ -1155,10 +1113,7 @@ public class IMEMethods {
                f.setEventKeys(String.join(";", f.getEventKeysArray()));
            }
         }
-
-
     }
-
     /**
      * Checks that the latest PlaceKey in comments exists as a Place Object and that the lat,lon is correct if not, then returns false, and it will be geocoded again.
      * This covers the situation where the Places have been renumbered, and don't now match - it will be necessary to redo in this case...
@@ -1597,13 +1552,11 @@ public class IMEMethods {
     }
     public static String appendComment (String existingComment,String newComment)
     {
-        DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
-
         if(existingComment==null)
         {
-            return newComment+":" + formatter.format(new Date());
+            return newComment;
         }
-        return existingComment+newComment+":" + formatter.format(new Date());
+        return existingComment+newComment;
     }
     public static void addCounter()
     {
@@ -2077,11 +2030,23 @@ public class IMEMethods {
                 if (f.getIPTCKeywords() != null) {
                     f.setIPTCKeywordsArray(new ArrayList<>(Arrays.asList(f.getIPTCKeywords().split(";", -1))));
                 }
+                else
+                {
+                    f.setIPTCKeywordsArray(new ArrayList<>());
+                }
                 if (f.getWindowsKeywords() != null) {
                     f.setWindowsKeywordsArray(new ArrayList<>(Arrays.asList(f.getWindowsKeywords().split(";", -1))));
                 }
+                else
+                {
+                    f.setWindowsKeywordsArray(new ArrayList<>());
+                }
                 if (f.getEventKeys()!= null) {
                     f.setEventKeysArray(new ArrayList<>(Arrays.asList(f.getEventKeys().split(";", -1))));
+                }
+                else
+                {
+                    f.setEventKeysArray(new ArrayList<>());
                 }
             }
         }
@@ -2320,7 +2285,8 @@ public class IMEMethods {
         f.setEventKeys("");
         f.setDisplayName("");
         f.setComments(new ArrayList<>());
-
+        f.setEventKeysArray(new ArrayList<>());
+        f.setWindowsKeywordsArray(new ArrayList<>());
         return f;
     }
     /**
@@ -2934,10 +2900,16 @@ public class IMEMethods {
      */
     public static void updateEvent(ConfigObject config, FileObject fNew, EventObject e,Boolean eventDone)
     {
-            fNew.setWindowsTitle( e.getTitle());
-            fNew.setIPTCObjectName( e.getTitle());
-            fNew.setIPTCKeywordsArray(joinKeys(fNew.getIPTCKeywordsArray(),new ArrayList<>(Arrays.asList(e.getKeywords().split(";",-1)))));
-            fNew.setWindowsSubject(e.getDescription());
+        if(e.getTitle()!=null) {
+            fNew.setWindowsTitle(e.getTitle());
+            fNew.setIPTCObjectName(e.getTitle());
+        }
+            if(e.getKeywords()!=null) {
+                fNew.setIPTCKeywordsArray(joinKeys(fNew.getIPTCKeywordsArray(), new ArrayList<>(Arrays.asList(e.getKeywords().split(";", -1)))));
+            }
+            if(e.getDescription()!=null) {
+                fNew.setWindowsSubject(e.getDescription());
+            }
 
        // we cannot process locations for Event Calendars - just event dates
        // and only process if lat and lon is missing
@@ -4045,6 +4017,16 @@ public class IMEMethods {
      */
     public static void readDrives(ConfigObject c)
     {
+        // Fix any slashes that are back facing
+        ArrayList<DriveObject> dd = new ArrayList<>();
+        for (DriveObject d : c.getDrives()) {
+             d.setStartdir(fixSlash(d.getStartdir()));
+             dd.add(d);
+        }
+          c.setDrives(dd);
+
+
+
         for (DriveObject d : c.getDrives()) {
             driveCounter=new CounterObject();
             message("Reading drive: "+d.getStartdir());
@@ -4056,7 +4038,6 @@ public class IMEMethods {
             addCounter();
         }
     }
-
     /**
      *  Prints out metadata
      * @param entry - entry
