@@ -41,6 +41,8 @@ Image Metadata Enhancer is distributed in the hope that it will be useful,  but 
 ```java -jar ImageMetadataEnhancer.jar  <directory to search> <output directory> <new directory structure> <parameters>```  
 
 If there are spaces in the directory names, you should enclose in double quotes.
+If you have Images with locations that require international characters (e.g. Chinese, Spanish), known as UTF-8, you should add a paramter to the command aas follows:
+```java -Dfile.encoding=utf-8 -jar ImageMetadataEnhancer.jar  <directory to search> <output directory> <new directory structure> <parameters>```
 
 **First parameter** (directory to search) is the top level directory where the program will start to find photos. IME will then search all subdirectories, looking for photos.
 **Second parameter** (output directory) is the location of the output files.  This should be in a different location than the photos. The output directory should then contain:  
