@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class IMEMethodsTest {
     String startDir = "R:/ICTEST";
-
+    String openAPIKey="5b3ce3597851110001cf6248a15496c57f254acbbcb04aaf8e115b50";
     @BeforeAll
     static void initAll() {
     }
@@ -68,7 +68,7 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir", "update", "savefilemetadata"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             String fileName = "T_" + "nodescriptivemetadata_haslonlat.jpg";
             FileObject fNew = readAndUpdateFile(new File(startDir + "/TestNewDir/2021/8/" + fileName), null, null, null, true);
             if (fNew != null) {
@@ -119,7 +119,7 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir", "update", "savefilemetadata"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             String fileName = "T_" + "no metadata IPTC location filled in.jpg";
             FileObject fNew = readAndUpdateFile(new File(startDir + "/TestNewDir/2021/8/" + fileName), null, null, null, true);
             if (fNew != null) {
@@ -159,7 +159,7 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir", "update", "overwrite", "savefilemetadata"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             String fileName = "T_" + "no metadata IPTC location filled in.jpg";
             FileObject fNew = readAndUpdateFile(new File(startDir + "/TestNewDir/2021/8/" + fileName), null, null, null, true);
             if (fNew != null) {
@@ -201,7 +201,7 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir", "update"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             String fileName = "T_" + "IPTC metadata not origin lat lon rotated.jpg";
             String thumbName = makeThumbName(new File(new StringBuilder().append(startDir).append("/TestNewDir/2021/8/").append(fileName).toString()));
             try {
@@ -228,7 +228,7 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", "savefilemetadata"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
 
             FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/DirKeyword1 DirKeyword2/" + fileName), null, null, null, true);
             if (fNew != null) {
@@ -268,7 +268,7 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", "update", "savefilemetadata"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             String fileName = "T_" + "nodescriptivemetadata_haslonlat.jpg";
             FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/DirKeyword1 DirKeyword2/" + fileName), null, null, null, true);
             if (fNew != null) {
@@ -307,10 +307,11 @@ class IMEMethodsTest {
         System.out.println("==========================TEST 7 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 4, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config.json", "<<startdir>>", startDir);
+            updateTextFile(startDir + "/Test/config.json", "<<openapikey>>", openAPIKey);
             IMEMethods.main(new String[]{startDir + "/Test/config.json", "overwrite"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             //
             FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/" + "T_" + fileName), null, null, null, true);
             if (fNew != null) {
@@ -335,12 +336,13 @@ class IMEMethodsTest {
         System.out.println("==========================TEST 8 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 4, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config.json", "<<startdir>>", startDir);
+            updateTextFile(startDir + "/Test/config.json", "<<openapikey>>", openAPIKey);
             setFileAttributesForTest(startDir + "/Test/" + "T_" + fileName, "1999-11-23");
             DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
             IMEMethods.main(new String[]{startDir + "/Test/config.json", "overwrite"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/" + "T_" + fileName), null, null, null, true);
             if (fNew != null) {
                 assertEquals("1985:01:01 00:00:00", formatter.format(convertToDateViaInstant(fNew.getBestDate())));
@@ -367,12 +369,13 @@ class IMEMethodsTest {
         System.out.println("==========================TEST 9 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 4, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config.json", "<<startdir>>", startDir);
+            updateTextFile(startDir + "/Test/config.json", "<<openapikey>>", openAPIKey);
             setFileAttributesForTest(startDir + "/Test/" + "T_" + fileName, "1999-11-23");
             DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
             IMEMethods.main(new String[]{startDir + "/Test/config.json", "overwrite"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             //
             FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/" + "T_" + fileName), null, null, null, true);
             if (fNew != null) {
@@ -397,13 +400,14 @@ class IMEMethodsTest {
         System.out.println("==========================TEST 10 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 4, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config.json", "<<startdir>>", startDir);
+            updateTextFile(startDir + "/Test/config.json", "<<openapikey>>", openAPIKey);
             setFileAttributesForTest(startDir + "/Test/" + "T_" + fileName, "1999-11-23");
 
             DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
             IMEMethods.main(new String[]{startDir + "/Test/config.json", "overwrite"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             //
             FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/" + "T_" + fileName), null, null, null, true);
             if (fNew != null) {
@@ -428,12 +432,13 @@ class IMEMethodsTest {
         System.out.println("==========================TEST 11 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 4, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config.json", "<<startdir>>", startDir);
+            updateTextFile(startDir + "/Test/config.json", "<<openapikey>>", openAPIKey);
             setFileAttributesForTest(startDir + "/Test/" + "T_" + fileName, "1999-11-23");
             DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
             IMEMethods.main(new String[]{startDir + "/Test/config.json", "overwrite"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             //
             FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/" + "T_" + fileName), null, null, null, true);
             if (fNew != null) {
@@ -458,12 +463,13 @@ class IMEMethodsTest {
         System.out.println("==========================TEST 12 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 4, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config.json", "<<startdir>>", startDir);
+            updateTextFile(startDir + "/Test/config.json", "<<openapikey>>", openAPIKey);
             setFileAttributesForTest(startDir + "/Test/" + "T_" + fileName, "1999-11-23");
             DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
             IMEMethods.main(new String[]{startDir + "/Test/config.json", "overwrite"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             //
             FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/" + "T_" + fileName), null, null, null, true);
             if (fNew != null) {
@@ -488,13 +494,14 @@ class IMEMethodsTest {
         System.out.println("==========================TEST 13 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 4, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config.json", "<<startdir>>", startDir);
+            updateTextFile(startDir + "/Test/config.json", "<<openapikey>>", openAPIKey);
             setFileAttributesForTest(startDir + "/Test/" + "T_" + fileName, "1999-11-23");
 
             DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
             IMEMethods.main(new String[]{startDir + "/Test/config.json", "overwrite"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             //
             FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/" + "T_" + fileName), null, null, null, true);
             if (fNew != null) {
@@ -518,11 +525,12 @@ class IMEMethodsTest {
         System.out.println("==========================TEST 14 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config.json", "<<startdir>>", startDir);
+            updateTextFile(startDir + "/Test/config.json", "<<openapikey>>", openAPIKey);
             DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
             IMEMethods.main(new String[]{startDir + "/Test/config.json"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             //
             FileObject fNew;
             fNew = readAndUpdateFile(new File(startDir + "/TestNewDir/2019/4/" + "T_" + "Added event with postcode.jpg"), null, null, null, true);
@@ -547,11 +555,12 @@ class IMEMethodsTest {
         System.out.println("==========================TEST 15 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config.json", "<<startdir>>", startDir);
+            updateTextFile(startDir + "/Test/config.json", "<<openapikey>>", openAPIKey);
             DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
             IMEMethods.main(new String[]{startDir + "/Test/config.json"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             //
             FileObject fNew;
             fNew = readAndUpdateFile(new File(startDir + "/TestNewDir/2019/7/" + "T_" + "Added event with place.jpg"), null, null, null, true);
@@ -576,11 +585,12 @@ class IMEMethodsTest {
         System.out.println("==========================TEST 16 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config.json", "<<startdir>>", startDir);
+            updateTextFile(startDir + "/Test/config.json", "<<openapikey>>", openAPIKey);
             DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
             IMEMethods.main(new String[]{startDir + "/Test/config.json"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             //
             FileObject fNew;
             fNew = readAndUpdateFile(new File(startDir + "/TestNewDir/2019/7/" + "T_" + "Find event date place.jpg"), null, null, null, true);
@@ -605,11 +615,12 @@ class IMEMethodsTest {
         System.out.println("==========================TEST 17 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config.json", "<<startdir>>", startDir);
+            updateTextFile(startDir + "/Test/config.json", "<<openapikey>>", openAPIKey);
             DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
             IMEMethods.main(new String[]{startDir + "/Test/config.json"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             //
             FileObject fNew;
             fNew = readAndUpdateFile(new File(startDir + "/TestNewDir/2020/6/" + "T_" + "Find event date time no place.jpg"), null, null, null, true);
@@ -633,11 +644,12 @@ class IMEMethodsTest {
         System.out.println("==========================TEST 18 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config.json", "<<startdir>>", startDir);
+            updateTextFile(startDir + "/Test/config.json", "<<openapikey>>", openAPIKey);
             DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
             IMEMethods.main(new String[]{startDir + "/Test/config.json"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             //
             FileObject fNew;
             fNew = readAndUpdateFile(new File(startDir + "/TestNewDir/2021/7/" + "T_" + "Find event date postcode.jpg"), null, null, null, true);
@@ -662,11 +674,12 @@ class IMEMethodsTest {
         System.out.println("==========================TEST 19 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config.json", "<<startdir>>", startDir);
+            updateTextFile(startDir + "/Test/config.json", "<<openapikey>>", openAPIKey);
             DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
             IMEMethods.main(new String[]{startDir + "/Test/config.json"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             //
             FileObject fNew;
             fNew = readAndUpdateFile(new File(startDir + "/TestNewDir/2021/8/" + "T_" + "Added event withlatlon.jpg"), null, null, null, true);
@@ -691,11 +704,12 @@ class IMEMethodsTest {
         System.out.println("==========================TEST 20 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config.json", "<<startdir>>", startDir);
+            updateTextFile(startDir + "/Test/config.json", "<<openapikey>>", openAPIKey);
             DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
             IMEMethods.main(new String[]{startDir + "/Test/config.json"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             //
             FileObject fNew;
             //
@@ -721,11 +735,12 @@ class IMEMethodsTest {
         System.out.println("==========================TEST 21 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config.json", "<<startdir>>", startDir);
+            updateTextFile(startDir + "/Test/config.json", "<<openapikey>>", openAPIKey);
             DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
             IMEMethods.main(new String[]{startDir + "/Test/config.json"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             //
             FileObject fNew;
             fNew = readAndUpdateFile(new File(startDir + "/TestNewDir/2021/9/" + "T_" + "find eventcalendar no place.jpg"), null, null, null, true);
@@ -750,11 +765,12 @@ class IMEMethodsTest {
         System.out.println("==========================TEST 22 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config.json", "<<startdir>>", startDir);
+            updateTextFile(startDir + "/Test/config.json", "<<openapikey>>", openAPIKey);
             DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
             IMEMethods.main(new String[]{startDir + "/Test/config.json"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             //
             FileObject fNew;
             fNew = readAndUpdateFile(new File(startDir + "/TestNewDir/2021/10/" + "T_" + "Added latlon.jpg"), null, null, null, true);
@@ -779,11 +795,12 @@ class IMEMethodsTest {
         System.out.println("==========================TEST 23 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config.json", "<<startdir>>", startDir);
+            updateTextFile(startDir + "/Test/config.json", "<<openapikey>>", openAPIKey);
             DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
             IMEMethods.main(new String[]{startDir + "/Test/config.json"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             //
             FileObject fNew;
             fNew = readAndUpdateFile(new File(startDir + "/TestNewDir/2021/10/" + "T_" + "Added place.jpg"), null, null, null, true);
@@ -808,11 +825,12 @@ class IMEMethodsTest {
         System.out.println("==========================TEST 24 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config.json", "<<startdir>>", startDir);
+            updateTextFile(startDir + "/Test/config.json", "<<openapikey>>", openAPIKey);
             DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
             IMEMethods.main(new String[]{startDir + "/Test/config.json"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             //
             FileObject fNew;
             fNew = readAndUpdateFile(new File(startDir + "/TestNewDir/2021/10/" + "T_" + "Addedpostcode.jpg"), null, null, null, true);
@@ -842,7 +860,7 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir", "update"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             File f_notmoved = new File(startDir + "/Test/T_WP_20150611_001.jpg");
             File f_moved = new File(startDir + "/TestNewDir/2015/6/T_WP_20150611_001.jpg");
             File f_moved2 = new File(startDir + "/TestNewDir/2015/6/T_WP_20150611_004.jpg");
@@ -869,7 +887,7 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir", "savefilemetadata"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             //
             FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/" + "T_" + fileName), null, null, null, true);
             if (fNew != null) {
@@ -923,7 +941,7 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir", "update", "addxpkeywords", "addiptckeywords", "savefilemetadata"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             String fileName = "T_" + "nodescriptivemetadata_haslonlat.jpg";
             FileObject fNew = readAndUpdateFile(new File(startDir + "/TestNewDir/2021/8/" + fileName), null, null, null, true);
             if (fNew != null) {
@@ -958,8 +976,8 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", "update"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertEquals(driveCounter.getCountALREADYPROCESSED(), 1);
-            assertEquals(driveCounter.getCountUPDATED(), 0);
+            assertEquals(1,driveCounter.getCountALREADYPROCESSED());
+            assertEquals(0,driveCounter.getCountUPDATED());
             String fileName = "T_" + "already_geocoded.jpg";
             FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/" + fileName), null, null, null, true);
             if (fNew != null) {
@@ -987,8 +1005,8 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", "update"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertEquals(driveCounter.getCountALREADYPROCESSED(), 1);
-            assertEquals(driveCounter.getCountUPDATED(), 0);
+            assertEquals(1,driveCounter.getCountALREADYPROCESSED());
+            assertEquals(0,driveCounter.getCountUPDATED());
             String fileName = "T_" + "IPTC-already processed.jpg";
             FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/" + fileName), null, null, null, true);
             if (fNew != null) {
@@ -1015,8 +1033,8 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", "update", "redo"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertEquals(driveCounter.getCountALREADYPROCESSED(), 1);
-            assertEquals(driveCounter.getCountUPDATED(), 1);
+            assertEquals(1,driveCounter.getCountALREADYPROCESSED());
+            assertEquals(1,driveCounter.getCountUPDATED());
             String fileName = "T_" + "already_geocoded.jpg";
             FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/" + fileName), null, null, null, true);
             if (fNew != null) {
@@ -1043,8 +1061,8 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", "update", "clear"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertEquals(driveCounter.getCountALREADYPROCESSED(), 1);
-            assertEquals(driveCounter.getCountUPDATED(), 1);
+            assertEquals(1,driveCounter.getCountALREADYPROCESSED());
+            assertEquals(1,driveCounter.getCountUPDATED());
             String fileName = "T_" + "already_geocoded.jpg";
             FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/" + fileName), null, null, null, true);
             if (fNew != null) {
@@ -1071,7 +1089,7 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir", "update"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             File f = new File(startDir + "/TestRESULTS/photosbydate.html");
             assertTrue(f.exists());
             f = new File(startDir + "/TestRESULTS/cameras.html");
@@ -1108,7 +1126,7 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir", "update"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             ConfigObject c = readConfig(startDir + "/TestRESULTS/" + jsonFile);
             if (c != null) {
                 assertNull(c.getPhotos());
@@ -1129,10 +1147,11 @@ class IMEMethodsTest {
         System.out.println("==========================TEST 35 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config-nomove.json", "<<startdir>>", startDir);
+            updateTextFile(startDir + "/Test/config-nomove.json", "<<openapikey>>", openAPIKey);
             IMEMethods.main(new String[]{startDir + "/Test/config-nomove.json", "update"});
-            assertEquals(driveCounter.getCountUPDATED(), 11);
+            assertEquals(11,driveCounter.getCountUPDATED());
             IMEMethods.main(new String[]{startDir + "/Test/config-nomove.json", "update"});
-            assertEquals(driveCounter.getCountUPDATED(), 0);
+            assertEquals(0,driveCounter.getCountUPDATED());
         } else {
             fail("Setup Copy files to Test Area could not complete");
         }
@@ -1148,7 +1167,7 @@ class IMEMethodsTest {
             IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", "update","redo", "savefilemetadata", "addxpkeywords","addiptckeywords"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
-            assertNotEquals(jsonFile.length(), 0);
+            assertNotEquals(0,jsonFile.length());
             String fileName = "T_" + "hongkong.jpg";
             FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/" + fileName), null, null, null, true);
             if (fNew != null) {
@@ -1178,6 +1197,71 @@ class IMEMethodsTest {
             } else {
                 fail("Did not find output file:" + startDir + "/Test" + fileName);
             }
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    //@Disabled
+    @DisplayName("Test 37 - Check files without metadata")
+    void update37Test() {
+        // Uses TestSource7
+        // 8 WHATS APp images with limited EXIF metadata
+        // No Json input file, but update parameter added and New Directory provided, so will copy to TestNewDir
+        // File is in a sub-directory so the old directory name is added as keywords (one for each word in directory name)
+        System.out.println("==========================TEST 37 =================================");
+        if (copyToTestArea(startDir + "/TestSource" + 7, startDir + "/Test")) {
+
+            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir", "update"});
+            String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("JSON  file found:" + jsonFile);
+            assertNotEquals(0,jsonFile.length());
+            assertEquals(8,driveCounter.getCountUPDATED());
+            assertEquals(0,driveCounter.getCountErrors());
+
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    //@Disabled
+    @DisplayName("Test 38 - Check corrupt jpeg")
+    void update38Test() {
+        // Uses TestSource7
+        // 1 corrupt image
+        // No Json input file, but update parameter added and New Directory provided, so will copy to TestNewDir
+        // File is in a sub-directory so the old directory name is added as keywords (one for each word in directory name)
+        System.out.println("==========================TEST 38 =================================");
+        if (copyToTestArea(startDir + "/TestSource" + 12, startDir + "/Test")) {
+
+            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir", "update"});
+            String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("JSON  file found:" + jsonFile);
+            assertNotEquals(0,jsonFile.length());
+            assertEquals(0,driveCounter.getCountUPDATED());
+            assertEquals(1,driveCounter.getCountErrors());
+
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    //@Disabled
+    @DisplayName("Test 39 - Illegal instructions in Comments")
+    void update39Test() {
+        // Uses TestSource10
+        // 7 Images with illegal instructions in the comments
+        // No Json input file, but update parameter added and New Directory provided, so will copy to TestNewDir
+        // File is in a sub-directory so the old directory name is added as keywords (one for each word in directory name)
+        System.out.println("==========================TEST 38 =================================");
+        if (copyToTestArea(startDir + "/TestSource" + 10, startDir + "/Test")) {
+
+            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", startDir + "/TestNewDir", "update"});
+            String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("JSON  file found:" + jsonFile);
+            assertNotEquals(0,jsonFile.length());
+            assertEquals(4,driveCounter.getCountDateUpdate());
+
         } else {
             fail("Setup Copy files to Test Area could not complete");
         }

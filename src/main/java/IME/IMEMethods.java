@@ -117,7 +117,7 @@ public class IMEMethods {
      * Main Method for the program - arguments passes as Java arguments
      * @param args - either single json file or two/three args, first one is root directory, second is output file, third is followed by parameters
      */
-    static String versionLabel="ImageMetadataEnhancer - Version 1.0.0.0 26 May 2022";
+    static String versionLabel="ImageMetadataEnhancer - Version 1.0.0 10 June 2022";
     public static void main(String[] args) {
         message(versionLabel);
         z= ZoneId.systemDefault();
@@ -2560,12 +2560,18 @@ public class IMEMethods {
     {
         String dateUpdated=null;
         String param=getInstructionFromEitherField(fNew,Enums.processMode.date);
-        if(param.length()>0) {
-            dateUpdated = updateDate(param, fNew,c);
+        if(param.equals("ERROR")!=true) {
+            if (param.length() > 0) {
+                dateUpdated = updateDate(param, fNew, c);
+            }
+            if (dateUpdated != null) {
+                updateCommentFields(fNew, param, Enums.processMode.date);
+            }
         }
-        if(dateUpdated!=null)
+        else
         {
-            updateCommentFields(fNew,param,Enums.processMode.date);
+            message("Parameter value missing for date instruction");
+            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Parameter value missing for date instruction", false);
         }
         return dateUpdated;
     }
@@ -2948,6 +2954,13 @@ public class IMEMethods {
             return false;
         }
     }
+
+    /**
+     * Retrieves a parameter i.e. after the #<instruction>: in the field - it will only return a value if the instruction exists
+     * @param fNew - FileObject to search
+     * @param processMode - Process Mode we are looking for
+     * @return text to process
+     */
     public static String getInstructionFromEitherField(FileObject fNew, Enums.processMode processMode)
     {
         String param = getParam(fNew.getWindowsComments(), "#"+processMode+":");
@@ -3038,132 +3051,135 @@ public class IMEMethods {
          String param ;
          boolean paramFound=false;
          for(Enums.processMode p :Enums.processMode.values()) {
-             // this is a special case where the forwardcode is driven from event location field
-             if(eventLocation!=null)
-             {
-                 param = getParam(eventLocation, "#" + p + ":");
+             if(p.equals(Enums.processMode.date)!=true) {
+                 // this is a special case where the forwardcode is driven from event location field
+                 if (eventLocation != null) {
+                     param = getParam(eventLocation, "#" + p + ":");
+                 } else {
+                     param = getInstructionFromEitherField(fNew, p);
+                 }
+                 if (param.equals("ERROR")) {
+
+                     message("Parameter values missing for:" + p.toString());
+                     addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Parameter values missing for:" + p.toString(), false);
+                 } else if (param.length() > 0) {
+                     paramFound = true;
+                     if (p.equals(Enums.processMode.latlon)) {
+
+                         String[] values = param.split(",", -1);
+                         if (values.length == 2) {
+                             try {
+                                 Double lat = Double.valueOf(values[0]);
+                                 Double lon = Double.valueOf(values[1]);
+                                 geocode(fNew, lat, lon, config, true);
+                                 // we should also set lat and lon if it is correct
+                                 if (fNew.getPlaceKey() != null) {
+                                     if (updateLatLon(lat, lon, fNew)) {
+                                         driveCounter.addCountAddedLATLONG();
+                                         updateCommentFields(fNew, lat + "," + lon, p);
+
+                                     }
+
+
+                                 }
+                             } catch (Exception e) {
+                                 message("could not convert provided values to lat long:" + param);
+                                 addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "could not convert provided values to lat, lon:" + param, false);
+                             }
+                         } else {
+                             message("Incorrect number of parameters for lat long:" + param);
+                             addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Incorrect number of parameters for lat lon:" + param, false);
+                         }
+
+                     } else if (p.equals(Enums.processMode.event)) {
+                         try {
+                             EventObject e;
+                             e = getEvent(Integer.valueOf(param));
+                             if (e == null) {
+                                 message("This Event has not been found in the JSON - event:" + param);
+                                 addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Event not found for:" + param, false);
+                             } else {
+                                 updateEvent(config, fNew, e, false);
+                                 fNew.setBestDate(e.getExactStartTime());
+                                 message("Event ID match for event:" + e.getEventid() + " " + e.getTitle());
+                                 driveCounter.addCountAddedEvent();
+                             }
+                         } catch (Exception e) {
+                             message("could not convert provided values to a place:" + param);
+                             addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Could not convert provided values to a place:" + param, false);
+                         }
+
+                     } else if (p.equals(Enums.processMode.place)) {
+
+                         try {
+                             Place g;
+                             g = getPlace(Integer.valueOf(param));
+                             if (g == null) {
+                                 message("This place has not been added in the JSON - place:" + param);
+                                 addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "This place does not exist in the JSON:" + param, false);
+                             } else {
+                                 message("Place has been found - place:" + param);
+                                 if (updateLatLon(g.getLatAsDouble(), g.getLonAsDouble(), fNew)) {
+                                     fNew.setPlaceKey(g.getPlaceid());
+                                     setFileObjectGEOValues(fNew, g, config);
+                                     driveCounter.addCountAddedPlace();
+                                     updateCommentFields(fNew, param, p);
+                                 }
+
+                             }
+                         } catch (Exception e) {
+                             message("could not convert provided values to a place:" + param);
+                             addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Could not convert provided values to a place:" + param, false);
+                         }
+
+                     } else if (p.equals(Enums.processMode.postcode)) {
+
+
+                         String[] values3 = param.split(",", -1);
+                         try {
+                             if (config.getOpenAPIKey() != null) {
+                                 String newLat = "";
+                                 if (values3.length > 1) {
+                                     newLat = checkPostCode(values3[0], config.getOpenAPIKey(), values3[1]);
+                                 } else if (values3.length == 1) {
+                                     newLat = checkPostCode(values3[0], config.getOpenAPIKey(), "GBR");
+                                 }
+                                 if (newLat != null) {
+                                     String[] values2 = newLat.split(",", -1);
+
+                                     if (values2.length == 2) {
+                                         Double lat = Double.valueOf(values2[0]);
+                                         Double lon = Double.valueOf(values2[1]);
+                                         geocode(fNew, lat, lon, config, true);
+                                         // we should also set lat and lon if it is correct
+                                         if (fNew.getPlaceKey() != null) {
+                                             if (updateLatLon(lat, lon, fNew)) {
+                                                 driveCounter.addCountAddedPostcode();
+                                                 updateCommentFields(fNew, param, p);
+                                             }
+
+                                         } else {
+                                             message("Open Street Map API cound not find the supplied postcode:" + param);
+                                             addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Could not find postcode:" + param, false);
+                                         }
+                                     }
+                                 } else {
+                                     message("Open Street Map API has not returned Lat, Lon");
+                                     addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Lat Lon is null:" + param, false);
+                                 }
+
+                             } else {
+                                 message("Open Street Map API not provided - cannot convert postcode:" + param);
+                                 addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "API not available:" + param, false);
+                             }
+                         } catch (Exception e) {
+                             message("could not convert provided values to a postcode:" + param);
+                         }
+                     }
+                 }
              }
-             else {
-                 param = getInstructionFromEitherField(fNew, p);
-             }
-
-            if(param.length()>0) {
-                paramFound=true;
-                if (p.equals(Enums.processMode.latlon)) {
-
-                    String[] values = param.split(",", -1);
-                    if (values.length == 2) {
-                        try {
-                            Double lat = Double.valueOf(values[0]);
-                            Double lon = Double.valueOf(values[1]);
-                            geocode(fNew, lat, lon, config,true);
-                            // we should also set lat and lon if it is correct
-                            if (fNew.getPlaceKey() != null) {
-                                if (updateLatLon(lat, lon, fNew)) {
-                                      driveCounter.addCountAddedLATLONG();
-                                    updateCommentFields(fNew,lat+","+lon,p);
-
-                                }
 
 
-                            }
-                        } catch (Exception e) {
-                            message("could not convert provided values to lat long:" + param);
-                            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "could not convert provided values to lat, lon:" + param,false);
-                        }
-                    } else {
-                        message("Incorrect number of parameters for lat long:" + param);
-                        addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Incorrect number of parameters for lat lon:" + param,false);
-                    }
-
-                } else if (p.equals(Enums.processMode.event)) {
-                    try {
-                        EventObject e;
-                        e = getEvent(Integer.valueOf(param));
-                        if (e == null) {
-                            message("This Event has not been found in the JSON - event:" + param);
-                            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Event not found for:" + param,false);
-                        } else {
-                            updateEvent(config, fNew, e,false);
-                            fNew.setBestDate(e.getExactStartTime());
-                            message("Event ID match for event:" + e.getEventid() + " " + e.getTitle());
-                            driveCounter.addCountAddedEvent();
-                       }
-                    } catch (Exception e) {
-                        message("could not convert provided values to a place:" + param);
-                        addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Could not convert provided values to a place:" + param,false);
-                    }
-
-                } else if (p.equals(Enums.processMode.place)) {
-
-                    try {
-                        Place g;
-                        g = getPlace(Integer.valueOf(param));
-                        if (g == null) {
-                            message("This place has not been added in the JSON - place:" + param);
-                            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "This place does not exist in the JSON:" + param,false);
-                        } else {
-                            message("Place has been found - place:" + param);
-                            if (updateLatLon(g.getLatAsDouble(), g.getLonAsDouble(), fNew)) {
-                                fNew.setPlaceKey(g.getPlaceid());
-                                setFileObjectGEOValues(fNew, g,  config);
-                                driveCounter.addCountAddedPlace();
-                                updateCommentFields(fNew,param,p);
-                            }
-
-                        }
-                    } catch (Exception e) {
-                        message("could not convert provided values to a place:" + param);
-                        addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Could not convert provided values to a place:" + param,false);
-                    }
-
-                } else if (p.equals(Enums.processMode.postcode)) {
-
-
-                    String[] values3 = param.split(",", -1);
-                    try {
-                        if (config.getOpenAPIKey() != null) {
-                            String newLat = "";
-                            if (values3.length > 1) {
-                                newLat = checkPostCode(values3[0], config.getOpenAPIKey(), values3[1]);
-                            } else if (values3.length == 1) {
-                                newLat = checkPostCode(values3[0], config.getOpenAPIKey(), "GBR");
-                            }
-                            if(newLat!=null) {
-                                String[] values2 = newLat.split(",", -1);
-
-                                if (values2.length == 2) {
-                                    Double lat = Double.valueOf(values2[0]);
-                                    Double lon = Double.valueOf(values2[1]);
-                                    geocode(fNew, lat, lon, config,true);
-                                    // we should also set lat and lon if it is correct
-                                    if (fNew.getPlaceKey() != null) {
-                                        if (updateLatLon(lat, lon, fNew)) {
-                                            driveCounter.addCountAddedPostcode();
-                                            updateCommentFields(fNew, param, p);
-                                        }
-
-                                    } else {
-                                        message("Open Street Map API cound not find the supplied postcode:"+param);
-                                        addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Could not find postcode:" + param,false);
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                message("Open Street Map API has not returned Lat, Lon");
-                                addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Lat Lon is null:" + param,false);
-                            }
-
-                        } else {
-                            message("Open Street Map API not provided - cannot convert postcode:" + param);
-                            addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "API not available:" + param,false);
-                        }
-                    } catch (Exception e) {
-                        message("could not convert provided values to a postcode:" + param);
-                    }
-                }
-            }
         }
          return paramFound;
     }
@@ -3830,12 +3846,24 @@ public class IMEMethods {
         {
             return "";
         }
-        int endPoint = searchString.indexOf(" ", startPoint + 1);
+        String fieldFromThisPoint= searchString.substring(startPoint+1);
+        String[] strings = fieldFromThisPoint.split("#",-1);
+        int endPoint = strings[0].indexOf(" ", 0);
+        String param;
         if (endPoint > -1) {
-            return searchString.substring(startPoint+keyValue.length(), endPoint - 1);
+            param=strings[0].substring(keyValue.length()-1, endPoint - 1).trim();
+
         } else {
-            return searchString.substring(startPoint+keyValue.length());
+
+            param= strings[0].substring(keyValue.length()-1).trim();
+
+
         }
+        if(param.length()>0)
+        {
+            return param;
+        }
+        return "ERROR";
     }
 
     /**
