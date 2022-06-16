@@ -1531,12 +1531,12 @@ public class IMEMethods {
             try {
                 FileUtils.cleanDirectory(new File(rootDir + "/Test"));
             } catch (Exception e) {
-                message("Test folder is missing");
+                message("Unable to delete file from Test:"+e);
             }
             try {
                 FileUtils.cleanDirectory(new File(rootDir + "/TestRESULTS"));
             } catch (Exception e) {
-                message("TestResults folder is missing");
+                message("TestResults folder is missing or cannot be removed"+e);
             }
             try {
 
