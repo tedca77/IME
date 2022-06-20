@@ -30,7 +30,7 @@ Image metadata in stored within each JPEG image file (JPEG files are produced by
 **BEFORE RUNNING ENSURE YOU HAVE A VALID BACKUP OF YOUR PHOTO FILES.  IF YOU DON'T HAVE A BACKUP - THEN CREATE ONE BEFORE YOU START !**
 Image Metadata Enhancer is distributed in the hope that it will be useful,  but WITHOUT ANY WARRANTY, under the GNU General Public Licence.  While it has been tested extensively, the range of formats possible are large and the program may not operate correctly with all files, so if you have a backup, you should not lose any photos. 
 
-1. Download the ImageMetadataEnhancer.jar to your drive e.g. D:/IME/ImageMetadataEnhancer.jar 
+1. Download the <a href="https://github.com/tedca77/IME/blob/main/out/artifacts/ImageMetadataEnhancer_jar/ImageMetadataEnhancer.jar">ImageMetadataEnhancer.jar</a> to your drive e.g. D:/IME/ImageMetadataEnhancer.jar 
 2. Ensure that version 17 or 18 of Java is installed.
 3. Run as a Windows command  
 ```java -jar ImageMetadataEnhancer.jar  <directory to search> <output directory> <new directory structure> <parameters>```  
