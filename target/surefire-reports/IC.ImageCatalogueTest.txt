@@ -1,0 +1,44 @@
+-------------------------------------------------------------------------------
+Test set: IC.ImageCatalogueTest
+-------------------------------------------------------------------------------
+Tests run: 26, Failures: 10, Errors: 0, Skipped: 16, Time elapsed: 0.143 s <<< FAILURE! - in IC.ImageCatalogueTest
+update10Test  Time elapsed: 0.096 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: Setup Clear Test Area could not complete
+	at IC.ImageCatalogueTest.init(ImageCatalogueTest.java:36)
+
+update1Test  Time elapsed: 0.001 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: Setup Clear Test Area could not complete
+	at IC.ImageCatalogueTest.init(ImageCatalogueTest.java:36)
+
+update2Test  Time elapsed: 0.001 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: Setup Clear Test Area could not complete
+	at IC.ImageCatalogueTest.init(ImageCatalogueTest.java:36)
+
+update3Test  Time elapsed: 0.001 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: Setup Clear Test Area could not complete
+	at IC.ImageCatalogueTest.init(ImageCatalogueTest.java:36)
+
+update4Test  Time elapsed: 0.001 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: Setup Clear Test Area could not complete
+	at IC.ImageCatalogueTest.init(ImageCatalogueTest.java:36)
+
+update5Test  Time elapsed: 0.001 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: Setup Clear Test Area could not complete
+	at IC.ImageCatalogueTest.init(ImageCatalogueTest.java:36)
+
+update6Test  Time elapsed: 0.001 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: Setup Clear Test Area could not complete
+	at IC.ImageCatalogueTest.init(ImageCatalogueTest.java:36)
+
+update7Test  Time elapsed: 0.001 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: Setup Clear Test Area could not complete
+	at IC.ImageCatalogueTest.init(ImageCatalogueTest.java:36)
+
+update8Test  Time elapsed: 0.001 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: Setup Clear Test Area could not complete
+	at IC.ImageCatalogueTest.init(ImageCatalogueTest.java:36)
+
+update9Test  Time elapsed: 0.001 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: Setup Clear Test Area could not complete
+	at IC.ImageCatalogueTest.init(ImageCatalogueTest.java:36)
+
