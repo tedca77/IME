@@ -498,16 +498,7 @@ Details of each photo is written out to the JSON file.  This information does no
 5. IPTC Specification [https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata]
 6. IPTC Message Group [https://groups.io/g/iptc-photometadata/messages]
 
-# For Developers
-IME has been developed in Java 17 with Maven build on Intellij.  A JUNIT-based test library is also provided. 
-	
-IME is built using open source java libraries,  including 
-*	ICAFE – read and writing IPTC data
-*	Javaxt – thumbnail creation
-*	Apache Commons Imaging – read and writing EXIF and Windows data 
-*	Freemarker – for outputting HTML reports
-*	JavaAPI for KML generation.
-Thanks to all developers for working on these libraries.
+
 
 
 	
