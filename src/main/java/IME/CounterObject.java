@@ -120,7 +120,7 @@ public class CounterObject {
     }
     public void printResults(String s)
     {
-        String ex = truncate(s,40);
+        String ex = truncate(s,80);
         message("Files found                        "+ex +":"+ countFiles);
         message("Photos found                       "+ex +":"+ countImages);
         message("Photos too small                   "+ex +":"+ countTooSmall);

@@ -23,15 +23,19 @@ import org.junit.jupiter.api.*;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.security.MessageDigest;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.zip.Checksum;
 
 import static IME.IMEMethods.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class IMEMethodsTest {
-    String startDir = "R:/ICTEST";
-    String openAPIKey="";
+    String startDir = "D:/ICTEST";
+    String openAPIKey="5b3ce3597851110001cf6248a15496c57f254acbbcb04aaf8e115b50";
     @BeforeAll
     static void initAll() {
     }
@@ -45,7 +49,7 @@ class IMEMethodsTest {
 
     @Test
     @DisplayName("Testing Longitude / latitude distance calculation")
-   //@Disabled
+ @Disabled
     void distance_Between_LatLongTest() {
         //choose two points separated by 58742 metres
         // George V Way,WD3 6 Rickmansworth,United Kingdom 51.68250194,-0.49026778
@@ -56,11 +60,10 @@ class IMEMethodsTest {
 
     @Test
     @DisplayName("Test 1 - Geocoding with update")
-   //@Disabled
+   @Disabled
     void update1Test() {
-        // Test: 1 - SIMPLE GEOCODING
-        // Uses TestSource1
-        // One image with no IPTC metadata and with lat and lon, so should geocode
+          // Uses TestSource1
+        // One image with no IPTC metadata and with lat and lon, so should geocode correctly
         // No Json input file, but update parameter added and New Directory provided, so will copy to a New Directory (TestNewDir)
         // File is in a sub-directory so the old directory name is added as keywords (one for each word in directory name)
         System.out.println("==========================TEST 1 =================================");
@@ -75,7 +78,7 @@ class IMEMethodsTest {
                 assertEquals("Corfe Castle", fNew.getCity());
                 assertEquals("GB", fNew.getCountry_code());
                 assertEquals("United Kingdom", fNew.getCountry_name());
-                assertEquals("Dorset, South West England", fNew.getStateProvince());
+                assertEquals("Dorset", fNew.getStateProvince());
                 assertEquals("", fNew.getSubLocation());
                 //other metadata
                 assertEquals("DirKeyword1;DirKeyword2;IPTCkey1;IPTCkey2", fNew.getIPTCKeywords());
@@ -92,10 +95,10 @@ class IMEMethodsTest {
                     assertEquals("Corfe Castle", c.getPhotos().get(0).getCity());
                     assertEquals("GB", c.getPhotos().get(0).getCountry_code());
                     assertEquals("United Kingdom", c.getPhotos().get(0).getCountry_name());
-                    assertEquals("Dorset, South West England", c.getPhotos().get(0).getStateProvince());
+                    assertEquals("Dorset", c.getPhotos().get(0).getStateProvince());
                     assertEquals("", c.getPhotos().get(0).getSubLocation());
                 } else {
-                    fail("Counld not read JSON file");
+                    fail("Could not read JSON file");
                 }
                 assertEquals(driveCounter.getCountImages(), 1);
 
@@ -108,11 +111,10 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 2 - Geocoding with no overwriting of existing values")
-   //@Disabled
+ @Disabled
     void update2Test() {
-        //Test 2 - SIMPLE GEOCODING _ NO OVERWRITING
         // Uses TestSource2
-        // One image, with current ITPC data, so it should not be overwritten
+        // One image, with existing ITPC location data, so it should not be overwritten
         //No Json input file, but update parameter added and New Directory provided, so will copy to so will copy to a New Directory (TestNewDir)
         System.out.println("==========================TEST 2 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 2, startDir + "/Test")) {
@@ -148,9 +150,8 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 3 - Geocoding with overwrite")
-   //@Disabled
+ @Disabled
     void update3Test() {
-        //Test: 3 - SIMPLE GEOCODING - WITH OVERWRITING
         // Uses TestSource2
         // One image with IPTC metadata and with lat and lon, so should geocode and overwrite existing IPTC values
         //No Json input file, but update parameter added and New Directory provided, so will copy to TestNewDir, overwriteValues parameter set
@@ -166,7 +167,7 @@ class IMEMethodsTest {
                 assertEquals("Corfe Castle", fNew.getCity());
                 assertEquals("GB", fNew.getCountry_code());
                 assertEquals("United Kingdom", fNew.getCountry_name());
-                assertEquals("Dorset, South West England", fNew.getStateProvince());
+                assertEquals("Dorset", fNew.getStateProvince());
                 assertEquals("", fNew.getSubLocation());
                 // other metadata
                 assertEquals("filled keywords 2;filled keywords1", fNew.getIPTCKeywords());
@@ -176,7 +177,7 @@ class IMEMethodsTest {
                     assertEquals("Corfe Castle", c.getPhotos().get(0).getCity());
                     assertEquals("GB", c.getPhotos().get(0).getCountry_code());
                     assertEquals("United Kingdom", c.getPhotos().get(0).getCountry_name());
-                    assertEquals("Dorset, South West England", c.getPhotos().get(0).getStateProvince());
+                    assertEquals("Dorset", c.getPhotos().get(0).getStateProvince());
                     assertEquals("", c.getPhotos().get(0).getSubLocation());
                 } else {
                     fail("Could not read JSON file");
@@ -189,10 +190,9 @@ class IMEMethodsTest {
         }
     }
     @Test
-   //@Disabled
-    @DisplayName("Test 4 -  image - rotated  thumbnail           ")
+  @Disabled
+    @DisplayName("Test 4 -  rotated thumbnail based on image orientation")
     void update4Test() {
-        //Test: 4 - ROTATING THUMBNAIL
         // Uses TestSource3
         // One image - Checking thumbnail is rotated correctly based on image orientation - we check the width of thumbnail
         // No Json input file, but update parameter added and New Directory provided, so will copy to TestNewDir
@@ -215,13 +215,13 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 5 - geocode - checks JSON has geocode information - read only")
-   //@Disabled
+    @DisplayName("Test 5 - geocode - checks geocode information is written to JSON file - file not updated")
+  @Disabled
     void update5Test() {
-        //Test: 5 - READ ONLY -  CHECKS JSON HAS GEOCODE INFORMATION
         // Uses TestSource1
         // One image with no descriptive metadata but with lat and lon, so should geocode
-        //No Json input file, read only so file will not be updated or moved (JSON output will include File details as we have specified "savefilemetadata")
+        // No JSON input file, read only so image file will not be updated or moved
+        // JSON output will include File details as we have specified "savefilemetadata"- these are read and checked
         String fileName = "T_" + "nodescriptivemetadata_haslonlat.jpg";
         System.out.println("==========================TEST 5 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 1, startDir + "/Test")) {
@@ -243,7 +243,7 @@ class IMEMethodsTest {
                     assertEquals("Corfe Castle", c.getPhotos().get(0).getCity());
                     assertEquals("GB", c.getPhotos().get(0).getCountry_code());
                     assertEquals("United Kingdom", c.getPhotos().get(0).getCountry_name());
-                    assertEquals("Dorset, South West England", c.getPhotos().get(0).getStateProvince());
+                    assertEquals("Dorset", c.getPhotos().get(0).getStateProvince());
                     assertEquals("", c.getPhotos().get(0).getSubLocation());
                 } else {
                     fail("Could not read JSON file");
@@ -256,13 +256,12 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 6 - geocode - checks JSON has geocode information - update")
-   //@Disabled
+    @DisplayName("Test 6 - geocode - checks geocode information is written to JSON file - file updated")
+  @Disabled
     void update6Test() {
-        //Test: 6 UPDATE GEOCODE -  CHECKS JSON HAS GEOCODE INFORMATION
         // Uses TestSource1
         // One image with no descriptive metadata but with lat and lon, so should geocode
-        //No Json input file, update parameter included, but no directory provided so will not move (JSON output will include Geocode details)
+        // No JSON input file, update parameter included, but no directory provided so will not move (JSON output will include Geocode details)
         System.out.println("==========================TEST 6 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 1, startDir + "/Test")) {
             IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", "update", "savefilemetadata"});
@@ -275,7 +274,7 @@ class IMEMethodsTest {
                 assertEquals("Corfe Castle", fNew.getCity());
                 assertEquals("GB", fNew.getCountry_code());
                 assertEquals("United Kingdom", fNew.getCountry_name());
-                assertEquals("Dorset, South West England", fNew.getStateProvince());
+                assertEquals("Dorset", fNew.getStateProvince());
                 assertEquals("", fNew.getSubLocation());
                 //
                 ConfigObject c = readConfig(startDir + "/TestRESULTS/" + jsonFile);
@@ -283,10 +282,10 @@ class IMEMethodsTest {
                     assertEquals("Corfe Castle", c.getPhotos().get(0).getCity());
                     assertEquals("GB", c.getPhotos().get(0).getCountry_code());
                     assertEquals("United Kingdom", c.getPhotos().get(0).getCountry_name());
-                    assertEquals("Dorset, South West England", c.getPhotos().get(0).getStateProvince());
+                    assertEquals("Dorset", c.getPhotos().get(0).getStateProvince());
                     assertEquals("", c.getPhotos().get(0).getSubLocation());
                 } else {
-                    fail("Counld not read JSON file");
+                    fail("Could not read JSON file");
                 }
             } else {
                 fail("Did not find output file");
@@ -296,10 +295,9 @@ class IMEMethodsTest {
         }
     }
     @Test
-   //@Disabled
-    @DisplayName("Test 7 - Date Updated YYYY and IPTC keywords added")
+  @Disabled
+    @DisplayName("Test 7 - Date updated with YYYY added to IPTC keywords")
     void update7Test() {
-        //Test: 7 - HARD CODE YEAR CHECKS IPTC DATE CREATED AND KEYWORDS
         // Uses TestSource4
         // Six images with YYYY or YYYY-MMM or YYYY-MM-DD provided, should update copyright
         //Json input file, update parameter included, but no directory provided so will not move
@@ -325,10 +323,9 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 8 - Date added YYYY from Windows Comments")
-   //@Disabled
+    @DisplayName("Test 8 - Date updated with YYYY added to Windows Comments")
+ @Disabled
     void update8Test() {
-        //Test: 8 - HARD CODE YEAR - CHECK FILE DATES
         // Uses TestSource4
         // Six images with YYYY or YYYY-MMM or YYYY-MM-DD provided, should update copyright
         //Json input file, update parameter included, but no directory provided so will not move
@@ -358,10 +355,9 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 9 - Date Updated YYYY MM and IPTC keywords added")
-   //@Disabled
+    @DisplayName("Test 9 - Date updated with YYYY-MM added to Windows Comments")
+  @Disabled
     void update9Test() {
-        //Test: 9 - HARD CODE YEAR AND MONTH
         // Uses TestSource4
         // Six images with YYYY or YYYY-MMM or YYYY-MM-DD provided, should update copyright
         //Json input file, update parameter included, but no directory provided so will not move
@@ -389,10 +385,9 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 10 - Add Year Month Day via Windows Comment")
-   //@Disabled
+    @DisplayName("Test 10 - Date updated with YYYY-MM-DD added to Windows Comment")
+ @Disabled
     void update10Test() {
-        //Test: 10 - HARD CODE YEAR MONTH DAY
         // Uses TestSource4
         // Six images with YYYY or YYYY-MMM or YYYY-MM-DD provided, should update copyright
         //Json input file, update parameter included, but no directory provided so will not move
@@ -421,10 +416,9 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 11 - Add Year via IPTC Instruction")
-   //@Disabled
+    @DisplayName("Test 11 - Date updated with YYYY added to IPTC Instruction Field")
+ @Disabled
     void update11Test() {
-        //Test: 11 - HARD CODE DATE USING IPTC INSTRUCTIONS FIELD
         // Uses TestSource4
         // Six images with YYYY or YYYY-MMM or YYYY-MM-DD provided, should update copyright
         //Json input file, update parameter included, but no directory provided so will not move  (HTML output wil includeGeocode details)
@@ -452,8 +446,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 12 - Date Updated YYYY MM from IPTC Instructio")
-   //@Disabled
+    @DisplayName("Test 12 - Date updated with YYYY-MM added to IPTC Instruction Field")
+ @Disabled
     void update12Test() {
         //Test: 7 - HARD CODE DATE USING IPTC INSTRUCTIONS FIELD YEAR AND MONTH
         // Uses TestSource4
@@ -483,10 +477,9 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 13 - Date Updated YYYY Mm DD from IPTC Instruction")
-   //@Disabled
+    @DisplayName("Test 13 - Date updated with YYYY-MM-DD added to IPTC Instruction Field")
+ @Disabled
     void update13Test() {
-        //Test: 13 - HARD CODE DATE USING IPTC INSTRUCTIONS FIELD YEAR AND MONTH
         // Uses TestSource4
         // Six images with YYYY or YYYY-MMM or YYYY-MM-DD provided, should update copyright
         //Json input file, update parameter included, but no directory provided so will not move  (HTML output wil includeGeocode details)
@@ -515,11 +508,10 @@ class IMEMethodsTest {
         }
     }
     @Test
-   //@Disabled
-    @DisplayName("Test 14 - Place found from Postcode for Added Event")
+  @Disabled
+    @DisplayName("Test 14 - Place found from the Postcode of an added Event")
     void update14Test() {
-        // Test 14 :  HARD CODE EVENT WITH A POSTCODE
-        // Uses TestSource5
+         // Uses TestSource5
         // 11 images where events are added or found via the date of the photo
         //Json input file, update and overwrite parameters included, directory provided so will move
         System.out.println("==========================TEST 14 =================================");
@@ -545,10 +537,9 @@ class IMEMethodsTest {
         }
     }
     @Test
-   //@Disabled
-    @DisplayName("Test 15 - Place found from Added Place ID")
+  @Disabled
+    @DisplayName("Test 15 - Place found from the Place ID of an added Event")
     void update15Test() {
-        // Test 15 - HARD CODE EVENT WITH PLACE
         // Uses TestSource5
         // 11 images where events are added or found via the date of the photo
         //Json input file, update and overwrite parameters included, directory provided so will move
@@ -575,8 +566,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-   //@Disabled
-    @DisplayName("Test 16 - Place found via match of Date with Event Date")
+ @Disabled
+    @DisplayName("Test 16 - Place found via match of Date with Event found from the Event Date")
     void update16Test() {
         // Test 16 - FIND EVENT WITH PLACE (FROM DATE)
         // Uses TestSource5
@@ -605,11 +596,10 @@ class IMEMethodsTest {
         }
     }
     @Test
-   //@Disabled
+ @Disabled
     @DisplayName("Test 17 - Match of Date with Event Date - no Place")
     void update17Test() {
-        // Test 17 - FIND EVENT WITH NO PLACE (FROM DATE)
-        // Uses TestSource5
+          // Uses TestSource5
         // 11 images where events are added or found via the date of the photo
         //Json input file, update and overwrite parameters included, directory provided so will move
         System.out.println("==========================TEST 17 =================================");
@@ -634,8 +624,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-   //@Disabled
-    @DisplayName("Test 18 - Event with Postcode matched on date")
+ @Disabled
+    @DisplayName("Test 18 - Place found via match of Date with Event found from the Event Date - Postcode used")
     void update18Test() {
         // Test 18 - FIND EVENT WITH POSTCODE (FROM DATE)
         // Uses TestSource5
@@ -664,11 +654,10 @@ class IMEMethodsTest {
         }
     }
     @Test
-   //@Disabled
-    @DisplayName("Test 19 - Added Event with Lat, Lon")
+ @Disabled
+    @DisplayName("Test 19 - Added Event with Lat, Lon in the Event")
     void update19Test() {
-        // Test 19 - HARD CODE  EVENT WITH LAT, LON
-        // Uses TestSource5
+           // Uses TestSource5
         // 11 images where events are added or found via the date of the photo
         //Json input file, update and overwrite parameters included, directory provided so will move
         System.out.println("==========================TEST 19 =================================");
@@ -694,8 +683,8 @@ class IMEMethodsTest {
         }
     }
     @Test
-   //@Disabled
-    @DisplayName("Test 20 - Find event from Date with Lat, Lon")
+ @Disabled
+    @DisplayName("Test 20 - Find event based on Date and adding Lat, Lon")
     void update20Test() {
         // Test 20 - FIND EVENT WITH LAT, LON (FROM DATE)
         // Uses TestSource5
@@ -725,11 +714,10 @@ class IMEMethodsTest {
         }
     }
     @Test
-   //@Disabled
+ @Disabled
     @DisplayName("Test 21 - Find Calendar Event from Date - No place")
     void update21Test() {
-        // Test 21 - FIND EVENT CALENDAR - NO PLACE (FROM DATE)
-        // Uses TestSource5
+           // Uses TestSource5
         // 11 images where events are added or found via the date of the photo
         //Json input file, update and overwrite parameters included, directory provided so will move
         System.out.println("==========================TEST 21 =================================");
@@ -755,11 +743,10 @@ class IMEMethodsTest {
         }
     }
     @Test
-   //@Disabled
-    @DisplayName("Test 22 - Added Lat, Lon")
+ @Disabled
+    @DisplayName("Test 22 - Lat, Lon added to Comments")
     void update22Test() {
-        // Test 22 -HARD CODE LAT,LON
-        // Uses TestSource5
+           // Uses TestSource5
         // 11 images where events are added or found via the date of the photo
         //Json input file, update and overwrite parameters included, directory provided so will move
         System.out.println("==========================TEST 22 =================================");
@@ -785,10 +772,9 @@ class IMEMethodsTest {
         }
     }
     @Test
-   //@Disabled
-    @DisplayName("Test 23 - Added Place")
+ @Disabled
+    @DisplayName("Test 23 - Place added to Comments")
     void update23Test() {
-        // Test 23 -HARD CODE PLACE
         // Uses TestSource5
         // 11 images where events are added or found via the date of the photo
         //Json input file, update and overwrite parameters included, directory provided so will move
@@ -815,10 +801,10 @@ class IMEMethodsTest {
         }
     }
     @Test
-   //@Disabled
-    @DisplayName("Test 24 - Added Postcode")
+ @Disabled
+    @DisplayName("Test 24 - Postcode added to comments")
     void update24Test() {
-        // Test 24 -HARD CODE POST CODE (REQUIRES OPENMAPS API KEY) - ADD TO config.json
+        // REQUIRES OPENMAPS API KEY in JSON file
         // Uses TestSource5
         // 11 images where events are added or found via the date of the photo
         //Json input file, update and overwrite parameters included, directory provided so will move  (HTML output wil includeGeocode details)
@@ -845,11 +831,10 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 25 moving duplicate files - ensuring the file names do not clash")
-   //@Disabled
+    @DisplayName("Test 25 moving duplicate files and renaming - ensuring the file names do not clash")
+ @Disabled
     void update25Test() {
-        // Test: 25 - MOVING DUPLICATE FILES AND RENAMING
-        // Uses TestSource6
+         // Uses TestSource6
         // checking duplicate images - two are the same in different folders, other two are different with same name
         // No Json input file, but update parameter added and New Directory provided, so will copy to TestNewDir
         // File is in a sub-directory so the old directory name is added as keywords (one for each word in directory name)
@@ -874,11 +859,10 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 26 - Checks that metadata written to Config Output file")
-   //@Disabled
+    @DisplayName("Test 26 - Checks that original metadata is read and not overwritten - rad only ")
+ @Disabled
     void update26Test() {
-        //Test: 26 - READ ONLY - CHECKS THAT ORIGINAL METADATA FIELDS ARE ALL READ (AND NOT OVERWRITTEN)
-        // Uses TestSource4
+           // Uses TestSource4
         // Six images with YYYY or YYYY-MMM or YYYY-MM-DD provided, should update copyright
         //No JSON input file, update parameter included, but no directory provided so will not move  (HTML output wil includeGeocode details)
         String fileName = "lightroom date year month day.jpg";
@@ -904,11 +888,10 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 27 - Checks all metadata fields are read")
-   //@Disabled
+    @DisplayName("Test 27 - Checks IPTC metadata fields are correctly read")
+ @Disabled
     void update27Test() {
-        //Test: 26 - CHECKS THAT METADATA FIELDS ARE ALL READ (NEW VALUES written to IPTC date and additional keywords added)
-        // Uses TestSource4
+          // Uses TestSource4
         //NO Json input file, update parameter included, but no directory provided so will not move
         String fileName = "lightroom date year month day.jpg";
         System.out.println("==========================TEST 27 =================================");
@@ -928,10 +911,9 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 28 - Checks that XP Keywords and IPTC Keywords are written")
-   //@Disabled
+    @DisplayName("Test 28 - Checks that XP Keywords and IPTC Keywords are merged and written")
+  @Disabled
     void update28Test() {
-        // Test: 1 - SIMPLE GEOCODING
         // Uses TestSource1
         // One image with no IPTC metadata and with lat and lon, so should geocode
         // No Json input file, but update parameter added and New Directory provided, so will copy to TestNewDir
@@ -946,12 +928,12 @@ class IMEMethodsTest {
             FileObject fNew = readAndUpdateFile(new File(startDir + "/TestNewDir/2021/8/" + fileName), null, null, null, true);
             if (fNew != null) {
                 //other metadata
-                assertEquals("DirKeyword1;DirKeyword2;IPTCkey1;IPTCkey2;GB;United Kingdom;Dorset;BH20 5DY;England;South West England;Corfe Castle", fNew.getIPTCKeywords());
-                assertEquals("GB;United Kingdom;Dorset;BH20 5DY;England;South West England;Corfe Castle", fNew.getWindowsKeywords());
+                assertEquals("DirKeyword1;DirKeyword2;IPTCkey1;IPTCkey2;GB;United Kingdom;Dorset;BH20 5DY;England;Corfe Castle", fNew.getIPTCKeywords());
+                assertEquals("GB;United Kingdom;Dorset;BH20 5DY;England;Corfe Castle", fNew.getWindowsKeywords());
                 ConfigObject c = readConfig(startDir + "/TestRESULTS/" + jsonFile);
                 if (c != null) {
-                    assertEquals("DirKeyword1;DirKeyword2;IPTCkey1;IPTCkey2;GB;United Kingdom;Dorset;BH20 5DY;England;South West England;Corfe Castle", c.getPhotos().get(0).getIPTCKeywords());
-                    assertEquals("GB;United Kingdom;Dorset;BH20 5DY;England;South West England;Corfe Castle", c.getPhotos().get(0).getWindowsKeywords());
+                    assertEquals("DirKeyword1;DirKeyword2;IPTCkey1;IPTCkey2;GB;United Kingdom;Dorset;BH20 5DY;England;Corfe Castle", c.getPhotos().get(0).getIPTCKeywords());
+                    assertEquals("GB;United Kingdom;Dorset;BH20 5DY;England;Corfe Castle", c.getPhotos().get(0).getWindowsKeywords());
                 } else {
                     fail("Could not read JSON file");
                 }
@@ -963,13 +945,12 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 29 - Checks that Processed file not reprocessed - geocoded")
-   //@Disabled
+    @DisplayName("Test 29 - Processed file reprocessed - because Place not provided - geocoded")
+  @Disabled
     void update29Test() {
-        // Test: 1 - SIMPLE GEOCODING - CHECK FIL IS NOT REPROCESSED
-        // Uses TestSource9 =- this file has already been GEOCODED - so we are checking it is not processed again
+        // Uses TestSource9 =- this file has already been GEOCODED - it is processed again
         // One image with no IPTC metadata and with lat and lon, so should geocode
-        // No Json input file, but update parameter - will not copy
+        // No Json input file, but update parameter
         // Checks that the output is written to Windows comments
         System.out.println("==========================TEST 29 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 9, startDir + "/Test")) {
@@ -977,13 +958,14 @@ class IMEMethodsTest {
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
             assertEquals(1,driveCounter.getCountALREADYPROCESSED());
-            assertEquals(0,driveCounter.getCountUPDATED());
+            assertEquals(1,driveCounter.getCountUPDATED());
             String fileName = "T_" + "already_geocoded.jpg";
             FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/" + fileName), null, null, null, true);
             if (fNew != null) {
                 //other metadata
-                assertEquals("#geocodeDONE:50.655271666666664,-2.0567166666666665:1#processedDONE:2022:05:05 18:01:00#movedfileDONE:R:/ICTEST/Test/DirKeyword1 DirKeyword2/", fNew.getWindowsComments());
-                assertEquals(3, fNew.getComments().size());
+                assertTrue(fNew.getWindowsComments().contains("#geocodeDONE:50.655271666666664,-2.0567166666666665:1"));
+                //assertEquals("#geocodeDONE:50.655271666666664,-2.0567166666666665:1#processedDONE:2022:05:05 18:01:00#movedfileDONE:R:/ICTEST/Test/DirKeyword1 DirKeyword2/", fNew.getWindowsComments());
+                assertEquals(5, fNew.getComments().size());
             } else {
                 fail("Could not find file");
             }
@@ -992,12 +974,11 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 30 - Checks that Processed file not reprocessed - Date")
-   //@Disabled
+    @DisplayName("Test 30 - Checks that Processed file not reprocessed - check the date")
+  @Disabled
     void update30Test() {
-        // Test: 30- SIMPLE GEOCODING (NO REDO OPTION)
         // Uses TestSource8
-        // One image with no IPTC metadata and with lat and lon, so should geocode
+        // One image with no IPTC metadata and with no lat and lon and already processed, so will not update
         // No Json input file, but update parameter added - will not copy
         // File is in a sub-directory so the old directory name is added as keywords (one for each word in directory name)
         System.out.println("==========================TEST 30 =================================");
@@ -1021,16 +1002,16 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 31 - Checks that Processed file reprocessed with REDO - geocoded")
-   //@Disabled
+    @DisplayName("Test 31 - Checks that Processed file reprocessed with REDO option - geocoded")
+  @Disabled
     void update31Test() {
         // Test: 31 - SIMPLE GEOCODING (REDO OPTION)
-        // Uses TestSource9
+        // Uses TestSource13
         // One image already processed, so should redo
-        // No Json input file, but update parameter added and New Directory provided, so will not copy
+        // Json input file, update and redo parameter added and no New Directory provided, so will not copy
         System.out.println("==========================TEST 31 =================================");
-        if (copyToTestArea(startDir + "/TestSource" + 9, startDir + "/Test")) {
-            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", "update", "redo"});
+        if (copyToTestArea(startDir + "/TestSource" + 13, startDir + "/Test")) {
+            IMEMethods.main(new String[]{startDir + "/Test/config.json", "update", "redo"});
             String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
             System.out.println("JSON  file found:" + jsonFile);
             assertEquals(1,driveCounter.getCountALREADYPROCESSED());
@@ -1038,7 +1019,7 @@ class IMEMethodsTest {
             String fileName = "T_" + "already_geocoded.jpg";
             FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/" + fileName), null, null, null, true);
             if (fNew != null) {
-                //Should be original 3 commments + 2 more for redo of geocode and processed
+                //Should be original 3 comments + 2 more for redo of geocode and processed
                 assertEquals(5, fNew.getComments().size());
             } else {
                 fail("Could not find file");
@@ -1049,10 +1030,9 @@ class IMEMethodsTest {
     }
 
     @Test
-    @DisplayName("Test 32 - Checks CLEAR option")
-   //@Disabled
+    @DisplayName("Test 32 - Checks CLEAR option - removes comments from JPEG Comments but leaves Windows Comments and IPTC Instructions field")
+  @Disabled
     void update32Test() {
-        // Test: 1 - CLEAR option - REMOVES COMMENTS VALUES
         // Uses TestSource1
         // One image with no IPTC metadata and with lat and lon, so should geocode
         // No Json input file, but update parameter added will not copy
@@ -1068,6 +1048,8 @@ class IMEMethodsTest {
             if (fNew != null) {
                 //other metadata
                 assertEquals(0, fNew.getComments().size());
+                assertEquals("#geocodeDONE:50.655271666666664,-2.0567166666666665:1#processedDONE:2022:05:05 18:01:00#movedfileDONE:R:/ICTEST/Test/DirKeyword1 DirKeyword2/", fNew.getWindowsComments());
+                assertEquals("#geocodeDONE:50.655271666666664,-2.0567166666666665:1#processedDONE:2022:05:05 18:01:00#movedfileDONE:R:/ICTEST/Test/DirKeyword1 DirKeyword2/", fNew.getIPTCInstructions());
             } else {
                 fail("Could not find file");
             }
@@ -1076,10 +1058,9 @@ class IMEMethodsTest {
         }
     }
     @Test
-    @DisplayName("Test 33 - Check files are created")
-   //@Disabled
+    @DisplayName("Test 33 - Check HTML files are created")
+  @Disabled
     void update33Test() {
-        // Test: 33 - SIMPLE GEOCODING - CHECKS HTML OUTPUT FILES ARE CREATED
         // Uses TestSource1
         // One image with no IPTC metadata and with lat and lon, so should geocode
         // No Json input file, but update parameter added and New Directory provided, so will copy to TestNewDir
@@ -1114,7 +1095,7 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 34 - Check File Metadata not written to JSON")
-   //@Disabled
+  @Disabled
     void update34Test() {
         // Uses TestSource1
         // One image with no IPTC metadata and with lat and lon, so should geocode
@@ -1139,26 +1120,26 @@ class IMEMethodsTest {
     }
     @Test
     @DisplayName("Test 35 - Event is not re-processed")
-   //@Disabled
+  @Disabled
     void update35Test() {
         // Uses TestSource5
-        // 11 images processed first time but not processed second time
+        // 11 images processed first time and processed second time
         // No Json input file, but update parameter added - will not move
         System.out.println("==========================TEST 35 =================================");
         if (copyToTestArea(startDir + "/TestSource" + 5, startDir + "/Test")) {
             updateTextFile(startDir + "/Test/config-nomove.json", "<<startdir>>", startDir);
             updateTextFile(startDir + "/Test/config-nomove.json", "<<openapikey>>", openAPIKey);
             IMEMethods.main(new String[]{startDir + "/Test/config-nomove.json", "update"});
-            assertEquals(11,driveCounter.getCountUPDATED());
+            assertEquals(11,driveCounter.getCountProcessed());
             IMEMethods.main(new String[]{startDir + "/Test/config-nomove.json", "update"});
-            assertEquals(0,driveCounter.getCountUPDATED());
+            assertEquals(9,driveCounter.getCountGEOCODED());
         } else {
             fail("Setup Copy files to Test Area could not complete");
         }
     }
     @Test
     @DisplayName("Test 36 - Geocoding with multi national characters")
-   //@Disabled
+  @Disabled
     void update36Test() {
         // One multi national image with lat and lon, so should geocode and also update using UTF-8 international fontand add  text to xpkeywords and IPTC keywords
         //No Json input file, but update parameter added - will not copy
@@ -1174,10 +1155,10 @@ class IMEMethodsTest {
                 // Checks also written correctly to Windows and IPTC keywords
                 assertNotEquals(-1,fNew.getWindowsKeywords().indexOf("荃灣區 Tsuen Wan District"));
                 //
-                assertEquals("川龍村", fNew.getCity());
+                assertEquals("荃灣區 Tsuen Wan District, 川龍村", fNew.getCity());
                 assertEquals("CN", fNew.getCountry_code());
                 assertEquals("中国", fNew.getCountry_name());
-                assertEquals("荃灣區 Tsuen Wan District", fNew.getStateProvince());
+                assertEquals("", fNew.getStateProvince());
                 assertEquals("大欖林道－荃錦段 Tai Lam Forest Track – Twisk Section, 川龍 Chuen Lung", fNew.getSubLocation());
                 ConfigObject c = readConfig(startDir + "/TestRESULTS/" + jsonFile);
                 if (c != null) {
@@ -1186,10 +1167,10 @@ class IMEMethodsTest {
                     System.out.println("Config:" + c.getPhotos().get(0).getCity());
                     System.out.println("Config:" + c.getPhotos().get(0).getStateProvince());
                     System.out.println("Config:" + c.getPhotos().get(0).getSubLocation());
-                    assertEquals("川龍村", c.getPhotos().get(0).getCity());
+                    assertEquals("荃灣區 Tsuen Wan District, 川龍村", c.getPhotos().get(0).getCity());
                     assertEquals("CN", c.getPhotos().get(0).getCountry_code());
                     assertEquals("中国", c.getPhotos().get(0).getCountry_name());
-                    assertEquals("荃灣區 Tsuen Wan District", c.getPhotos().get(0).getStateProvince());
+                    assertEquals("", c.getPhotos().get(0).getStateProvince());
                     assertEquals("大欖林道－荃錦段 Tai Lam Forest Track – Twisk Section, 川龍 Chuen Lung", c.getPhotos().get(0).getSubLocation());
                 } else {
                     fail("Could not read JSON file");
@@ -1202,7 +1183,7 @@ class IMEMethodsTest {
         }
     }
     @Test
-    //@Disabled
+  @Disabled
     @DisplayName("Test 37 - Check files without metadata")
     void update37Test() {
         // Uses TestSource7
@@ -1224,10 +1205,10 @@ class IMEMethodsTest {
         }
     }
     @Test
-     @Disabled
+   @Disabled
     @DisplayName("Test 38 - Check corrupt jpeg")
     void update38Test() {
-        //NOTE THIS TEST LEAVES A FILE THAT CANNOT BE ReMOVED PROGRAMATICALLY - DO NOT RUN WITH OHTHER TESTS 
+        //NOTE THIS TEST LEAVES A FILE THAT CANNOT BE REMOVED PROGRAMATICALLY - DO NOT RUN WITH OTHER TESTS
         // Uses TestSource7
         // 1 corrupt image
         // No Json input file, but update parameter added and New Directory provided, so will copy to TestNewDir
@@ -1247,7 +1228,7 @@ class IMEMethodsTest {
         }
     }
     @Test
-   // //@Disabled
+  @Disabled
     @DisplayName("Test 39 - Illegal instructions in Comments")
     void update39Test() {
         // Uses TestSource10
@@ -1267,4 +1248,200 @@ class IMEMethodsTest {
             fail("Setup Copy files to Test Area could not complete");
         }
     }
+    @Test
+    @DisplayName("Test 40 - Processed file not reprocessed - because Place is provided in JSON")
+  @Disabled
+    void update40Test() {
+        // Uses TestSource13 =- this file has already been GEOCODED - it is not processed again
+        // One image with no IPTC metadata and with lat and lon, so should geocode
+        // No Json input file, but update parameter
+        // Checks that the output is written to Windows comments
+        System.out.println("==========================TEST 40 =================================");
+        if (copyToTestArea(startDir + "/TestSource" + 13, startDir + "/Test")) {
+            IMEMethods.main(new String[]{startDir + "/Test/config.json", "update"});
+            String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("JSON  file found:" + jsonFile);
+            assertEquals(1,driveCounter.getCountALREADYPROCESSED());
+            assertEquals(0,driveCounter.getCountUPDATED());
+            String fileName = "T_" + "already_geocoded.jpg";
+            FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/" + fileName), null, null, null, true);
+            if (fNew != null) {
+                //other metadata
+                assertTrue(fNew.getWindowsComments().contains("#geocodeDONE:50.655271666666664,-2.0567166666666665:1"));
+                //assertEquals("#geocodeDONE:50.655271666666664,-2.0567166666666665:1#processedDONE:2022:05:05 18:01:00#movedfileDONE:R:/ICTEST/Test/DirKeyword1 DirKeyword2/", fNew.getWindowsComments());
+                assertEquals(3, fNew.getComments().size());
+            } else {
+                fail("Could not find file");
+            }
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @DisplayName("Test 41 - Checks CLEAR option - removes comments  JPEG Comments and also Windows Comments and IPTC Instructions field")
+    @Disabled
+    void update41test() {
+        // Uses TestSource9
+        // One image with no IPTC metadata and with lat and lon, so should geocode
+        // No Json input file, but update parameter added will not copy
+        System.out.println("==========================TEST 41 =================================");
+        if (copyToTestArea(startDir + "/TestSource" + 9, startDir + "/Test")) {
+            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", "update", "clearallcomments"});
+            String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("JSON  file found:" + jsonFile);
+            assertEquals(1,driveCounter.getCountALREADYPROCESSED());
+            assertEquals(1,driveCounter.getCountUPDATED());
+            String fileName = "T_" + "already_geocoded.jpg";
+            FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/" + fileName), null, null, null, true);
+            if (fNew != null) {
+                //other metadata
+                assertEquals(0, fNew.getComments().size());
+                assertEquals("", fNew.getWindowsComments());
+                assertEquals(null, fNew.getIPTCInstructions());  // this works differently from WindowsComments - returning null
+            } else {
+                fail("Could not find file");
+            }
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @DisplayName("Test 42 - Whats App files")
+      @Disabled
+    void update42Test() {
+        // Uses TestSource1
+        // One image with minimal metadata (no Exif)
+        // No Json input file, but update parameter
+        System.out.println("==========================TEST 1 =================================");
+        if (copyToTestArea(startDir + "/TestSource" + 14, startDir + "/Test")) {
+            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", "update", "savefilemetadata"});
+            String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("JSON  file found:" + jsonFile);
+            assertNotEquals(0,jsonFile.length());
+            String fileName = "T_" + "WhatsApp Image 2022-12-27 at 20.53.06.jpeg";
+            FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/" + fileName), null, null, null, true);
+            if (fNew != null) {
+                assertEquals("", fNew.getCity());
+                assertEquals("", fNew.getCountry_code());
+                assertEquals("", fNew.getCountry_name());
+                assertEquals("", fNew.getStateProvince());
+                assertEquals("", fNew.getSubLocation());
+                //other metadata
+
+                //
+                assertTrue(checkJPEGComments(fNew.getComments(), "#processedDONE:"));
+                ConfigObject c = readConfig(startDir + "/TestRESULTS/" + jsonFile);
+                if (c != null) {
+                    assertEquals("", c.getPhotos().get(0).getCity());
+                    assertEquals("", c.getPhotos().get(0).getCountry_code());
+                    assertEquals("", c.getPhotos().get(0).getCountry_name());
+                    assertEquals("", c.getPhotos().get(0).getStateProvince());
+                    assertEquals("", c.getPhotos().get(0).getSubLocation());
+                } else {
+                    fail("Could not read JSON file");
+                }
+                assertEquals(driveCounter.getCountImages(), 1);
+
+            } else {
+                fail("Could not find file");
+            }
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @DisplayName("Test 43 - IPTC Test files")
+    @Disabled
+    void update43Test() {
+        // Uses 15 test files
+        // No Json input file, but update parameter
+        System.out.println("==========================TEST 1 =================================");
+        if (copyToTestArea(startDir + "/TestSource" + 15, startDir + "/Test")) {
+            IMEMethods.main(new String[]{startDir + "/Test", startDir + "/TestRESULTS", "update", "savefilemetadata"});
+            String jsonFile = findJSONFile(new File(startDir + "/TestRESULTS"));
+            System.out.println("JSON  file found:" + jsonFile);
+            assertNotEquals(0,jsonFile.length());
+            String fileName = "T_" + "acdseepsu_2023_t3.1.jpg";
+            FileObject fNew = readAndUpdateFile(new File(startDir + "/Test/" + fileName), null, null, null, true);
+            if (fNew != null) {
+                assertEquals("Banff", fNew.getCity());
+                assertEquals("012", fNew.getCountry_code());
+                assertEquals("Canada", fNew.getCountry_name());
+                assertEquals("Alberta", fNew.getStateProvince());
+                assertEquals("Banff Canada", fNew.getSubLocation());
+                //other metadata
+
+                assertEquals(driveCounter.getCountImages(), 15);
+
+            } else {
+                fail("Could not find file");
+            }
+        } else {
+            fail("Setup Copy files to Test Area could not complete");
+        }
+    }
+    @Test
+    @DisplayName("Test 44 - Generate Checksums")
+        //@Disabled
+    void update44Test() {
+        // Uses 15 test files
+        // No Json input file, but update parameter
+        //Use SHA-1 algorithm
+        try {
+            MessageDigest shaDigest = MessageDigest.getInstance("SHA-256");
+
+           //SHA-1 checksum
+            File filejar = new File("d:/ImageCatalogue/out/artifacts/ImageMetadataEnhancer_jar/ImageMetadataEnhancer.jar");
+            File fileexe = new File("d:/ImageCatalogue/out/artifacts/Launch4j/IME.exe");
+            File filedmg = new File("d:/ImageCatalogue/out/artifacts/MacOS/IME-1.0.dmg");
+            try {
+                String shaChecksumjar = getFileChecksum(shaDigest, filejar);
+                System.out.println("Checksum for ImageMetadataEnhancer.jar:"+shaChecksumjar);
+                String shaChecksumexe = getFileChecksum(shaDigest, fileexe);
+                System.out.println("Checksum for IME.exe:"+shaChecksumexe);
+                String shaChecksumdmg = getFileChecksum(shaDigest, filedmg);
+                System.out.println("Checksum for IME-1.0.dmg:"+shaChecksumdmg);
+            }
+            catch(IOException e)
+            {
+                fail("Files not present"+e);
+            }
+        }
+        catch(Exception e)
+        {
+            fail("SHA256 not available"+e);
+        }
+    }
+    private static String getFileChecksum(MessageDigest digest, File file) throws IOException
+    {
+        //Get file input stream for reading the file content
+        FileInputStream fis = new FileInputStream(file);
+
+        //Create byte array to read data in chunks
+        byte[] byteArray = new byte[1024];
+        int bytesCount = 0;
+
+        //Read file data and update in message digest
+        while ((bytesCount = fis.read(byteArray)) != -1) {
+            digest.update(byteArray, 0, bytesCount);
+        };
+
+        //close the stream; We don't need it now.
+        fis.close();
+
+        //Get the hash's bytes
+        byte[] bytes = digest.digest();
+
+        //This bytes[] has bytes in decimal format;
+        //Convert it to hexadecimal format
+        StringBuilder sb = new StringBuilder();
+        for(int i=0; i< bytes.length ;i++)
+        {
+            sb.append(Integer.toString((bytes[i] & 0xff) + 0x100, 16).substring(1));
+        }
+
+        //return complete hash
+        return sb.toString();
+    }
+
 }

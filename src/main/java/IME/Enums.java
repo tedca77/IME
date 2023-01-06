@@ -23,16 +23,21 @@ public class Enums {
         public enum prog {temp}
 
         public enum argOptions {
-            overwrite,update,showmetadata,redo,redoevents,append,addxpkeywords,addiptckeywords,clear,savefilemetadata
+            overwrite,update,showmetadata,redo,redoevents,append,addxpkeywords,addiptckeywords,clear,savefilemetadata,clearallcomments
         }
         /*
            update - if false, no updates will take place to records ...default false
            showmetadata - metadata will be shown before and after, if update is true .. default false
-           redoGeocoding - will do geocoding even if the metadata says that geocoding has been done before ... default false
+           redo - will redo processing ... default false
+           redoevents -
            overwriteValues - if the subLocation, country etc. are filled in, then they will not be replaced...default false
            append - will update photos provided on the input JSON - otherwise will clear out photos array
            addxpkeywords - add location to XP Keywords / tags as well as IPTC data
            addiptckeywords - add location to IPTC Keywords / tags as well as IPTC data
+           clear - clears the JPEG comments field
+           clearallcomments - clears JPEG comments, IPTC Instructions and XP Comment (Windows)
+
+           savefilemetadata -
           */
        public enum processMode {
            postcode,geocode,place,latlon,event,date

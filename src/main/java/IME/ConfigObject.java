@@ -34,6 +34,8 @@ public class ConfigObject {
     private Boolean redoevents;
     private Boolean append;
     private Boolean clear;
+    private Boolean clearallcomments;
+
     private Boolean savefilemetadata;
     private Boolean addxpkeywords;
     private Boolean addiptckeywords;

@@ -115,9 +115,9 @@ public class IMEMethods {
     static CounterObject mainCounter=new CounterObject();
     /**
      * Main Method for the program - arguments passes as Java arguments
-     * @param args - either single json file or two/three args, first one is root directory, second is output file, third is followed by parameters
+     * args - either single json file or two/three args, first one is root directory, second is output file, third is followed by parameters
      */
-    static String versionLabel="ImageMetadataEnhancer - Version 1.0.0 10 June 2022";
+    static String versionLabel="ImageMetadataEnhancer - Version 1.0.0.1 5 January 2023";
     public static void main(String[] args) {
         message(versionLabel);
         z= ZoneId.systemDefault();
@@ -128,9 +128,15 @@ public class IMEMethods {
         // clear ArrayLists - required for JUNIT testing...
         clearArrayLists();
         try {
+            if(args.length==0)
+            {
+                message("No arguments provided - either provide config file or two parameters ");
+                System.exit(0);
+            }
+
             if(FilenameUtils.getExtension(args[0]).equalsIgnoreCase("json"))
             {
-                configFileName = Path.of(args[0]);
+                configFileName = Paths.get(args[0]);
                 message("JSON file name provided:"+configFileName);
                 config = readConfig(configFileName.toString());
 
@@ -141,12 +147,12 @@ public class IMEMethods {
             }
             else
             {
-                message("No json file present - requiring two parameters");
+                message("No JSON input file present - requiring two parameters");
                 if(args.length>1) {
                     config = new ConfigObject();
                     setDrives(config, args[0]);
                     config.setTempdir(args[1]);
-                    configFileName=Path.of(args[0]+"/"+jsonDefault);
+                    configFileName=Paths.get(args[0]+"/"+jsonDefault);
                     message("Parameter 1 - Root Directory: "+args[0]);
                     message("Output Config File: "+configFileName);
                     message("Parameter 2 - Output Directory: "+args[1]);
@@ -208,7 +214,7 @@ public class IMEMethods {
                 message("Failed to export HTML");
             }
             // runs report for console
-            runReport();
+            runReport("After processing");
 
             //Exports reports for cameras, fileObjects etc...
             if(!exportHTML(config))
@@ -281,8 +287,8 @@ public class IMEMethods {
     {
         String result;
         try {
-            Path fileName = Path.of(configFile);
-            result = Files.readString(fileName);
+
+            result = FileUtils.readFileToString(new File(configFile), "UTF-8");
         }
         catch(Exception e)
         {
@@ -334,6 +340,10 @@ public class IMEMethods {
             else if(s.trim().equalsIgnoreCase(Enums.argOptions.clear.toString()))
             {
                 config.setClear(true);
+            }
+            else if(s.trim().equalsIgnoreCase(Enums.argOptions.clearallcomments.toString()))
+            {
+                config.setClearallcomments(true);
             }
             else if(s.trim().equalsIgnoreCase(Enums.argOptions.addxpkeywords.toString()))
             {
@@ -425,6 +435,7 @@ public class IMEMethods {
         if(config.getAddiptckeywords()==null) {config.setAddiptckeywords(false);}
         if(config.getSavefilemetadata()==null) {config.setSavefilemetadata(false);}
         if(config.getClear()==null) {config.setClear(false);}
+        if(config.getClearallcomments()==null) {config.setClearallcomments(false);}
         if(config.getTempdir()!=null)
             {
                 config.setTempdir(fixSlash(config.getTempdir()));
@@ -756,7 +767,7 @@ public class IMEMethods {
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss");
         objectMapper.findAndRegisterModules();
         String fileName=inputPath.getFileName().toString();
-        String newName = c.getTempdir() + "\\"+  FilenameUtils.getBaseName(fileName)+format.format(new Date()) + "."+FilenameUtils.getExtension(fileName);
+        String newName = c.getTempdir() + "/"+  FilenameUtils.getBaseName(fileName)+format.format(new Date()) + "."+FilenameUtils.getExtension(fileName);
         try {
             objectMapper.writeValue(new File(newName), c);
             return true;
@@ -768,17 +779,17 @@ public class IMEMethods {
     /**
      * Runs Console reports at the end of the program run
      */
-    public static void runReport()
+    public static void runReport(String comment)
     {
         messageLine("*");
-        message("Number of Files :"+fileObjects.size());
-        message("Number of Cameras :"+cameras.size());
-        message("Number of Places :"+places.size());
-        message("Number of Events :"+events.size());
-        message("Number of Tracks :"+tracks.size());
-        message("Number of Errors:"+errorObjects.size());
-        message("Number of Warnings:"+warningObjects.size());
-        message("Number of Duplicates found:"+duplicateObjects.size());
+        message("Number of Files            "+comment+" :"+fileObjects.size());
+        message("Number of Cameras          "+comment+" :"+cameras.size());
+        message("Number of Places           "+comment+" :"+places.size());
+        message("Number of Events           "+comment+" :"+events.size());
+        message("Number of Tracks           "+comment+" :"+tracks.size());
+        message("Number of Errors           "+comment+" :"+errorObjects.size());
+        message("Number of Warnings         "+comment+" :"+warningObjects.size());
+        message("Number of Duplicates found "+comment+" :"+duplicateObjects.size());
         messageLine("*");
     }
     /**
@@ -829,6 +840,10 @@ public class IMEMethods {
             if(fNew.getWindowsTitle()==null)
             {
                 fNew.setWindowsTitle("");
+            }
+            if(fNew.getWindowsComments()==null)
+            {
+                fNew.setWindowsComments("");
             }
             if(fNew.getComments()==null)
             {
@@ -1446,9 +1461,6 @@ public class IMEMethods {
                         }
 
                     } else {
-                        System.out.println(file.getCanonicalPath());
-                        System.out.println(file.getPath());
-                        System.out.println(file.getParent());
                         //don't rename json file !!
                         if(!FilenameUtils.getExtension(file.getPath()).equalsIgnoreCase("json") &&
                                 !FilenameUtils.getExtension(file.getPath()).equalsIgnoreCase("db")
@@ -1458,6 +1470,10 @@ public class IMEMethods {
                             if (!result) {
                                 message("Could not rename file:" + file.getAbsolutePath());
                                 return false;
+                            }
+                            else
+                            {
+                                message ("File renamed to :"+file.getParent() + "/" + "T_" + file.getName());
                             }
                         }
                     }
@@ -1486,7 +1502,7 @@ public class IMEMethods {
             }
             catch(Exception e)
             {
-                message("Could not copy test directory"+e);
+                message("Clear test area  - Could not copy test directory"+e);
                 return false;
             }
         return renameFiles(new File(copyDir));
@@ -1526,23 +1542,23 @@ public class IMEMethods {
             try {
                 FileUtils.cleanDirectory(new File(rootDir + "/Test/DirKeyword1 DirKeyword2"));
             } catch (Exception e) {
-                message("Test/DirKeyword1 DirKeyword2 folder is missing");
+                message("Clear test area  - warning - Test/DirKeyword1 DirKeyword2 folder is missing");
             }
             try {
                 FileUtils.cleanDirectory(new File(rootDir + "/Test"));
             } catch (Exception e) {
-                message("Unable to delete file from Test:"+e);
+                message("Clear test area  - Unable to delete file from Test:"+e);
             }
             try {
                 FileUtils.cleanDirectory(new File(rootDir + "/TestRESULTS"));
             } catch (Exception e) {
-                message("TestResults folder is missing or cannot be removed"+e);
+                message("Clear test area  - warning - TestResults folder is missing or cannot be removed"+e);
             }
             try {
 
                 FileUtils.cleanDirectory(new File(rootDir + "/TestNewDir"));
             } catch (Exception e) {
-                message("TestNewDir folder is missing or cannot be cleared:"+e);
+                message("Clear test area  - warning - TestNewDir folder is missing or cannot be cleared:"+e);
             }
             return true;
         } else {
@@ -1877,18 +1893,20 @@ public class IMEMethods {
      * Creates temporary folder for output from the program
      * @param temp - name (from the JSON)
      */
-    public static void createTempDirForUser(String temp) {
-        boolean result=true;
+    public static Boolean createTempDirForUser(String temp) {
+
         try {
-          result = new File(temp).mkdir();
+          return new File(temp).mkdir();
 
 
         } catch (Exception e) {
            if(e.getMessage().equals("OK"))
            {
-               message("ok"+result);
+               message("ok");
+               return false;
            }
         }
+        return true;
     }
     /**
      * Creates all tracks from the FileObjects
@@ -1968,15 +1986,18 @@ public class IMEMethods {
      */
     public static void message(String messageString)
     {
-        String str=" ";
-
-        String[] lines = messageString.split("\\R",-1);
+         String[] lines = messageString.split("\\R",-1);
         for(String l: lines) {
             if (l.length() > (messageLength - 4)) {
                 System.out.println("* " + l.substring(0, messageLength - 4) + " *");
             } else {
                 int width = messageLength - (l.length() + 4);
-                String ss = "* " + l + " " + str.repeat(width);
+                StringBuilder builder = new StringBuilder(width);
+                for (int i = 0; i < width; i++) {
+                    builder.append(" ");
+                }
+
+                String ss = "* " + l + " " + builder;
                 if (ss.length() < messageLength) {
                     ss = ss + "*";
                 }
@@ -1991,7 +2012,12 @@ public class IMEMethods {
      */
     public static void messageLine(String s)
     {
-         String ss= s.repeat(messageLength);
+        StringBuilder builder = new StringBuilder(messageLength);
+        for (int i = 0; i < messageLength; i++) {
+            builder.append(s);
+        }
+
+         String ss= builder.toString();
          System.out.println(ss);
     }
 
@@ -2104,7 +2130,7 @@ public class IMEMethods {
             //sort in case there are gaps in numbering
             events.sort(Comparator.comparing(EventObject::getEventid));
         }
-        runReport();
+        runReport("in input file");
         messageLine("*");
     }
 
@@ -2119,10 +2145,14 @@ public class IMEMethods {
         //getYear
         int year=f.getBestDate().getYear();
         // create directory
-        createTempDirForUser(config.getNewdir()+"/"+year);
+        boolean result1=createTempDirForUser(config.getNewdir()+"/"+year);
         int month=f.getBestDate().getMonth().getValue();
         String newDirectory= config.getNewdir()+"/"+year+"/"+month;
-        createTempDirForUser(newDirectory);
+        boolean result2=createTempDirForUser(newDirectory);
+        if(!result1 || !result2)
+        {
+            message("Could not create Temp Directory:"+config.getNewdir()+"/"+year);
+        }
         return newDirectory;
     }
     /**
@@ -2174,7 +2204,7 @@ public class IMEMethods {
      */
     public static String makeThumbName(File f) {
         try {
-            return f.getCanonicalPath().replace("\\", "_").replace(":", "_");
+            return fixSlash(f.getCanonicalPath()).replace("/", "_").replace(":", "_");
             //remove the root
 
             // replace any directory slashes with underscores
@@ -2489,8 +2519,8 @@ public class IMEMethods {
     public static Integer checkEvent(ConfigObject config,FileObject fNew,EventObject e)
     {
         LocalDateTime d= fNew.getBestDate();
-        Boolean eventDone=false;
-        if(fNew.getEventKeysArray().contains(e.getEventid()))
+        boolean eventDone=false;
+        if(fNew.getEventKeysArray().contains(e.getEventid().toString()))
         {
             message("File has previously been matched with this event:"+e.getEventid());
             eventDone=true;
@@ -2586,7 +2616,6 @@ public class IMEMethods {
      */
     public static FileObject readAndUpdateFile(File file, String thumbName, ConfigObject config, DriveObject drive, boolean readOnly) {
         FileObject fNew = initialiseFileObject();
-
         boolean alreadyProcessed = false;
         readSystemDates(fNew,file);
         IPTC iptc = new IPTC();
@@ -2612,7 +2641,6 @@ public class IMEMethods {
                     }
                 } else if (meta instanceof Comments) {
                     fNew.setComments(clearBlanks(new ArrayList<>(((Comments) meta).getComments())));
-
                     alreadyProcessed= checkJPEGComments(fNew.getComments(),"#"+Enums.statusValues.processed+Enums.doneValues.DONE+":");
                     if(alreadyProcessed)
                     {
@@ -2645,7 +2673,11 @@ public class IMEMethods {
         if(!readOnly) {
             if(config.getClear())
             {
-                clearFile(fNew, config, file,   drive);
+                clearFile(fNew, config, file,   drive,false);
+            }
+            else if(config.getClearallcomments())
+            {
+                clearFile(fNew, config, file,   drive,true);
             }
             else {
                 processFile(fNew, config, file, thumbName, alreadyProcessed, drive);
@@ -2662,6 +2694,16 @@ public class IMEMethods {
      * @param thumbName - name of thumbnail
      * @param alreadyProcessed - flag to identify if the file has already been processed
      * @param drive - Drive object
+     *
+     * **If JPEG comments contain a “processed” comment then it is assumed to be already processed.
+     * If the Redo option is set or it has not been processed, file will be geocoded and updated (if update selected).  On redo, ideally it finds the geocode in the JSON file rather than having to request from OpenStreetMap.
+     * If a file has been geocoded, it holds a unique “Place” key in the IPTC Instructions, JPEG Comments and Windows  Comments.  On subsequent runs, if the Place key does not match, then the file is geocoded again, and will be updated (if updated selected).
+     * If any new dates are found in the metadata, it will be processed again and updated (if update selected)
+     * If any new location metadata has been found it will be processed and updated (if update selected)
+     * If a file has been previously matched against an Event it will not be reprocessed, unless the redo or redoevents options are selected (and update has been selected).  If you add new Events to the JSON file, then you should run with redoevents to ensure all files are rechecked.
+     * If a file is to be moved then its metadata is updated with information on whether a file is moved or not.
+     * If one or more Events have been found then the file will be updated (if update selected).
+     * We only create a thumbnail if there is not one on the disk
      */
     public static void processFile(FileObject fNew,ConfigObject config,File file, String thumbName,Boolean alreadyProcessed,DriveObject drive)
     {
@@ -2670,9 +2712,7 @@ public class IMEMethods {
         checkDuplicateFile(fNew);
 
         // if it has not been processed or needs to be redone
-        // We always have to process a file at least once, in order to update IPTC metadata specified on the drive
-        // If this is changed, then you must redo...
-        if (config.getRedo() || !alreadyProcessed) {
+           if (config.getRedo() || !alreadyProcessed) {
             updateRequired = true;
         }
         // create a thumbnail, if we need to
@@ -2701,17 +2741,27 @@ public class IMEMethods {
             }
             else
             {
+                // looks like we dont need to update but we still need to check the place key
                 // we still want to match the file with a Place record
                 if(checkPlaceKeyFound(fNew,config))
                 {
-                    message("Place key found matching lat, lon values:"+fNew.getPlaceKey()+" no need to geocode");
+                    message("Place key found matching lat, lon values:"+fNew.getPlaceKey()+" no need to geocode or update");
 
                     driveCounter.addCountGEOCODED();
                 }
                 else {
+                    // we do need to update because the Place Key does not match
+                    message ("Reverse geocoding done to update Place list");
                     // geocode but do not update fields - we need to do this if there is no matched place Object Place Objects...
-                    geocode(fNew, fNew.getLatitude(), fNew.getLongitude(), config, false);
-                    message ("Reverse geocoding done to update Place list - key is: "+fNew.getPlaceKey());
+                    if(geocode(fNew, fNew.getLatitude(), fNew.getLongitude(), config, true))
+                    {
+                        removeInstructionFields(fNew,fNew.getLatitude()+","+fNew.getLongitude()+":"+fNew.getPlaceKey(),Enums.processMode.geocode);
+                        message ("Reverse geocoding redone as current Place key ("+getPlaceKeyFromIPTCComments(fNew.getComments())+") is missing - new key is: "+fNew.getPlaceKey());
+                        updateCommentFields(fNew,fNew.getLatitude()+","+fNew.getLongitude()+":"+fNew.getPlaceKey(),Enums.processMode.geocode);
+                        message("Reverse Geocoding completed");
+                        updateRequired = true;
+                    }
+
                 }
             }
         }
@@ -2740,8 +2790,8 @@ public class IMEMethods {
 
             fNew.getComments().add("#"+Enums.statusValues.processed+Enums.doneValues.DONE+":" + formatter.format(new Date()));
           //  addComment(newCommentsString, "#"+Enums.statusValues.processed+Enums.doneValues.DONE);
-            fNew.setWindowsComments(appendComment(fNew.getWindowsComments(),"#"+Enums.statusValues.processed+Enums.doneValues.DONE ));
-            fNew.setIPTCInstructions(appendComment(fNew.getIPTCInstructions(),"#"+Enums.statusValues.processed+Enums.doneValues.DONE));
+           // fNew.setWindowsComments(appendComment(fNew.getWindowsComments(),"#"+Enums.statusValues.processed+Enums.doneValues.DONE ));
+           // fNew.setIPTCInstructions(appendComment(fNew.getIPTCInstructions(),"#"+Enums.statusValues.processed+Enums.doneValues.DONE));
             message("Processing with update");
             updateFile(config, drive, file, fNew);
         }
@@ -2753,7 +2803,7 @@ public class IMEMethods {
      * @param file - File being processed
      * @param drive - Drive object
      */
-    public static void clearFile(FileObject fNew,ConfigObject config,File file, DriveObject drive)
+    public static void clearFile(FileObject fNew,ConfigObject config,File file, DriveObject drive,Boolean allComments)
     {
         for(Enums.processMode p :Enums.processMode.values()) {
             fNew.setComments(removeJPEGComments(fNew.getComments(),"#"+p+Enums.doneValues.DONE+":"));
@@ -2762,6 +2812,12 @@ public class IMEMethods {
             fNew.setComments(removeJPEGComments(fNew.getComments(),"#"+s+Enums.doneValues.DONE+":"));
         }
         message("Clearing JPG Comments update");
+        if(allComments)
+        {
+            fNew.setWindowsComments("");
+            fNew.setIPTCInstructions("");
+            message("Clearing Windows and IPTC Instructions Comments update");
+        }
         updateFile(config, drive, file, fNew);
 
     }
@@ -3051,7 +3107,7 @@ public class IMEMethods {
          String param ;
          boolean paramFound=false;
          for(Enums.processMode p :Enums.processMode.values()) {
-             if(p.equals(Enums.processMode.date)!=true) {
+             if(!p.equals(Enums.processMode.date)) {
                  // this is a special case where the forwardcode is driven from event location field
                  if (eventLocation != null) {
                      param = getParam(eventLocation, "#" + p + ":");
@@ -3060,8 +3116,8 @@ public class IMEMethods {
                  }
                  if (param.equals("ERROR")) {
 
-                     message("Parameter values missing for:" + p.toString());
-                     addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Parameter values missing for:" + p.toString(), false);
+                     message("Parameter values missing for:" + p);
+                     addError(fNew.getFileName(), fNew.getDirectory(), fNew.getBestDate(), "Parameter values missing for:" + p, false);
                  } else if (param.length() > 0) {
                      paramFound = true;
                      if (p.equals(Enums.processMode.latlon)) {
@@ -3226,6 +3282,7 @@ public class IMEMethods {
     {
         if(jpegMetadata!=null)
         {
+            fNew.setWindowsComments(getStringOrUnknown(jpegMetadata, MicrosoftTagConstants.EXIF_TAG_XPCOMMENT));
             fNew.setCameraMaker(getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MAKE));
             fNew.setCameraModel(getStringOrUnknown(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL));
             fNew.setFStop(getTagValueDouble(jpegMetadata, ExifTagConstants.EXIF_TAG_FNUMBER));
@@ -3390,6 +3447,10 @@ public class IMEMethods {
                         f.setIPTCInstructions(item.getValue());
                         message("IPTC Instructions is:" + item.getValue());
                     }
+                    else
+                    {
+                        f.setIPTCInstructions("");
+                    }
                 } else if (item.getKey().equals(IPTCApplicationTag.CAPTION_ABSTRACT.getName())) {
                     // this concatenates the subject field
                     if (item.getValue().length() > 0) {
@@ -3460,7 +3521,18 @@ public class IMEMethods {
         DateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
         fNew.getComments().add("#"+p.toString()+Enums.doneValues.DONE+":"+param+":" + formatter.format(new Date()));
     }
+    /**
+     *  Updates both instruction fields and adds a comment to the JPEG comments section
+     * @param fNew - fileObject
+     * @param param - parameter for the instruction / processMode
+     * @param p - processMode
+     */
+    public static void removeInstructionFields(FileObject fNew, String param, Enums.processMode p)
+    {
+        fNew.setWindowsComments(removeInstructions(fNew.getWindowsComments(),p,param));
+        fNew.setIPTCInstructions(removeInstructions(fNew.getIPTCInstructions(),p,param));
 
+    }
     /**
      * UPdates the IPTC fields - these will be merged with existing fields later
      * @param iptcs - IPTC structure
@@ -3596,8 +3668,8 @@ public class IMEMethods {
                         fNew.setIPTCInstructions(fNew.getIPTCInstructions() + "#"+Enums.statusValues.movedfile+Enums.doneValues.DONE+":" + fixSlash(fNew.getDirectory()));
                     }
                 }
-                // we update the Special Instructions if they have been provided....
-                if (!StringUtils.isNullOrEmpty(fNew.getIPTCInstructions())) {
+                // we update the Special Instructions if they have been provided....or if we are clearing...
+                if (!StringUtils.isNullOrEmpty(fNew.getIPTCInstructions())|| config.getClearallcomments()) {
                     iptcs.add(new IPTCDataSet(IPTCApplicationTag.SPECIAL_INSTRUCTIONS, fNew.getIPTCInstructions()));
                 }
                 //update the IPTC section (last parameters ensures original values kept)
@@ -3700,10 +3772,10 @@ public class IMEMethods {
      * @param dst - destination image file
      */
     public static boolean updateExifMetadata(final File jpegImageFile, final File dst, FileObject fNew)
-             {
+    {
 
         try (FileOutputStream fos = new FileOutputStream(dst);
-             OutputStream os = new BufferedOutputStream(fos)) {
+                OutputStream os = new BufferedOutputStream(fos)) {
             TiffOutputSet outputSet = null;
             // note that metadata might be null if no metadata is found.
             final ImageMetadata metadata = Imaging.getMetadata(jpegImageFile);
@@ -3731,7 +3803,6 @@ public class IMEMethods {
 
             final TiffOutputDirectory rootDir = outputSet.getOrCreateRootDirectory();
             rootDir.removeField(MicrosoftTagConstants.EXIF_TAG_XPCOMMENT);
-
             rootDir.add(MicrosoftTagConstants.EXIF_TAG_XPCOMMENT, fNew.getWindowsComments());
 
             rootDir.removeField(TiffTagConstants.TIFF_TAG_IMAGE_DESCRIPTION);
@@ -3751,6 +3822,7 @@ public class IMEMethods {
                     fNew.setWindowsKeywords(String.join(";", fNew.getWindowsKeywordsArray()));
                 }
             }
+
             new ExifRewriter().updateExifMetadataLossless(jpegImageFile, os,
                     outputSet);
             return true;
@@ -3762,6 +3834,27 @@ public class IMEMethods {
 
     }
 
+
+    /**
+     * removes the instructions in a string , based on the format #<instruction>:param to #<instruction>DONE:param
+     * If blank or null, then blank is returned
+     * @param s - string to check
+     * @param pMode - processMode / instruction
+     * @param param - value to be used
+     * @return - return string
+     */
+    private static String removeInstructions(String s,Enums.processMode pMode,String param)
+    {
+        if(s==null)
+        {
+            return "";
+        }
+        if(pMode==null)
+        {
+            return s;
+        }
+        return s.replace("#"+pMode+ Enums.doneValues.DONE+":"+param,"");
+    }
     /**
      * Updates the instructions in a string , based on the format #<instruction>:param to #<instruction>DONE:param
      * If blank or null, then a new string is added e.g. #<instruction>DONE:param
@@ -3833,7 +3926,7 @@ public class IMEMethods {
         if (v.length() > 0) {
             return v.replaceAll("'","");
         } else {
-            return "Unknown";
+            return "";
         }
     }
     public static String getParam(String searchString,String keyValue) {
@@ -3848,7 +3941,7 @@ public class IMEMethods {
         }
         String fieldFromThisPoint= searchString.substring(startPoint+1);
         String[] strings = fieldFromThisPoint.split("#",-1);
-        int endPoint = strings[0].indexOf(" ", 0);
+        int endPoint = strings[0].indexOf(" ");
         String param;
         if (endPoint > -1) {
             param=strings[0].substring(keyValue.length()-1, endPoint - 1).trim();
@@ -3867,7 +3960,7 @@ public class IMEMethods {
     }
 
     /**
-     *  Checks if specific event key exists in the field - this is a fied of numbers separated by semi colon
+     *  Checks if specific event key exists in the field - this is a field of numbers separated by semi colon
      * @param keyString - string to search
      * @param keyValue - event key value
      * @return - retusn true if found
@@ -4046,15 +4139,12 @@ public class IMEMethods {
     public static void readDrives(ConfigObject c)
     {
         // Fix any slashes that are back facing
-        ArrayList<DriveObject> dd = new ArrayList<>();
+        ArrayList<DriveObject> drives = new ArrayList<>();
         for (DriveObject d : c.getDrives()) {
              d.setStartdir(fixSlash(d.getStartdir()));
-             dd.add(d);
+             drives.add(d);
         }
-          c.setDrives(dd);
-
-
-
+        c.setDrives(drives);
         for (DriveObject d : c.getDrives()) {
             driveCounter=new CounterObject();
             message("Reading drive: "+d.getStartdir());
