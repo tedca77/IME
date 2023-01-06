@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class IMEMethodsTest {
     String startDir = "D:/ICTEST";
-    String openAPIKey="5b3ce3597851110001cf6248a15496c57f254acbbcb04aaf8e115b50";
+    String openAPIKey="<Enter API Key here>";
     @BeforeAll
     static void initAll() {
     }
