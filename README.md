@@ -12,11 +12,10 @@ IME is simple to run, from a terminal session on Windows, MacOS or Linux. It can
 IME is copyright but available under an open source licence - source code is available on this Github repository.
 
 # Why is Image Metadata Enhancer needed?
-1.	Many personal and small organisation image libraries are disorganised  – this software tool helps discover duplicates and organises files by the date the photo was taken.
-2.	Many "Cloud-based" image libraries provide reverse geocoding when a file is uploaded. Most Cloud systems do not update the metadata within photos, so any enhanced metadata created by the Cloud system is of no use if the photos are transferred to other storage environments.  This tool is designed for people with collections on local disk drives or SANs who require similar geocoding facilities to "Cloud systems" but without additional cost.
-3.	It is difficult to search or review geographical and other metadata across a collection of images – in Windows you have to select properties on each image in turn, while MacOS has limited support for IPTC metadata.  IME helps you view the geographical information and remind you of trips and visits, and helps to identify where photos have been taken.
-4.	Software that uses the latitude and longitude metadata may not be able to reverse geocode.  For instance, Adobe Lightroom “Classic” is a great tool for viewing and searching geographical information – but reverse geocoding is only possible by purchasing one of the Lightroom Cloud-based packages. Adobe Bridge does not have geocoding capabilities.
-5.	IME also generates Windows "Tag" information allowing fast Windows searching of location metadata without any extra software.
+1.	Many personal and small organisation image libraries are disorganised  – this software tool helps discover duplicates and organises files.
+2.	Many "Cloud-based" image libraries provide reverse geocoding when a file is uploaded but do not update the metadata within photos. 
+3.	IME helps you view the geographical information and remind you of trips and visits, and helps to identify where photos have been taken.
+4.	Provides location searching with tools such as Adobe Lightroom Classic and Adobve Bridge, as well as Windows search.
 # About Image Metadata
 Image metadata in stored within each JPEG image file (JPEG files are produced by most mobile phones). The metadata is organised in a set of categories.  These categories include:
 * **EXIF** – this contains the longitude and latitude information, as well as information on the camera / phone,  date of capture etc.
