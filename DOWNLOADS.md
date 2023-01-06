@@ -3,7 +3,7 @@
 ## Version 1.0.0.1 5th January 2023
 
 * Java jar - <a href="https://github.com/tedca77/IME/blob/main/out/artifacts/ImageMetadataEnhancer_jar/ImageMetadataEnhancer.jar">ImageMetadataEnhancer.jar</a> (17MB)
-* Windows Executable - <a href="https://github.com/tedca77/IME/blob/main/out/artifacts/ImageMetadataEnhancer.jar/IME-1.0.exe">IME-1.0.exe</a> (61MB)
+* Windows Executable - <a href="https://github.com/tedca77/IME/blob/main/out/artifacts/ImageMetadataEnhancer_jar/IME-1.0.exe">IME-1.0.exe</a> (61MB)
 * MacOS package part 1 - <a href="https://github.com/tedca77/IME/blob/main/out/artifacts/MacOS/IME-1.0.dmg.001">IMG-1.0.dmg.001</a> (62MB)
 * MacOS package part 2 - <a href="https://github.com/tedca77/IME/blob/main/out/artifacts/MacOS/IME-1.0.dmg.002">IMG-1.0.dmg.002</a> (45MB)
 * 
