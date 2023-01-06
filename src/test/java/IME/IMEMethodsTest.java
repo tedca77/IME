@@ -1392,15 +1392,18 @@ class IMEMethodsTest {
 
            //SHA-1 checksum
             File filejar = new File("d:/ImageCatalogue/out/artifacts/ImageMetadataEnhancer_jar/ImageMetadataEnhancer.jar");
-            File fileexe = new File("d:/ImageCatalogue/out/artifacts/Launch4j/IME.exe");
-            File filedmg = new File("d:/ImageCatalogue/out/artifacts/MacOS/IME-1.0.dmg");
+            File fileexe = new File("d:/ImageCatalogue/out/artifacts/ImageMetadataEnhancer_jar/IME-1.0.exe");
+            File filedmg1 = new File("d:/ImageCatalogue/out/artifacts/MacOS/IME-1.0.dmg.001");
+            File filedmg2 = new File("d:/ImageCatalogue/out/artifacts/MacOS/IME-1.0.dmg.002");
             try {
                 String shaChecksumjar = getFileChecksum(shaDigest, filejar);
-                System.out.println("Checksum for ImageMetadataEnhancer.jar:"+shaChecksumjar);
+                System.out.println("* Checksum for ImageMetadataEnhancer.jar: "+shaChecksumjar);
                 String shaChecksumexe = getFileChecksum(shaDigest, fileexe);
-                System.out.println("Checksum for IME.exe:"+shaChecksumexe);
-                String shaChecksumdmg = getFileChecksum(shaDigest, filedmg);
-                System.out.println("Checksum for IME-1.0.dmg:"+shaChecksumdmg);
+                System.out.println("* Checksum for IME-1.0.exe: "+shaChecksumexe);
+                String shaChecksumdmg1 = getFileChecksum(shaDigest, filedmg1);
+                System.out.println("* Checksum for IME-1.0.dmg.001: "+shaChecksumdmg1);
+                String shaChecksumdmg2 = getFileChecksum(shaDigest, filedmg2);
+                System.out.println("* Checksum for IME-1.0.dmg.002: "+shaChecksumdmg2);
             }
             catch(IOException e)
             {
