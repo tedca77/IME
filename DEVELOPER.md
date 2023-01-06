@@ -8,7 +8,21 @@ IME is built using open source java libraries,  including:
 * Freemarker – for outputting HTML reports
 * JavaAPI for KML generation.
 
-I have used Launch4J to generate an Exe file and javapackager to create a dmg file for MacOS.  I have not done any packaging for Linux.
+I have used jpackage to generate a Windows exe file and javapackager to create a dmg file for MacOS.  I have not done any packaging for Linux.
+
+##Creating Windows version
+
+Assuming you have built a jar file using IntelliJ Build.
+
+'''
+jpackage --name IME --input "D:/ImageCatalogue/out/artifacts/ImageMetadataEnhancer_jar" 
+--main-jar ImageMetadataEnhancer.jar --main-class IME.IMEMethods --win-console 
+--dest "D:/ImageCatalogue/out/artifacts/ImageMetadataEnhancer_jar"  --java-options -Dfile.encoding=UTF8
+'''
+
+##Creating MacOS version
+
+
 
 If anyone would like to build this project, I can provide additional information here.
 

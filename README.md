@@ -45,9 +45,9 @@ If there are spaces in the directory names, you should enclose in double quotes.
 * The results will be sent to : ```d:/Results```
 
 ## On Windows
-1. Download the <a href="https://github.com/tedca77/IME/blob/main/DOWNLOADS.md">IME.exe</a> to your drive e.g. D:/IME/IME.exe
+1. Download the <a href="https://github.com/tedca77/IME/blob/main/DOWNLOADS.md">IME-1.0.exe</a> to your drive and install.  This will install in the Program Files directory.
 2. Run as a Windows command  
-   ```D:/IME/IME.exe “d:/Photos” “d:/Results”```
+   ```C:/Program Files/IME/IME-1.0.exe “d:/Photos” “d:/Results”```
 
 ## On MacOS
 1. Download the <a href="https://github.com/tedca77/IME/blob/main/DOWNLOADS.md">IME-1.0.dmg</a>
