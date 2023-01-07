@@ -31,7 +31,7 @@ Image Metadata Enhancer is distributed in the hope that it will be useful,  but 
 
 ## Running as jar file (on all platforms)
 1. Download the <a href="https://github.com/tedca77/IME/blob/main/DOWNLOADS.md">ImageMetadataEnhancer.jar</a> to your drive e.g. D:/IME/ImageMetadataEnhancer.jar
-2. Ensure that version 8 of Java Run Time Environment is installed.
+2. Ensure that version 8 (or higher) of Java Run Time Environment is installed.
 3. Run from a Terminal session with two parameters
    ```java -jar ImageMetadataEnhancer.jar  <directory to search> <output directory>```
 
@@ -50,8 +50,8 @@ If there are spaces in the directory names, you should enclose in double quotes.
    ```C:/Program Files/IME/IME-1.0.exe “d:/Photos” “d:/Results”```
 
 ## On MacOS
-1. Download the <a href="https://github.com/tedca77/IME/blob/main/DOWNLOADS.md">IME-1.0.dmg</a>
-2. Click on the downloaded file to install and copy to the Applications folder
+1. Download the two archive files <a href="https://github.com/tedca77/IME/blob/main/DOWNLOADS.md">IME-1.0.dmg.001 and IME-1.0.dmg.002</a>
+2. Use an archive tool (I used "Extract Any File" from the App Store) to extract IME-1.0.dmg. Click on IME-1.0.dmg to install and copy to the Applications folder
 2. Run from a Terminal Session
    ```/Applications/IME.app/Contents/MacOS/IME "/Users/jsmith/Pictures/Photos Library.photoslibrary/Masters" "/Users/jsmith/Documents/IMEResults"```
 
