@@ -14,7 +14,8 @@
 * Checksum for IME-1.0.dmg.001: 7087c5b5defa2ae5979967bfdcb91f21b1d8843356b5f040eb86347d4f170cc8
 * Checksum for IME-1.0.dmg.002: f5b7d0e0f26e5922d46a84448a03d0fcf68c943624fd542e20b510599412900f
 
-The MacOS file is too large for GitHUb, so please download the two parts and use Mac tools to extract the Archive. 
+The MacOS dmg file is too large to store on GitHub, so please download the two parts (.001 and 002) and use Mac tools to extract the Archive. I used "Extract Any File" from the App Store. 
+
 On Windows you can use Powershell to confirm the Checksum. On MacOS, use shasum from Terminal for the two parts of the Archive.
 
 <a href="https://github.com/tedca77/IME/blob/main/README.md">Back to ReadMe page.</a>
