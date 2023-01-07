@@ -1,5 +1,5 @@
 # For Developers
-IME has been developed in Java 8 with Maven build on Intellij.  A JUNIT-based test library is also provided.
+IME has been developed in Java 8 with Maven build on Intellij.  A JUNIT-based test library is also provided wih 44 separate tests.  
 
 IME is built using open source java libraries,  including:
 * ICAFE – read and writing IPTC data
@@ -7,6 +7,8 @@ IME is built using open source java libraries,  including:
 * Apache Commons Imaging – read and writing EXIF and Windows data
 * Freemarker – for outputting HTML reports
 * JavaAPI for KML generation.
+
+OpenStreetMap does not require an API key to carry out a longitude and latitude look up but does require an API key to return longitude and latitude from a post code. 
 
 I have used jpackage to generate a Windows exe file and javapackager to create a dmg file for MacOS.  I have not done any packaging for Linux.
 
@@ -22,11 +24,13 @@ jpackage --name IME --input "D:/ImageCatalogue/out/artifacts/ImageMetadataEnhanc
 
 ##Creating MacOS version
 
+If anyone would like to build this project for MacOS, I can provide additional information here.
 
 
-If anyone would like to build this project, I can provide additional information here.
 
-Thanks to all developers for working on these libraries.
+Thanks to all developers for working on the open source libraries that have enabled this application. I would welcome additional contributions to this. 
+
+Thanks also to OpenStreetMap and all the contributors for providing a wonderful API service.  
 
 Ted Carroll
 January 2023
