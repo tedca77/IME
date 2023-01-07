@@ -13,9 +13,9 @@ IME is copyright but available under an open source licence - source code is ava
 
 # Why is Image Metadata Enhancer needed?
 1.	Many personal and small organisation image libraries are disorganised  – this software tool helps discover duplicates and organises files.
-2.	Many "Cloud-based" image libraries provide reverse geocoding when a file is uploaded but do not update the metadata within photos. 
-3.	IME helps you view the geographical information and remind you of trips and visits, and helps to identify where photos have been taken.
-4.	Provides location searching with tools such as Adobe Lightroom Classic and Adobve Bridge, as well as Windows search.
+2.	Supports location searching with tools such as Adobe Lightroom Classic and Adobe Bridge, as well as Windows File Explorer search. IME helps you view the geographical information and remind you of trips and visits, and helps to identify where photos have been taken.
+3.	Many "Cloud-based" image libraries provide reverse geocoding when a file is uploaded but they do not update the metadata within photos. 
+
 # About Image Metadata
 Image metadata in stored within each JPEG image file (JPEG files are produced by most mobile phones). The metadata is organised in a set of categories.  These categories include:
 * **EXIF** – this contains the longitude and latitude information, as well as information on the camera / phone,  date of capture etc.
@@ -175,9 +175,9 @@ The IPTC metadata specification has 4 fields for location - the OpenStreet Map a
 * **ExifTool** - this provides a very good report on all metadata on a file.
 # Limitations
 * IME is currently tested on Windows, Linux and MacOS, and it is believed to operate on all systems that support Java 8 or higher.
-* IME is currently only tested with JPEG / JPG files, although should be able to support other formats.
+* IME is currently set up to work with JPEG / JPG files, although should be able to support other formats.
 * There is a bug in Apache Imaging library which means that if the Windows Title field already has a value, it cannot be overwritten. This only impacts the use of Events.
-* IME has only been tested with UK national postcodes.
+* IME has only been tested with UK national postcodes, although should work with other countries.
 * IME support International character sets (i.e. UTF-8), but has currently only been tested on a small subset of languages (including Chinese).
 
 # References
