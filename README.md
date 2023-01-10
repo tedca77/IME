@@ -187,6 +187,8 @@ The IPTC metadata specification has 4 fields for location - the OpenStreet Map a
 4. ExifTool [https://exiftool.org]
 5. IPTC Specification [https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata]
 6. IPTC Message Group [https://groups.io/g/iptc-photometadata/messages]
+7. openrouteservice API [https://api.openrouteservice.org]
+8. OpenStreetMap [https://www.openstreetmap.org]
 
 	
 	
