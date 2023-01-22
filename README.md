@@ -3,7 +3,7 @@ IME (Image Metadata Enhancer) improves the metadata information on images and he
 
 It is designed for image collections with **latitude and longitude** geographic information (e.g. usually taken on mobile phones, but also on many digital cameras) by converting latitude and longitude to recognisable place addresses. (This is known as “reverse geocoding”.) The IME software updates address information in the **IPTC** metadata and **Windows Tags** so the information is visible in tools such as Adobe Lightroom and Adobe Bridge which support the IPTC metadata standard and also via Windows File Manager search.
 
-IME works through all images on one or more drives or directories and uses the **Open Street Map** web lookup service to populate the IPTC section with the full location. (You need to be connected to the Internet for this to work.) IME will also identify duplicate images in different folders.
+IME works through all images on one or more drives or directories and uses the **OpenStreetMap** web lookup service to populate the IPTC section with the full location. (You need to be connected to the Internet for this to work.) IME will also identify duplicate images in different folders.
 
 IME has been designed so that it can be run repeatedly on a collection of images – it will not redo geocoding if it has already been processed. It can also copy files to a new, organised structure based on Year and Month, leaving behind any duplicate files.  IME has extensive reporting and output of metadata information, including a set of HTML pages, which can be viewed, with a browser – this includes thumbnails of each image. (see below).
 
