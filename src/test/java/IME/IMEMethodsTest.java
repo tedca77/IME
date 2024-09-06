@@ -34,7 +34,7 @@ import static IME.IMEMethods.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class IMEMethodsTest {
-    String startDir = "D:/ICTEST";
+    String startDir = "C:/ICTEST";
     String openAPIKey="<Enter API Key here>";
     @BeforeAll
     static void initAll() {
@@ -1389,12 +1389,12 @@ class IMEMethodsTest {
         //Use SHA-1 algorithm
         try {
             MessageDigest shaDigest = MessageDigest.getInstance("SHA-256");
-
+           
            //SHA-1 checksum
-            File filejar = new File("d:/ImageCatalogue/out/artifacts/ImageMetadataEnhancer_jar/ImageMetadataEnhancer.jar");
-            File fileexe = new File("d:/ImageCatalogue/out/artifacts/ImageMetadataEnhancer_jar/IME-1.0.exe");
-            File filedmg1 = new File("d:/ImageCatalogue/out/artifacts/MacOS/IME-1.0.dmg.001");
-            File filedmg2 = new File("d:/ImageCatalogue/out/artifacts/MacOS/IME-1.0.dmg.002");
+            File filejar = new File("C:/GitProjects/IME/out/artifacts/ImageMetadataEnhancer_jar/ImageMetadataEnhancer.jar");
+            File fileexe = new File("C:/GitProjects/IME/out/artifacts/ImageMetadataEnhancer_jar/IME-1.0.exe");
+            File filedmg1 = new File("C:/GitProjects/IME/out/artifacts/MacOS/IME-1.0.dmg.001");
+            File filedmg2 = new File("C:/GitProjects/IME/out/artifacts/MacOS/IME-1.0.dmg.002");
             try {
                 String shaChecksumjar = getFileChecksum(shaDigest, filejar);
                 System.out.println("* Checksum for ImageMetadataEnhancer.jar: "+shaChecksumjar);

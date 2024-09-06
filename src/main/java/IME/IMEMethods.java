@@ -84,6 +84,8 @@ public class IMEMethods {
 
     static ArrayList<CameraObject> cameras = new ArrayList<>();
     static ArrayList<FileObject> fileObjects = new ArrayList<>();
+
+
     static ArrayList<FileObject> duplicateObjects = new ArrayList<>();
     static ArrayList<ErrorObject> errorObjects = new ArrayList<>();
     static ArrayList<ErrorObject> warningObjects = new ArrayList<>();
